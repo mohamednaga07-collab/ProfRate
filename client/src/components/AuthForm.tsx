@@ -136,7 +136,7 @@ export function AuthForm({ onSuccess, defaultTab = "login" }: AuthFormProps) {
     setIsLoading(true);
 
     try {
-      console.log("Attempting login with username:", loginUsername);
+      console.log("🔐 Attempting login with username:", loginUsername);
       const responseObj: any = await apiRequest("POST", "/api/auth/login", {
         username: loginUsername,
         password: loginPassword,
@@ -144,7 +144,7 @@ export function AuthForm({ onSuccess, defaultTab = "login" }: AuthFormProps) {
 
       // apiRequest returns a Response object, we need to parse JSON
       const response = await responseObj.json();
-      console.log("Login response:", response);
+      console.log("✅ Login response received:", response);
 
       if (response?.user) {
         console.log("✅ Login successful! User:", response.user);
@@ -155,22 +155,25 @@ export function AuthForm({ onSuccess, defaultTab = "login" }: AuthFormProps) {
           description: `Logged in as ${response.user.firstName || loginUsername}.`,
         });
         
-        // Invalidate the auth query cache to force refetch
-        console.log("🔄 Invalidating auth cache...");
+        // Clear login form
+        setLoginUsername("");
+        setLoginPassword("");
+        
+        console.log("🔄 Step 1: Invalidating auth cache...");
         await queryClient.invalidateQueries({ queryKey: ["/api/auth/user"] });
         
-        // Give the invalidation time to process, then redirect
-        setTimeout(() => {
-          console.log("🔄 Redirecting to home page...");
-          window.location.href = "/";
-        }, 100);
+        console.log("🔄 Step 2: Refetching to load user...");
+        const newAuthData = await queryClient.refetchQueries({ queryKey: ["/api/auth/user"] });
+        
+        console.log("🔄 Step 3: New auth data:", newAuthData);
+        console.log("🔄 Step 4: Page will auto-redirect when auth state updates...");
         
         if (onSuccess) onSuccess();
       } else {
         throw new Error("Login failed - no user data returned");
       }
     } catch (error: any) {
-      console.error("Login error:", error);
+      console.error("❌ Login error:", error);
       
       const errorMessage = error.message || "Invalid username or password";
       
