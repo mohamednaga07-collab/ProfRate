@@ -298,7 +298,7 @@ export default function DoctorListing() {
                     const doctor = doctors?.find((d) => d.id === id);
                     return (
                       <Badge key={id} variant="secondary" className="gap-1">
-                        Dr. {doctor?.name}
+                        Dr. {doctor?.name?.replace(/^Dr\.?\s+/i, "")}
                         <button
                           onClick={() => handleCompareToggle(id)}
                           className="ml-1 hover:text-destructive"

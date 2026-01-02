@@ -21,7 +21,7 @@ export default function Home() {
   });
 
   const topDoctors = doctors
-    ?.filter((d) => d.ratings && d.ratings.totalReviews > 0)
+    ?.filter((d) => (d.ratings?.totalReviews ?? 0) > 0)
     ?.sort((a, b) => (b.ratings?.overallRating ?? 0) - (a.ratings?.overallRating ?? 0))
     ?.slice(0, 3);
 
@@ -99,7 +99,7 @@ export default function Home() {
                       {doctors && doctors.length > 0
                         ? (
                             doctors.reduce((acc, d) => acc + (d.ratings?.overallRating ?? 0), 0) /
-                            doctors.filter((d) => d.ratings?.overallRating).length
+                            Math.max(1, doctors.filter((d) => (d.ratings?.totalReviews ?? 0) > 0).length)
                           ).toFixed(1)
                         : "0.0"}
                     </p>

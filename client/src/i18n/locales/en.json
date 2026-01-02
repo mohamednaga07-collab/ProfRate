@@ -1,0 +1,48 @@
+{
+  "nav": {
+    "home": "Home",
+    "doctors": "Doctors",
+    "compare": "Compare",
+    "dashboard": "Dashboard",
+    "logout": "Logout"
+  },
+  "landing": {
+    "title": "Campus Ratings",
+    "subtitle": "Rate and Compare Your Professors",
+    "description": "Share your experience and help other students find the best teachers",
+    "getStarted": "Get Started"
+  },
+  "auth": {
+    "login": "Login",
+    "register": "Register",
+    "username": "Username",
+    "password": "Password",
+    "firstName": "First Name",
+    "lastName": "Last Name",
+    "iAm": "I am a",
+    "student": "Student",
+    "teacher": "Teacher",
+    "createAccount": "Create Account",
+    "haveAccount": "Already have an account?",
+    "noAccount": "Don't have an account?",
+    "loginTab": "Login",
+    "registerTab": "Register",
+    "successTitle": "Account Created!",
+    "successDescription": "Your account has been created successfully."
+  },
+  "doctors": {
+    "title": "Professors",
+    "searchPlaceholder": "Search professors...",
+    "ratingCount": "ratings",
+    "noDoctors": "No professors found"
+  },
+  "common": {
+    "loading": "Loading...",
+    "error": "Error",
+    "success": "Success",
+    "cancel": "Cancel",
+    "save": "Save",
+    "delete": "Delete",
+    "edit": "Edit"
+  }
+}

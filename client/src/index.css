@@ -1,6 +1,66 @@
+/* stylelint-disable at-rule-no-unknown */
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
+/* stylelint-enable at-rule-no-unknown */
+
+/* Smooth scrolling and performance optimization */
+* {
+  scroll-behavior: smooth;
+}
+
+html {
+  scroll-behavior: smooth;
+  scroll-padding-top: 100px;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  transition: direction 0.3s cubic-bezier(0.25, 0.1, 0.25, 1);
+}
+
+/* RTL Support for Arabic */
+html[dir="rtl"] {
+  direction: rtl;
+  text-align: right;
+}
+
+html[dir="rtl"] body {
+  direction: rtl;
+}
+
+/* GPU acceleration for better performance */
+body {
+  transform: translateZ(0);
+  backface-visibility: hidden;
+  perspective: 1000px;
+}
+
+/* Optimize animations for 60fps */
+@layer base {
+  * {
+    -webkit-tap-highlight-color: transparent;
+  }
+  
+  /* Hardware acceleration for animated elements */
+  [class*="animate-"],
+  [class*="transition-"],
+  button,
+  a {
+    transform: translateZ(0);
+    will-change: transform;
+  }
+  
+  /* Smooth transitions */
+  button,
+  a,
+  [role="button"] {
+    transition: all 0.25s cubic-bezier(0.34, 1.56, 0.64, 1);
+  }
+  
+  /* Smooth scrolling for internal links */
+  a[href^="#"] {
+    scroll-behavior: smooth;
+  }
+}
 
 /* LIGHT MODE */
 :root {
@@ -212,9 +272,6 @@
   /* .no-default-hover-elevate/no-default-active-elevate is an escape hatch so consumers of
    * buttons/badges can remove the automatic brightness adjustment on interactions
    * and program their own. */
-  .no-default-hover-elevate {}
-
-  .no-default-active-elevate {}
 
 
   /**
@@ -286,3 +343,124 @@
     inset: -1px;
   }
 }
+
+/* ============ reCAPTCHA Styling ============ */
+
+/* Main wrapper styling */
+.recaptcha-wrapper {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  padding: 0.75rem;
+  border-radius: 0.5rem;
+  background-color: hsl(var(--card) / 1);
+  border: 1px solid hsl(var(--card-border) / 1);
+  transition: all 0.4s cubic-bezier(0.34, 1.56, 0.64, 1);
+  min-height: 80px;
+  overflow: hidden;
+  position: relative;
+  animation: recaptchaFadeIn 0.5s cubic-bezier(0.34, 1.56, 0.64, 1) forwards;
+  will-change: transform;
+  transform: translateZ(0);
+  backface-visibility: hidden;
+}
+
+@keyframes recaptchaFadeIn {
+  from {
+    opacity: 0.85;
+    transform: scale(0.98) translateY(-2px);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1) translateY(0);
+  }
+}
+
+.recaptcha-wrapper:hover {
+  border-color: hsl(var(--ring) / 1);
+  background-color: hsl(var(--card) / 0.8);
+  transform: translateY(-1px);
+  box-shadow: 0 4px 12px hsl(0 0% 0% / 0.08);
+  transition: all 0.3s cubic-bezier(0.34, 1.56, 0.64, 1);
+}
+
+/* Dark mode wrapper */
+.dark .recaptcha-wrapper {
+  background-color: hsl(var(--card) / 1);
+  border-color: hsl(var(--card-border) / 1);
+}
+
+.dark .recaptcha-wrapper:hover {
+  border-color: hsl(var(--ring) / 0.8);
+  background-color: hsl(var(--card) / 0.9);
+}
+
+/* reCAPTCHA container */
+.g_recaptcha,
+.recaptcha {
+  display: flex !important;
+  justify-content: center !important;
+  align-items: center !important;
+  width: 100% !important;
+  position: relative !important;
+  z-index: 1 !important;
+}
+
+/* reCAPTCHA iframe - clip to show only checkbox */
+.g_recaptcha iframe,
+.recaptcha iframe {
+  clip-path: polygon(0 0, 100% 0, 100% 60%, 0 60%) !important;
+  max-height: 60px !important;
+  min-height: 60px !important;
+  height: auto !important;
+  min-width: 100% !important;
+  display: block !important;
+  position: relative !important;
+  will-change: clip-path;
+}
+
+/* Hide all text elements */
+.rc-anchor-content,
+.rc-anchor-text,
+.rc-footer,
+.rc-footer-item,
+.rc-footer-items,
+.rc-anchor-normal-footer,
+.rc-anchor-normal-footer span,
+.rc-anchor-normal-footer a,
+[style*="color: red"],
+[style*="color:red"] {
+  display: none !important;
+  visibility: hidden !important;
+  height: 0 !important;
+  width: 0 !important;
+  margin: 0 !important;
+  padding: 0 !important;
+  border: none !important;
+  font-size: 0 !important;
+  line-height: 0 !important;
+  overflow: hidden !important;
+}
+
+/* Hide extra div layers in reCAPTCHA */
+.g_recaptcha > div:not(:first-child),
+.recaptcha > div:not(:first-child) {
+  display: none !important;
+}
+
+/* Badge styling - hide it */
+.g_recaptcha_badge {
+  opacity: 0 !important;
+  pointer-events: none !important;
+}
+
+/* Smooth transitions for theme changes */
+.g_recaptcha,
+.recaptcha,
+.recaptcha-wrapper {
+  transition: all 0.4s cubic-bezier(0.34, 1.56, 0.64, 1);
+  transform: translateZ(0);
+  backface-visibility: hidden;
+  -webkit-font-smoothing: antialiased;
+}
+

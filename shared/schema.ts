@@ -31,6 +31,8 @@ export type UserRole = (typeof userRoles)[number];
 // Users table with role support
 export const users = pgTable("users", {
   id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  username: varchar("username", { length: 50 }).unique(),
+  password: varchar("password", { length: 255 }),
   email: varchar("email").unique(),
   firstName: varchar("first_name"),
   lastName: varchar("last_name"),
@@ -101,9 +103,10 @@ export const doctorRatingsRelations = relations(doctorRatings, ({ one }) => ({
 }));
 
 // Schemas and types
-export const insertUserSchema = createInsertSchema(users).omit({ createdAt: true, updatedAt: true });
-export const insertDoctorSchema = createInsertSchema(doctors).omit({ id: true, createdAt: true, updatedAt: true });
-export const insertReviewSchema = createInsertSchema(reviews).omit({ id: true, createdAt: true }).extend({
+// createInsertSchema can be difficult for TS to infer across versions; cast to any
+export const insertUserSchema: any = (createInsertSchema(users) as any).omit({ createdAt: true, updatedAt: true });
+export const insertDoctorSchema: any = (createInsertSchema(doctors) as any).omit({ id: true, createdAt: true, updatedAt: true });
+export const insertReviewSchema: any = (createInsertSchema(reviews) as any).omit({ id: true, createdAt: true }).extend({
   teachingQuality: z.number().min(1).max(5),
   availability: z.number().min(1).max(5),
   communication: z.number().min(1).max(5),

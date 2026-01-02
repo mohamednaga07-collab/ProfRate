@@ -20,7 +20,23 @@ export function ThemeToggle() {
     const newTheme = theme === "light" ? "dark" : "light";
     setTheme(newTheme);
     localStorage.setItem("theme", newTheme);
-    document.documentElement.classList.toggle("dark", newTheme === "dark");
+    
+    // Fade out effect
+    document.documentElement.style.opacity = "0.95";
+    document.documentElement.style.transition = "opacity 0.15s cubic-bezier(0.25, 0.1, 0.25, 1)";
+    
+    // Switch theme after fade
+    setTimeout(() => {
+      document.documentElement.classList.toggle("dark", newTheme === "dark");
+      document.documentElement.style.opacity = "1";
+      document.documentElement.style.transition = "all 0.35s cubic-bezier(0.25, 0.1, 0.25, 1)";
+    }, 75);
+    
+    // Remove transition after animation completes
+    setTimeout(() => {
+      document.documentElement.style.transition = "";
+      document.documentElement.style.opacity = "";
+    }, 410);
   };
 
   return (

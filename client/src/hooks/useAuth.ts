@@ -5,11 +5,25 @@ export function useAuth() {
   const { data: user, isLoading } = useQuery<User | null>({
     queryKey: ["/api/auth/user"],
     retry: false,
+    refetchOnMount: true, // Always refetch on component mount
   });
+
+  // Only authenticated if we have a real user from the server
+  const isAuthenticated = !!user;
+
+  const logout = async () => {
+    try {
+      await fetch("/api/auth/logout-custom", { method: "POST" });
+    } catch (e) {
+      // ignore errors
+    }
+    window.location.href = "/";
+  };
 
   return {
     user: user ?? undefined,
     isLoading,
-    isAuthenticated: !!user,
+    isAuthenticated,
+    logout,
   };
 }

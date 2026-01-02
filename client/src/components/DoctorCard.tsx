@@ -5,6 +5,7 @@ import { Badge } from "@/components/ui/badge";
 import { StarRating } from "./StarRating";
 import { User, BarChart3, Eye } from "lucide-react";
 import { Link } from "wouter";
+import { motion } from "framer-motion";
 import type { DoctorWithRatings } from "@shared/schema";
 
 interface DoctorCardProps {
@@ -14,6 +15,7 @@ interface DoctorCardProps {
 }
 
 export function DoctorCard({ doctor, onCompareToggle, isComparing }: DoctorCardProps) {
+  const formatName = (name: string) => name.replace(/^Dr\.?\s+/i, "");
   const initials = doctor.name
     .split(" ")
     .map((n) => n[0])
@@ -25,7 +27,13 @@ export function DoctorCard({ doctor, onCompareToggle, isComparing }: DoctorCardP
   const totalReviews = doctor.ratings?.totalReviews ?? 0;
 
   return (
-    <Card className="flex flex-col h-full" data-testid={`card-doctor-${doctor.id}`}>
+    <motion.div
+      initial={{ opacity: 0, y: 20 }}
+      animate={{ opacity: 1, y: 0 }}
+      transition={{ duration: 0.3, ease: [0.25, 0.1, 0.25, 1] }}
+      whileHover={{ y: -4, scale: 1.02 }}
+    >
+      <Card className="flex flex-col h-full" data-testid={`card-doctor-${doctor.id}`}>
       <CardContent className="flex-1 p-6">
         <div className="flex items-start gap-4">
           <Avatar className="h-16 w-16 shrink-0">
@@ -36,7 +44,7 @@ export function DoctorCard({ doctor, onCompareToggle, isComparing }: DoctorCardP
           </Avatar>
           <div className="flex-1 min-w-0">
             <h3 className="font-semibold text-lg truncate" data-testid={`text-doctor-name-${doctor.id}`}>
-              Dr. {doctor.name}
+              Dr. {formatName(doctor.name)}
             </h3>
             <p className="text-sm text-muted-foreground truncate">{doctor.department}</p>
             {doctor.title && (
@@ -102,5 +110,6 @@ export function DoctorCard({ doctor, onCompareToggle, isComparing }: DoctorCardP
         )}
       </CardFooter>
     </Card>
+    </motion.div>
   );
 }

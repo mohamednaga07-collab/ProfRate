@@ -1,9 +1,59 @@
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { ThemeToggle } from "@/components/ThemeToggle";
+import { AuthForm } from "@/components/AuthForm";
 import { GraduationCap, Star, BarChart3, Shield, Users, ChevronRight } from "lucide-react";
+import { useAuth } from "@/hooks/useAuth";
+import { useLocation } from "wouter";
+import { useState, useEffect } from "react";
 
 export default function Landing() {
+  const { devMode, setUserRole, userRole } = useAuth();
+  const [, navigate] = useLocation();
+  const [showRoleSelect, setShowRoleSelect] = useState(false);
+
+  const handleGetStarted = () => {
+    setShowRoleSelect(true);
+  };
+
+  const handleLogin = () => {
+    setShowRoleSelect(true);
+  };
+
+  const toggleDevMode = () => {
+    localStorage.setItem("devBypassAuth", JSON.stringify(!devMode));
+    window.location.reload();
+  };
+
+  // Check if a previous action requested the role selector (e.g. header login)
+  useEffect(() => {
+    try {
+      const v = localStorage.getItem("showRoleSelect");
+      if (v) {
+        setShowRoleSelect(true);
+        localStorage.removeItem("showRoleSelect");
+      }
+    } catch (e) {
+      // ignore
+    }
+  }, []);
+  
+  // Also honor a query parameter (e.g. /?showRoleSelect=1) so server
+  // redirects to /api/login can open the role selector when auth is disabled.
+  useEffect(() => {
+    try {
+      const params = new URLSearchParams(window.location.search);
+      if (params.get("showRoleSelect") === "1") {
+        setShowRoleSelect(true);
+        // remove the param from the URL without reloading
+        params.delete("showRoleSelect");
+        const base = window.location.pathname + (params.toString() ? `?${params.toString()}` : "");
+        window.history.replaceState({}, document.title, base);
+      }
+    } catch (e) {
+      // ignore
+    }
+  }, []);
   return (
     <div className="min-h-screen bg-background">
       <header className="sticky top-0 z-50 w-full border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
@@ -14,8 +64,8 @@ export default function Landing() {
           </div>
           <div className="flex items-center gap-2">
             <ThemeToggle />
-            <Button asChild data-testid="button-landing-login">
-              <a href="/api/login">Log in</a>
+            <Button onClick={handleLogin} data-testid="button-landing-login">
+              Log in
             </Button>
           </div>
         </div>
@@ -39,17 +89,21 @@ export default function Landing() {
               availability, communication, knowledge, and fairness.
             </p>
 
-            <div className="flex flex-col sm:flex-row items-center justify-center gap-4">
-              <Button size="lg" asChild data-testid="button-get-started">
-                <a href="/api/login">
+            {showRoleSelect ? (
+              <div id="auth-form-container" className="max-w-md mx-auto mb-10">
+                <AuthForm onSuccess={() => setShowRoleSelect(false)} />
+              </div>
+            ) : (
+              <div className="flex flex-col sm:flex-row items-center justify-center gap-4">
+                <Button size="lg" onClick={handleGetStarted} data-testid="button-get-started">
                   Get Started
                   <ChevronRight className="h-5 w-5 ml-1" />
-                </a>
-              </Button>
-              <Button size="lg" variant="outline" asChild>
-                <a href="#features">Learn More</a>
-              </Button>
-            </div>
+                </Button>
+                <Button size="lg" variant="outline" asChild>
+                  <a href="#features">Learn More</a>
+                </Button>
+              </div>
+            )}
           </div>
         </section>
 
@@ -156,11 +210,12 @@ export default function Landing() {
             <p className="text-primary-foreground/80 max-w-2xl mx-auto mb-8">
               Join thousands of students making better academic decisions with honest professor reviews.
             </p>
-            <Button size="lg" variant="secondary" asChild>
-              <a href="/api/login">
-                Sign Up Now
-                <ChevronRight className="h-5 w-5 ml-1" />
-              </a>
+            <Button size="lg" variant="secondary" onClick={() => {
+              setShowRoleSelect(true);
+              window.scrollTo({ top: 0, behavior: 'smooth' });
+            }}>
+              Get Started
+              <ChevronRight className="h-5 w-5 ml-1" />
             </Button>
           </div>
         </section>

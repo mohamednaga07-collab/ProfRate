@@ -206,7 +206,7 @@ export default function DoctorProfile() {
                     <div className="flex flex-wrap items-start justify-between gap-4">
                       <div>
                         <h1 className="text-2xl font-bold" data-testid="text-doctor-name">
-                          Dr. {doctor.name}
+                          Dr. {doctor.name.replace(/^Dr\.?\s+/i, "")}
                         </h1>
                         <p className="text-muted-foreground">{doctor.department}</p>
                         {doctor.title && (
@@ -226,7 +226,7 @@ export default function DoctorProfile() {
                           </DialogTrigger>
                           <DialogContent className="max-w-lg">
                             <DialogHeader>
-                              <DialogTitle>Rate Dr. {doctor.name}</DialogTitle>
+                              <DialogTitle>Rate Dr. {doctor.name.replace(/^Dr\.?\s+/i, "")}</DialogTitle>
                               <DialogDescription className="flex items-center gap-2 pt-2">
                                 <Shield className="h-4 w-4 text-chart-2" />
                                 Your review is completely anonymous

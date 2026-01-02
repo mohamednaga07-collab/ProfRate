@@ -14,11 +14,14 @@ import {
 } from "@shared/schema";
 import { db } from "./db";
 import { eq, desc, sql } from "drizzle-orm";
+import { MemoryStorage } from "./memoryStorage";
 
 export interface IStorage {
   // User operations (mandatory for Replit Auth)
   getUser(id: string): Promise<User | undefined>;
+  getUserByUsername(username: string): Promise<User | undefined>;
   upsertUser(user: UpsertUser): Promise<User>;
+  createUser(user: UpsertUser): Promise<User>;
 
   // Doctor operations
   getAllDoctors(): Promise<DoctorWithRatings[]>;
@@ -42,6 +45,16 @@ export class DatabaseStorage implements IStorage {
     return user;
   }
 
+  async getUserByUsername(username: string): Promise<User | undefined> {
+    const [user] = await db.select().from(users).where(eq(users.username, username));
+    return user;
+  }
+
+  async createUser(userData: UpsertUser): Promise<User> {
+    const [user] = await db.insert(users).values(userData).returning();
+    return user;
+  }
+
   async upsertUser(userData: UpsertUser): Promise<User> {
     const [user] = await db
       .insert(users)
@@ -62,9 +75,9 @@ export class DatabaseStorage implements IStorage {
     const allDoctors = await db.select().from(doctors).orderBy(desc(doctors.createdAt));
     const allRatings = await db.select().from(doctorRatings);
 
-    return allDoctors.map((doctor) => ({
+    return allDoctors.map((doctor: any) => ({
       ...doctor,
-      ratings: allRatings.find((r) => r.doctorId === doctor.id) ?? null,
+      ratings: allRatings.find((r: any) => r.doctorId === doctor.id) ?? null,
     }));
   }
 
@@ -118,11 +131,11 @@ export class DatabaseStorage implements IStorage {
 
     if (doctorReviews.length === 0) return;
 
-    const avgTeachingQuality = doctorReviews.reduce((sum, r) => sum + r.teachingQuality, 0) / doctorReviews.length;
-    const avgAvailability = doctorReviews.reduce((sum, r) => sum + r.availability, 0) / doctorReviews.length;
-    const avgCommunication = doctorReviews.reduce((sum, r) => sum + r.communication, 0) / doctorReviews.length;
-    const avgKnowledge = doctorReviews.reduce((sum, r) => sum + r.knowledge, 0) / doctorReviews.length;
-    const avgFairness = doctorReviews.reduce((sum, r) => sum + r.fairness, 0) / doctorReviews.length;
+    const avgTeachingQuality = doctorReviews.reduce((sum: number, r: any) => sum + r.teachingQuality, 0) / doctorReviews.length;
+    const avgAvailability = doctorReviews.reduce((sum: number, r: any) => sum + r.availability, 0) / doctorReviews.length;
+    const avgCommunication = doctorReviews.reduce((sum: number, r: any) => sum + r.communication, 0) / doctorReviews.length;
+    const avgKnowledge = doctorReviews.reduce((sum: number, r: any) => sum + r.knowledge, 0) / doctorReviews.length;
+    const avgFairness = doctorReviews.reduce((sum: number, r: any) => sum + r.fairness, 0) / doctorReviews.length;
     const overallRating = (avgTeachingQuality + avgAvailability + avgCommunication + avgKnowledge + avgFairness) / 5;
 
     await db
@@ -165,4 +178,6 @@ export class DatabaseStorage implements IStorage {
   }
 }
 
-export const storage = new DatabaseStorage();
+export const storage = process.env.DATABASE_URL
+  ? new DatabaseStorage()
+  : new MemoryStorage();

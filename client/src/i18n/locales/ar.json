@@ -1,0 +1,48 @@
+{
+  "nav": {
+    "home": "الصفحة الرئيسية",
+    "doctors": "الأساتذة",
+    "compare": "مقارنة",
+    "dashboard": "لوحة التحكم",
+    "logout": "تسجيل الخروج"
+  },
+  "landing": {
+    "title": "تقييمات الحرم الجامعي",
+    "subtitle": "قيّم وقارن أساتذتك",
+    "description": "شارك تجربتك وساعد الطلاب الآخرين في العثور على أفضل المعلمين",
+    "getStarted": "ابدأ الآن"
+  },
+  "auth": {
+    "login": "تسجيل الدخول",
+    "register": "إنشاء حساب",
+    "username": "اسم المستخدم",
+    "password": "كلمة المرور",
+    "firstName": "الاسم الأول",
+    "lastName": "الاسم الأخير",
+    "iAm": "أنا",
+    "student": "طالب",
+    "teacher": "معلم",
+    "createAccount": "إنشاء حساب",
+    "haveAccount": "هل لديك حساب بالفعل؟",
+    "noAccount": "ليس لديك حساب؟",
+    "loginTab": "تسجيل الدخول",
+    "registerTab": "إنشاء حساب",
+    "successTitle": "تم إنشاء الحساب!",
+    "successDescription": "تم إنشاء حسابك بنجاح."
+  },
+  "doctors": {
+    "title": "الأساتذة",
+    "searchPlaceholder": "ابحث عن الأساتذة...",
+    "ratingCount": "تقييم",
+    "noDoctors": "لم يتم العثور على أساتذة"
+  },
+  "common": {
+    "loading": "جاري التحميل...",
+    "error": "خطأ",
+    "success": "نجاح",
+    "cancel": "إلغاء",
+    "save": "حفظ",
+    "delete": "حذف",
+    "edit": "تعديل"
+  }
+}
