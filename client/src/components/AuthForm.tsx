@@ -83,13 +83,22 @@ export function AuthForm({ onSuccess, defaultTab = "login" }: AuthFormProps) {
         });
         
         // Reset body styles that reCAPTCHA may have changed
-        if (document.body) {
-          document.body.style.overflow = '';
-          document.body.style.position = '';
-          document.body.style.width = '';
+        try {
+          if (document?.body?.style) {
+            document.body.style.overflow = '';
+            document.body.style.position = '';
+            document.body.style.width = '';
+          }
+        } catch (e) {
+          // Ignore body style errors
         }
-        if (document.documentElement) {
-          document.documentElement.style.overflow = '';
+        
+        try {
+          if (document?.documentElement?.style) {
+            document.documentElement.style.overflow = '';
+          }
+        } catch (e) {
+          // Ignore html style errors
         }
         
         // Remove any inline styles on html/body that might be hiding content
