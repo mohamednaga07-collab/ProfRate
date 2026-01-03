@@ -51,21 +51,38 @@ export function AuthForm({ onSuccess, defaultTab = "login" }: AuthFormProps) {
 
   // Detect dark mode preference
   useEffect(() => {
-    const isDark = document.documentElement.classList.contains("dark");
-    setIsDarkMode(isDark);
-
-    // Listen for theme changes
-    const observer = new MutationObserver(() => {
-      const isDark = document.documentElement.classList.contains("dark");
+    try {
+      const isDark = document?.documentElement?.classList?.contains("dark") ?? false;
       setIsDarkMode(isDark);
-    });
 
-    observer.observe(document.documentElement, {
-      attributes: true,
-      attributeFilter: ["class"],
-    });
+      // Listen for theme changes
+      const observer = new MutationObserver(() => {
+        try {
+          const isDarkNow = document?.documentElement?.classList?.contains("dark") ?? false;
+          setIsDarkMode(isDarkNow);
+        } catch (e) {
+          console.warn('Error detecting dark mode:', e);
+        }
+      });
 
-    return () => observer.disconnect();
+      if (document?.documentElement) {
+        observer.observe(document.documentElement, {
+          attributes: true,
+          attributeFilter: ["class"],
+        });
+      }
+
+      return () => {
+        try {
+          observer.disconnect();
+        } catch (e) {
+          // Ignore disconnect errors
+        }
+      };
+    } catch (e) {
+      console.warn('Error setting up dark mode observer:', e);
+      return () => {};
+    }
   }, []);
 
   // Handle click outside reCAPTCHA modal to dismiss it

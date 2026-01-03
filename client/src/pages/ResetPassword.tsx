@@ -44,19 +44,37 @@ export default function ResetPassword() {
   }, [t]);
 
   useEffect(() => {
-    const isDark = document.documentElement.classList.contains("dark");
-    setIsDarkMode(isDark);
+    try {
+      const isDark = document?.documentElement?.classList?.contains("dark") ?? false;
+      setIsDarkMode(isDark);
 
-    const observer = new MutationObserver(() => {
-      setIsDarkMode(document.documentElement.classList.contains("dark"));
-    });
+      const observer = new MutationObserver(() => {
+        try {
+          const isDarkNow = document?.documentElement?.classList?.contains("dark") ?? false;
+          setIsDarkMode(isDarkNow);
+        } catch (e) {
+          console.warn('Error detecting dark mode:', e);
+        }
+      });
 
-    observer.observe(document.documentElement, {
-      attributes: true,
-      attributeFilter: ["class"],
-    });
+      if (document?.documentElement) {
+        observer.observe(document.documentElement, {
+          attributes: true,
+          attributeFilter: ["class"],
+        });
+      }
 
-    return () => observer.disconnect();
+      return () => {
+        try {
+          observer.disconnect();
+        } catch (e) {
+          // Ignore disconnect errors
+        }
+      };
+    } catch (e) {
+      console.warn('Error setting up dark mode observer:', e);
+      return () => {};
+    }
   }, []);
 
   useEffect(() => {
