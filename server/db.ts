@@ -13,10 +13,26 @@ if (!process.env.DATABASE_URL) {
   pool = undefined;
 } else {
   console.log("✓ Using PostgreSQL database");
+  // Force SSL in production, or if the URL looks like a cloud URL
+  const isProduction = process.env.NODE_ENV === "production";
+  const useSsl = isProduction || process.env.DATABASE_URL.includes("render.com") || process.env.DATABASE_URL.includes("neon.tech");
+  
   pool = new Pool({ 
     connectionString: process.env.DATABASE_URL,
-    ssl: process.env.NODE_ENV === "production" ? { rejectUnauthorized: false } : undefined
+    ssl: useSsl ? { rejectUnauthorized: false } : undefined,
+    connectionTimeoutMillis: 5000, // Fail fast if connectivity is wrong
   });
+  
+  // Test connection immediately to catch errors early
+  pool.connect((err, client, release) => {
+    if (err) {
+      console.error("❌ Database connection failed:", err.message);
+    } else {
+      console.log("✅ Database connected successfully");
+      release();
+    }
+  });
+  
   db = drizzle(pool, { schema });
 }
 
