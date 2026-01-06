@@ -108,70 +108,69 @@ function Router() {
           )}
         </Route>
         
-        {!isAuthenticated ? (
-          <Route path="/">
-            {() => (
-              <AnimatedPageWrapper>
+        {/* Root Route - Handles logic for different roles and auth state */}
+        <Route path="/">
+          {() => (
+            <AnimatedPageWrapper>
+              {!isAuthenticated ? (
                 <Landing />
-              </AnimatedPageWrapper>
-            )}
-          </Route>
-        ) : (
-          <>
-            <Route path="/">
-              {() => (
-                <AnimatedPageWrapper>
-                  {user?.role === "admin" ? (
-                    <AdminDashboard />
-                  ) : user?.role === "teacher" ? (
-                    <TeacherDashboard />
-                  ) : (
-                    <Home />
-                  )}
-                </AnimatedPageWrapper>
+              ) : user?.role === "admin" ? (
+                <AdminDashboard />
+              ) : user?.role === "teacher" ? (
+                <TeacherDashboard />
+              ) : (
+                <Home />
               )}
-            </Route>
-            <Route path="/doctors">
-              {() => (
-                <AnimatedPageWrapper>
-                  <DoctorListing />
-                </AnimatedPageWrapper>
+            </AnimatedPageWrapper>
+          )}
+        </Route>
+
+        {/* Protected Routes - Show Landing if not authenticated */}
+        <Route path="/doctors">
+          {() => (
+            <AnimatedPageWrapper>
+              {!isAuthenticated ? <Landing /> : <DoctorListing />}
+            </AnimatedPageWrapper>
+          )}
+        </Route>
+        
+        <Route path="/doctors/:id">
+          {() => (
+            <AnimatedPageWrapper>
+              {!isAuthenticated ? <Landing /> : <DoctorProfile />}
+            </AnimatedPageWrapper>
+          )}
+        </Route>
+
+        <Route path="/compare">
+          {() => (
+            <AnimatedPageWrapper>
+              {!isAuthenticated ? <Landing /> : <Compare />}
+            </AnimatedPageWrapper>
+          )}
+        </Route>
+
+        <Route path="/teacher-dashboard">
+          {() => (
+            <AnimatedPageWrapper>
+              {!isAuthenticated ? <Landing /> : <TeacherDashboard />}
+            </AnimatedPageWrapper>
+          )}
+        </Route>
+
+        <Route path="/admin">
+          {() => (
+            <AnimatedPageWrapper>
+              {!isAuthenticated ? (
+                <Landing />
+              ) : user?.role === "admin" ? (
+                <AdminDashboard />
+              ) : (
+                <NotFound />
               )}
-            </Route>
-            <Route path="/doctors/:id">
-              {() => (
-                <AnimatedPageWrapper>
-                  <DoctorProfile />
-                </AnimatedPageWrapper>
-              )}
-            </Route>
-            <Route path="/compare">
-              {() => (
-                <AnimatedPageWrapper>
-                  <Compare />
-                </AnimatedPageWrapper>
-              )}
-            </Route>
-            <Route path="/teacher-dashboard">
-              {() => (
-                <AnimatedPageWrapper>
-                  <TeacherDashboard />
-                </AnimatedPageWrapper>
-              )}
-            </Route>
-            <Route path="/admin">
-              {() => (
-                <AnimatedPageWrapper>
-                  {user?.role === "admin" ? (
-                    <AdminDashboard />
-                  ) : (
-                    <NotFound />
-                  )}
-                </AnimatedPageWrapper>
-              )}
-            </Route>
-          </>
-        )}
+            </AnimatedPageWrapper>
+          )}
+        </Route>
         <Route>
           {() => (
             <AnimatedPageWrapper>

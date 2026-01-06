@@ -3,11 +3,11 @@ import { type Server } from "http";
 import { storage } from "./db";
 import { setupAuth, isAuthenticated } from "./antigravityAuth";
 import { insertDoctorSchema, insertReviewSchema } from "@shared/schema";
-import { hashPassword, verifyPassword, validatePasswordStrength, sanitizeUsername, isValidUsername, isValidEmail, recordLoginAttempt, isAccountLocked, getLockoutTimeRemaining, clearLoginAttempts, generateCsrfToken, validateCsrfToken, clearCsrfToken, validateInputLength, validateFormInputs, MAX_INPUT_LENGTHS, validateCsrfHeader, sanitizeHtmlContent } from "./auth";
+import { hashPassword, verifyPassword, validatePasswordStrength, sanitizeUsername, isValidUsername, isValidEmail, recordLoginAttempt, isAccountLocked, getLockoutTimeRemaining, clearLoginAttempts, generateCsrfToken, validateCsrfToken, clearCsrfToken, validateInputLength, validateFormInputs, MAX_INPUT_LENGTHS, validateCsrfHeader, sanitizeHtmlContent, loginLimiter, registerLimiter } from "./auth";
 import { randomUUID } from "crypto";
 import crypto from "crypto";
 import { sendEmail, generateForgotPasswordEmailHtml, generateForgotUsernameEmailHtml } from "./email";
-import { loginLimiter, registerLimiter } from "./index";// Extend Express session to include userId
+// Extend Express session to include userId
 declare module "express-session" {
   interface SessionData {
     userId?: string;

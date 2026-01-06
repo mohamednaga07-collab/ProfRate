@@ -1,7 +1,27 @@
 import crypto from "crypto";
 import bcrypt from "bcrypt";
 import sanitizeHtml from "sanitize-html";
+import rateLimit from "express-rate-limit";
 import { type Request, type Response, type NextFunction } from "express";
+
+// Rate limiting - Prevent brute force and DoS attacks
+export const loginLimiter = rateLimit({
+  windowMs: 15 * 60 * 1000, // 15 minutes
+  max: 5, // Max 5 attempts per window
+  message: "Too many login attempts, please try again later",
+  standardHeaders: true, // Return rate limit info in RateLimit-* headers
+  skip: (req) => process.env.NODE_ENV === "development", // Skip in development
+  // Don't use custom keyGenerator - use defaults which handle IPv6
+});
+
+export const registerLimiter = rateLimit({
+  windowMs: 60 * 60 * 1000, // 1 hour
+  max: 3, // Max 3 registrations per hour per IP
+  message: "Too many accounts created, please try again later",
+  standardHeaders: true,
+  skip: (req) => process.env.NODE_ENV === "development",
+  // Don't use custom keyGenerator - use defaults which handle IPv6
+});
 
 const BCRYPT_ROUNDS = 12; // Higher rounds = more secure but slower
 

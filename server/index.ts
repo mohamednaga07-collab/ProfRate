@@ -111,28 +111,6 @@ app.use(
   }),
 );
 
-// Rate limiting - Prevent brute force and DoS attacks
-const loginLimiter = rateLimit({
-  windowMs: 15 * 60 * 1000, // 15 minutes
-  max: 5, // Max 5 attempts per window
-  message: "Too many login attempts, please try again later",
-  standardHeaders: true, // Return rate limit info in RateLimit-* headers
-  skip: (req) => process.env.NODE_ENV === "development", // Skip in development
-  // Don't use custom keyGenerator - use defaults which handle IPv6
-});
-
-const registerLimiter = rateLimit({
-  windowMs: 60 * 60 * 1000, // 1 hour
-  max: 3, // Max 3 registrations per hour per IP
-  message: "Too many accounts created, please try again later",
-  standardHeaders: true,
-  skip: (req) => process.env.NODE_ENV === "development",
-  // Don't use custom keyGenerator - use defaults which handle IPv6
-});
-
-// Export limiters for use in routes
-export { loginLimiter, registerLimiter };
-
 export function log(message: string, source = "express") {
   const formattedTime = new Date().toLocaleTimeString("en-US", {
     hour: "numeric",

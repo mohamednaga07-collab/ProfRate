@@ -16,6 +16,10 @@ export default function NotFound() {
           <p className="mt-4 text-sm text-gray-600">
             {t("notFound.description")}
           </p>
+
+          <p className="mt-2 text-xs text-gray-400 font-mono bg-gray-100 p-2 rounded">
+             Path: {window.location.pathname}
+          </p>
         </CardContent>
       </Card>
     </div>
