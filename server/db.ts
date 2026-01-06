@@ -13,12 +13,13 @@ let storage: any;
 if (!process.env.DATABASE_URL) {
   console.log("⚠️  Warning: DATABASE_URL not set. Falling back to SQLite storage.");
   storage = sqliteStorage;
+  db = null; // Don't initialize PostgreSQL at all
+  pool = undefined;
 } else {
   console.log("✓ Using PostgreSQL database");
   pool = new Pool({ connectionString: process.env.DATABASE_URL });
   db = drizzle(pool, { schema });
-  // The actual implementation should be in storage.ts, this is just the exported interface
-  storage = null; 
+  storage = null; // Will use DatabaseStorage from storage.ts
 }
 
 export { pool, db, storage };
