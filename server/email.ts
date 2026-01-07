@@ -69,6 +69,16 @@ export async function sendEmail(options: EmailOptions): Promise<boolean> {
     if (USE_RESEND) {
       console.log(`  Using Resend API`);
       try {
+        console.log(`[Email Send] Resend payload:`, {
+          from: RESEND_FROM,
+          to: options.to,
+          subject: options.subject,
+          html_length: options.html ? options.html.length : 0,
+          text_length: options.text ? options.text.length : 0,
+          has_html: !!options.html,
+          has_text: !!options.text,
+        });
+        
         const response = await fetch('https://api.resend.com/emails', {
           method: 'POST',
           headers: {
