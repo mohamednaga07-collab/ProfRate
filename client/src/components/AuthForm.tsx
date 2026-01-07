@@ -12,7 +12,7 @@ import { useToast } from "@/hooks/use-toast";
 import { GraduationCap, User, Lock, UserCircle, Mail, AlertCircle } from "lucide-react";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { motion } from "framer-motion";
-import { apiRequest, queryClient } from "@/lib/queryClient";
+import { apiRequest, queryClient, prefetchCsrfToken } from "@/lib/queryClient";
 import { useTranslation } from "react-i18next";
 
 interface AuthFormProps {
@@ -96,6 +96,9 @@ export function AuthForm({ onSuccess, defaultTab = "login" }: AuthFormProps) {
 
     // Initial check
     checkRecaptchaVerification();
+
+    // Prefetch CSRF token to speed up first POST (login/register)
+    prefetchCsrfToken();
 
     // Check expiration every second
     const interval = setInterval(checkRecaptchaVerification, 1000);
@@ -319,11 +322,11 @@ export function AuthForm({ onSuccess, defaultTab = "login" }: AuthFormProps) {
 
         if (onSuccess) onSuccess();
 
-        // Delay redirect slightly to show toast
+        // Short delay to show toast, but keep it snappy
         console.log("🔄 Redirecting to:", finalTarget);
         setTimeout(() => {
           window.location.assign(finalTarget);
-        }, 500);
+        }, 150);
       } else {
         throw new Error("Login failed - no user data returned");
       }

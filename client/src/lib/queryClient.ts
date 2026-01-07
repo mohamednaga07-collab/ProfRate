@@ -60,6 +60,15 @@ export async function apiRequest(
   return res;
 }
 
+// Prefetch CSRF token to reduce latency on first POST
+export async function prefetchCsrfToken() {
+  try {
+    await getCsrfToken();
+  } catch {
+    // ignore
+  }
+}
+
 type UnauthorizedBehavior = "returnNull" | "throw";
 export const getQueryFn: <T>(options: {
   on401: UnauthorizedBehavior;
