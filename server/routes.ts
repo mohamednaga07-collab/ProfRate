@@ -965,6 +965,27 @@ export async function registerRoutes(httpServer: Server, app: Express): Promise<
     }
   });
 
+  // Delete user by email (for cleanup/testing)
+  app.delete("/api/admin/users/by-email/:email", isAdmin, validateCsrfHeader, async (req, res) => {
+    try {
+      const { email } = req.params;
+      console.log(`[Admin] Deleting user by email: ${email}`);
+      
+      // Find user by email
+      const user = await storage.getUserByEmail(email);
+      if (!user) {
+        return res.status(404).json({ message: "User not found with that email" });
+      }
+      
+      await storage.deleteUser(user.id);
+      console.log(`✅ [Admin] User deleted by email: ${user.username} (${email})`);
+      res.json({ message: `User ${user.username} deleted successfully` });
+    } catch (error: any) {
+      console.error("Error deleting user by email:", error);
+      res.status(500).json({ message: `Failed to delete user: ${error.message}` });
+    }
+  });
+
   // Get all doctors (admin version with full details)
   app.get("/api/admin/doctors", isAdmin, async (req, res) => {
     try {
