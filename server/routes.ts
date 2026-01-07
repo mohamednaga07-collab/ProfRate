@@ -720,15 +720,21 @@ export async function registerRoutes(httpServer: Server, app: Express): Promise<
       // Send email with username
       console.log(`[forgot-username] Sending email to ${email}`);
       const emailHtml = generateForgotUsernameEmailHtml(user.username || "Your Username");
-      await sendEmail({
-        to: email,
-        subject: "Your Campus Ratings Username",
-        html: emailHtml,
-      });
+      
+      try {
+        await sendEmail({
+          to: email,
+          subject: "Your Campus Ratings Username",
+          html: emailHtml,
+        });
+      } catch (emailError: any) {
+        console.error("Email service error:", emailError);
+        return res.status(500).json({ message: `Email sending failed: ${emailError.message}` });
+      }
 
       res.status(200).json({ message: "If an account exists, your username has been sent to the email on file." });
     } catch (error: any) {
-      console.error("Error in forgot username:", error);
+      console.error("Unexpected error in forgot username:", error);
       res.status(500).json({ message: `Failed to process forgot username request: ${error.message}` });
     }
   });
