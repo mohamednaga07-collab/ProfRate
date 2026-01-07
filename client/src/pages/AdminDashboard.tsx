@@ -629,30 +629,27 @@ export default function AdminDashboard() {
                                       <Button
                                         variant="outline"
                                         size="sm"
-                                        onClick={() => {
-                                          setEditingUser(user);
-                                          scrollToTabs();
-                                        }}
+                                        onClick={() => setEditingUser(user)}
                                       >
                                         <Edit className="h-4 w-4" />
                                       </Button>
                                     </DialogTrigger>
-                                    <DialogContent className="sm:max-w-[425px]">
+                                    <DialogContent className="sm:max-w-[425px] z-[100]">
                                       <DialogHeader>
                                         <DialogTitle>Edit User Role</DialogTitle>
                                         <DialogDescription>Change the role for {user.username}</DialogDescription>
                                       </DialogHeader>
-                                      <div className="space-y-4">
-                                        <div>
-                                          <Label>{t("admin.users.edit.role")}</Label>
+                                      <div className="space-y-4 py-4">
+                                        <div className="space-y-2">
+                                          <Label htmlFor="role">{t("admin.users.edit.role")}</Label>
                                           <Select
                                             defaultValue={user.role}
                                             onValueChange={(role) => setEditingUser({ ...user, role })}
                                           >
-                                            <SelectTrigger>
-                                              <SelectValue />
+                                            <SelectTrigger id="role" className="w-full">
+                                              <SelectValue placeholder="Select a role" />
                                             </SelectTrigger>
-                                            <SelectContent position="popper" side="bottom" align="start">
+                                            <SelectContent>
                                               <SelectItem value="student">Student</SelectItem>
                                               <SelectItem value="teacher">Teacher</SelectItem>
                                               <SelectItem value="admin">Admin</SelectItem>
