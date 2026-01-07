@@ -46,7 +46,13 @@ export async function sendEmail(options: EmailOptions): Promise<boolean> {
     if (EMAIL_USER === "your-email@gmail.com" || EMAIL_PASSWORD === "your-app-password") {
       console.log(`📧 Email not configured. Would send to ${options.to}:`);
       console.log(`   Subject: ${options.subject}`);
-      return true; // Return success but don't actually send
+      
+      // In production, we should probably let the user know email isn't working
+      if (process.env.NODE_ENV === "production") {
+        throw new Error("Email service is not configured on the server (using default credentials)");
+      }
+      
+      return true; // Return success in dev mode
     }
 
     console.log(`📨 Attempting to send email to: ${options.to}`);
@@ -63,7 +69,8 @@ export async function sendEmail(options: EmailOptions): Promise<boolean> {
     return true;
   } catch (error) {
     console.error(`❌ Failed to send email to ${options.to}:`, error instanceof Error ? error.message : error);
-    return false;
+    // Throw the error so the route handler knows it failed
+    throw error;
   }
 }
 
