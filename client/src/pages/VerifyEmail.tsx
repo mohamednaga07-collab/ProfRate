@@ -33,10 +33,12 @@ export function VerifyEmail() {
           setMessage(data.message || "Email verified successfully!");
           setUsername(data.username || "");
           
-          // Redirect to login after 3 seconds
-          setTimeout(() => {
-            setLocation("/login");
-          }, 3000);
+          // Redirect to login after 2 seconds (faster redirect)
+          const redirectTimer = setTimeout(() => {
+            window.location.href = "/login";
+          }, 2000);
+          
+          return () => clearTimeout(redirectTimer);
         } else {
           setStatus("error");
           setMessage(data.message || "Verification failed");
@@ -92,12 +94,10 @@ export function VerifyEmail() {
             <>
               <XCircle className="h-16 w-16 text-red-500" />
               <p className="text-center text-red-600">{message}</p>
-      // Redirect to login after 2 seconds (faster redirect)
-      const redirectTimer = setTimeout(() => {
-        window.location.href = "/login";
-      }, 2000);
-      
-      return () => clearTimeout(redirectTimer);
+              <div className="flex gap-2">
+                <Button onClick={() => setLocation("/register")}>
+                  Register Again
+                </Button>
                 <Button variant="outline" onClick={() => setLocation("/login")}>
                   Try Login
                 </Button>
