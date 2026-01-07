@@ -316,9 +316,17 @@ export async function registerRoutes(httpServer: Server, app: Express): Promise<
 
   // Register endpoint - Protected with rate limiting
   app.post("/api/auth/register", registerLimiter, async (req, res) => {
+    console.log("\n" + "🚀".repeat(30));
+    console.log("🚀 REGISTRATION REQUEST RECEIVED 🚀");
+    console.log("🚀".repeat(30));
+    console.log("Request body:", JSON.stringify(req.body, null, 2));
+    console.log("🚀".repeat(30) + "\n");
+    
     try {
       const { username: rawUsername, password, email, firstName, lastName, role, recaptchaToken, skipRecaptcha } = req.body;
       const username = rawUsername ? rawUsername.trim() : "";
+      
+      console.log(`📝 Processing registration for:`, { email, username, role });
 
       // Sanitize and validate username
       const sanitized = sanitizeUsername(username || "");
