@@ -650,18 +650,20 @@ export async function registerRoutes(httpServer: Server, app: Express): Promise<
         return res.status(500).json({ message: `Database error: ${dbError.message}` });
       }
 
-      // Send email with reset link (Background Task)
+      // Send email with reset link
       const resetLink = `${process.env.APP_URL || "http://localhost:5173"}/reset-password?token=${resetToken}`;
       const emailHtml = generateForgotPasswordEmailHtml(user.username || "User", resetLink);
       
-      // Fire and forget - don't await the email sending to ensure instant response
-      sendEmail({
-        to: email,
-        subject: "Reset Your Campus Ratings Password",
-        html: emailHtml,
-      }).catch(err => {
-        console.error("Background email sending failed:", err);
-      });
+      try {
+        await sendEmail({
+          to: email,
+          subject: "Reset Your Campus Ratings Password",
+          html: emailHtml,
+        });
+      } catch (emailError: any) {
+        console.error("Email sending failed:", emailError);
+        return res.status(500).json({ message: `Email sending failed: ${emailError.message}` });
+      }
 
       res.status(200).json({ message: "If an account exists, a reset link has been sent." });
     } catch (error: any) {
@@ -715,18 +717,20 @@ export async function registerRoutes(httpServer: Server, app: Express): Promise<
         return res.status(200).json({ message: "If an account exists, your username has been sent to the email on file." });
       }
 
-      // Send email with username (Background Task)
+      // Send email with username
       console.log(`[forgot-username] Sending email to ${email}`);
       const emailHtml = generateForgotUsernameEmailHtml(user.username || "Your Username");
       
-      // Fire and forget - don't await the email sending to ensure instant response
-      sendEmail({
-        to: email,
-        subject: "Your Campus Ratings Username",
-        html: emailHtml,
-      }).catch(err => {
-        console.error("Background email sending failed:", err);
-      });
+      try {
+        await sendEmail({
+          to: email,
+          subject: "Your Campus Ratings Username",
+          html: emailHtml,
+        });
+      } catch (emailError: any) {
+        console.error("Email sending failed:", emailError);
+        return res.status(500).json({ message: `Email sending failed: ${emailError.message}` });
+      }
 
       res.status(200).json({ message: "If an account exists, your username has been sent to the email on file." });
     } catch (error: any) {
