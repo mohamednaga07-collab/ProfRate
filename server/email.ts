@@ -76,8 +76,10 @@ export async function sendEmail(options: EmailOptions): Promise<boolean> {
     // Try Resend first if configured (simple HTTP API)
     if (USE_RESEND) {
       console.log(`[RESEND] Starting Resend API call...`);
+      console.log(`  API Key: ${RESEND_API_KEY ? '✓ Present' : '✗ MISSING'}`);
       console.log(`  From: ${RESEND_FROM}`);
       console.log(`  Reply-To: ${EMAIL_USER}`);
+      console.log(`  To: ${options.to}`);
       
       try {
         const payload = {
@@ -89,7 +91,10 @@ export async function sendEmail(options: EmailOptions): Promise<boolean> {
           reply_to: EMAIL_USER,
         };
         
-        console.log(`[RESEND] Sending payload to https://api.resend.com/emails`);
+        console.log(`[RESEND] Preparing fetch request...`);
+        console.log(`[RESEND] URL: https://api.resend.com/emails`);
+        console.log(`[RESEND] Method: POST`);
+        console.log(`[RESEND] Headers: Authorization: Bearer ${RESEND_API_KEY?.substring(0, 10)}..., Content-Type: application/json`);
         
         const response = await fetch('https://api.resend.com/emails', {
           method: 'POST',
@@ -100,20 +105,40 @@ export async function sendEmail(options: EmailOptions): Promise<boolean> {
           body: JSON.stringify(payload),
         });
 
-        const responseData = await response.json();
+        console.log(`[RESEND] Fetch completed, status: ${response.status}`);
+        
+        let responseData: any;
+        try {
+          responseData = await response.json();
+          console.log(`[RESEND] Response JSON parsed successfully`);
+        } catch (parseError) {
+          console.error(`[RESEND] Failed to parse response JSON:`, parseError);
+          const text = await response.text();
+          console.error(`[RESEND] Raw response text:`, text);
+          throw new Error(`Failed to parse Resend response: ${text}`);
+        }
         
         console.log(`[RESEND] Response status: ${response.status}`);
-        console.log(`[RESEND] Response data:`, responseData);
+        console.log(`[RESEND] Response data:`, JSON.stringify(responseData, null, 2));
         
         if (!response.ok) {
-          throw new Error(`Resend API error: ${response.status} ${JSON.stringify(responseData)}`);
+          const errorMessage = responseData?.message || responseData?.error || 'Unknown error';
+          console.error(`[RESEND] ❌ API Error - Status: ${response.status}, Message: ${errorMessage}`);
+          throw new Error(`Resend API error: ${response.status} - ${errorMessage}`);
+        }
+        
+        if (!responseData.id) {
+          console.error(`[RESEND] ❌ No email ID in response - response data:`, responseData);
+          throw new Error(`Resend API didn't return email ID`);
         }
         
         console.log(`✅ [RESEND] Email sent successfully! ID: ${responseData.id}`);
         console.log(`${'='.repeat(60)}\n`);
         return true;
       } catch (resendError: any) {
-        console.error(`❌ [RESEND] Failed:`, resendError.message || resendError);
+        console.error(`\n❌ [RESEND] Failed:`, resendError.message || resendError);
+        console.error(`[RESEND] Error type:`, resendError.constructor.name);
+        console.error(`[RESEND] Full error:`, resendError);
         console.log(`[GMAIL FALLBACK] Attempting to send via Gmail SMTP...`);
       }
     }
@@ -141,6 +166,7 @@ export async function sendEmail(options: EmailOptions): Promise<boolean> {
     console.error(`${'='.repeat(60)}\n`);
     throw error;
   }
+}
 }
 
 export function generateForgotPasswordEmailHtml(username: string, resetLink: string): string {
