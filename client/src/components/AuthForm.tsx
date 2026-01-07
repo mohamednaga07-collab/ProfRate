@@ -499,26 +499,26 @@ export function AuthForm({ onSuccess, defaultTab = "login" }: AuthFormProps) {
   return (
     <motion.div
       id="auth-form-container"
-      initial={{ opacity: 0, y: 40, scale: 0.95 }}
+      initial={{ opacity: 0, y: 60, scale: 0.92 }}
       animate={{ opacity: 1, y: 0, scale: 1 }}
       transition={{
-        duration: 0.8,
+        duration: 1.2,
         ease: [0.34, 1.56, 0.64, 1],
-        staggerChildren: 0.1
+        staggerChildren: 0.12
       }}
     >
       {registrationSuccess && (
         <motion.div
           initial={{ opacity: 0, scale: 0.9 }}
           animate={{ opacity: 1, scale: 1 }}
-          transition={{ duration: 0.5, ease: [0.34, 1.56, 0.64, 1] }}
+          transition={{ duration: 0.7, ease: [0.34, 1.56, 0.64, 1] }}
           className="fixed inset-0 flex items-center justify-center z-[9999] bg-black/60 backdrop-blur-sm"
         >
           <Card className="w-full max-w-md mx-4 shadow-2xl border-green-500/50">
             <CardContent className="pt-12 pb-12 text-center space-y-4">
               <motion.div
-                animate={{ scale: [1, 1.2, 1] }}
-                transition={{ duration: 0.5, repeat: Infinity, repeatDelay: 1 }}
+                animate={{ scale: [1, 1.15, 1] }}
+                transition={{ duration: 0.8, repeat: Infinity, repeatDelay: 1.5 }}
                 className="text-6xl mb-4"
               >
                 🎉
@@ -536,21 +536,21 @@ export function AuthForm({ onSuccess, defaultTab = "login" }: AuthFormProps) {
         ref={authCardRef}
         initial={{ opacity: 0, y: 20, scale: 0.98 }}
         animate={{ opacity: 1, y: 0, scale: 1 }}
-        transition={{ duration: 0.6, ease: [0.34, 1.56, 0.64, 1] }}
+        transition={{ duration: 0.9, ease: [0.34, 1.56, 0.64, 1], delay: 0.15 }}
         className="w-full max-w-md mx-auto"
       >
         <Card className="w-full shadow-xl hover:shadow-2xl transition-shadow duration-300 border-border/50">
           <motion.div
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
-            transition={{ duration: 0.6, delay: 0.2 }}
+            transition={{ duration: 0.8, delay: 0.35 }}
           >
             <CardHeader className="space-y-1 pb-4">
               <motion.div
                 className="flex items-center justify-center mb-4"
                 initial={{ scale: 0 }}
                 animate={{ scale: 1 }}
-                transition={{ duration: 0.5, delay: 0.3, type: "spring", stiffness: 100 }}
+                transition={{ duration: 0.7, delay: 0.5, type: "spring", stiffness: 80, damping: 15 }}
               >
                 <motion.div
                   className="h-12 w-12 rounded-full bg-gradient-to-br from-primary to-primary/60 flex items-center justify-center shadow-lg"
@@ -560,8 +560,20 @@ export function AuthForm({ onSuccess, defaultTab = "login" }: AuthFormProps) {
                   <GraduationCap className="h-6 w-6 text-white" />
                 </motion.div>
               </motion.div>
-              <CardTitle className="text-3xl text-center font-bold bg-gradient-to-r from-primary to-primary/80 bg-clip-text text-transparent">{t("auth.welcomeTitle")}</CardTitle>
-              <CardDescription className="text-center text-sm">{t("auth.welcomeDescription")}</CardDescription>
+              <motion.div
+                initial={{ opacity: 0, y: 10 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ duration: 0.6, delay: 0.65 }}
+              >
+                <CardTitle className="text-3xl text-center font-bold bg-gradient-to-r from-primary to-primary/80 bg-clip-text text-transparent">{t("auth.welcomeTitle")}</CardTitle>
+              </motion.div>
+              <motion.div
+                initial={{ opacity: 0, y: 10 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ duration: 0.6, delay: 0.75 }}
+              >
+                <CardDescription className="text-center text-sm">{t("auth.welcomeDescription")}</CardDescription>
+              </motion.div>
             </CardHeader>
           </motion.div>
           <CardContent>

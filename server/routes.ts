@@ -1093,5 +1093,53 @@ export async function registerRoutes(httpServer: Server, app: Express): Promise<
     }
   });
 
+  // Upload profile picture (converts to base64 data URL)
+  app.post("/api/auth/upload-profile-picture", isAuthenticated, async (req, res) => {
+    try {
+      const userId = getUserId(req);
+      if (!userId) {
+        return res.status(401).json({ message: "Not authenticated" });
+      }
+
+      const user = await storage.getUser(userId);
+      if (!user) {
+        return res.status(404).json({ message: "User not found" });
+      }
+
+      // Get image data from request body (base64)
+      const { imageData } = req.body;
+      if (!imageData) {
+        return res.status(400).json({ message: "No image data provided" });
+      }
+
+      // Validate it's a reasonable data URL
+      if (!imageData.startsWith("data:image/")) {
+        return res.status(400).json({ message: "Invalid image format" });
+      }
+
+      // Limit size to 5MB
+      if (imageData.length > 5 * 1024 * 1024) {
+        return res.status(413).json({ message: "Image too large (max 5MB)" });
+      }
+
+      // Update user with new profile picture
+      const updatedUser = await storage.updateUser(userId, {
+        profileImageUrl: imageData,
+      });
+
+      console.log(`✅ Profile picture updated for user: ${user.username}`);
+
+      // Don't send password to client
+      const { password: _, ...userWithoutPassword } = updatedUser as any;
+      res.json({ 
+        user: userWithoutPassword,
+        message: "Profile picture updated successfully" 
+      });
+    } catch (error) {
+      console.error("Error uploading profile picture:", error);
+      res.status(500).json({ message: "Failed to upload profile picture" });
+    }
+  });
+
   return httpServer;
 }

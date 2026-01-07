@@ -1,19 +1,11 @@
 import { Link, useLocation } from "wouter";
 import { Button } from "@/components/ui/button";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
-import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuLabel,
-  DropdownMenuSeparator,
-  DropdownMenuTrigger,
-} from "@/components/ui/dropdown-menu";
-import { Badge } from "@/components/ui/badge";
 import { ThemeToggle } from "./ThemeToggle";
 import { LanguageSwitcher } from "./LanguageSwitcher";
+import { RoleBasedProfileMenu } from "./RoleBasedProfileMenu";
 import { useAuth } from "@/hooks/useAuth";
-import { GraduationCap, BarChart3, Home, Star, LogOut, User, Search } from "lucide-react";
+import { GraduationCap, BarChart3, Home, Star, Search } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { useState } from "react";
 import { useTranslation } from "react-i18next";
@@ -38,29 +30,6 @@ export function Header() {
   const userInitials = user
     ? `${user.firstName?.[0] ?? ""}${user.lastName?.[0] ?? ""}`.toUpperCase() || "U"
     : "U";
-
-  const getRoleBadgeVariant = (role: string) => {
-    switch (role) {
-      case "admin":
-        return "destructive";
-      case "teacher":
-        return "secondary";
-      default:
-        return "default";
-    }
-  };
-
-  const roleLabel = (role: string) => {
-    switch (role) {
-      case "admin":
-        return t("roles.admin");
-      case "teacher":
-        return t("roles.teacher");
-      case "student":
-      default:
-        return t("roles.student");
-    }
-  };
 
   return (
     <header className="sticky top-0 z-50 w-full border-b bg-background/98 backdrop-blur-md supports-[backdrop-filter]:bg-background/90 shadow-sm">
@@ -133,8 +102,10 @@ export function Header() {
           {isLoading ? (
             <div className="h-9 w-9 rounded-full bg-muted animate-pulse" />
           ) : isAuthenticated && user ? (
-            <DropdownMenu>
-              <DropdownMenuTrigger asChild>
+            <RoleBasedProfileMenu
+              user={user}
+              onLogout={handleLogout}
+              trigger={
                 <Button
                   variant="ghost"
                   className="relative h-9 w-9 rounded-full p-0"
@@ -145,48 +116,8 @@ export function Header() {
                     <AvatarFallback>{userInitials}</AvatarFallback>
                   </Avatar>
                 </Button>
-              </DropdownMenuTrigger>
-              <DropdownMenuContent align="end" className="w-56">
-                <DropdownMenuLabel className="font-normal">
-                  <div className="flex flex-col space-y-1">
-                    <p className="text-sm font-medium leading-none">
-                      {user.firstName} {user.lastName}
-                    </p>
-                    <p className="text-xs leading-none text-muted-foreground">{user.email}</p>
-                    <Badge variant={getRoleBadgeVariant(user.role)} className="w-fit mt-2">
-                      {roleLabel(user.role)}
-                    </Badge>
-                  </div>
-                </DropdownMenuLabel>
-                <DropdownMenuSeparator />
-                <DropdownMenuItem asChild className="sm:hidden">
-                  <Link href="/">
-                    <Home className="h-4 w-4 mr-2" />
-                    {t("nav.home")}
-                  </Link>
-                </DropdownMenuItem>
-                <DropdownMenuItem asChild className="sm:hidden">
-                  <Link href="/doctors">
-                    <Star className="h-4 w-4 mr-2" />
-                    {t("nav.rateProfessors")}
-                  </Link>
-                </DropdownMenuItem>
-                <DropdownMenuItem asChild className="sm:hidden">
-                  <Link href="/compare">
-                    <BarChart3 className="h-4 w-4 mr-2" />
-                    {t("nav.compare")}
-                  </Link>
-                </DropdownMenuItem>
-                <DropdownMenuSeparator className="sm:hidden" />
-                <DropdownMenuItem
-                  onClick={handleLogout}
-                  className="cursor-pointer text-rose-800 dark:text-rose-100 bg-gradient-to-r from-rose-500/22 via-rose-600/18 to-rose-700/16 border border-rose-300 dark:border-rose-700 hover:from-rose-500/28 hover:via-rose-600/22 hover:to-rose-700/20 hover:border-rose-400 dark:hover:border-rose-600 focus:text-rose-900 dark:focus:text-rose-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-rose-400/70 dark:focus-visible:ring-rose-300/80"
-                >
-                  <LogOut className="h-4 w-4 mr-2 text-rose-600 dark:text-rose-50" />
-                  <span className="font-semibold">{t("nav.logout")}</span>
-                </DropdownMenuItem>
-              </DropdownMenuContent>
-            </DropdownMenu>
+              }
+            />
           ) : (
             <Button onClick={() => {
               // Check if already on landing page
