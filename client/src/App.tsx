@@ -115,6 +115,25 @@ function Router() {
             </AnimatedPageWrapper>
           )}
         </Route>
+
+        {/* Login Route - Redirects to / but can be used as explicit login page */}
+        <Route path="/login">
+          {() => (
+            <AnimatedPageWrapper>
+              {isAuthenticated ? (
+                user?.role === "admin" ? (
+                  <AdminDashboard />
+                ) : user?.role === "teacher" ? (
+                  <TeacherDashboard />
+                ) : (
+                  <Home />
+                )
+              ) : (
+                <Landing defaultTab="login" />
+              )}
+            </AnimatedPageWrapper>
+          )}
+        </Route>
         
         {/* Root Route - Handles logic for different roles and auth state */}
         <Route path="/">
