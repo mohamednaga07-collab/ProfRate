@@ -26,6 +26,9 @@ export interface IStorage {
   updateUserResetToken(id: string, token: string, expiry: Date): Promise<void>;
   updateUserPassword(id: string, hashedPassword: string): Promise<void>;
   clearResetToken(id: string): Promise<void>;
+  getUserByVerificationToken(token: string): Promise<User | undefined>;
+  updateUserVerificationToken(id: string, token: string): Promise<void>;
+  verifyUserEmail(id: string): Promise<void>;
   upsertUser(user: UpsertUser): Promise<User>;
   createUser(user: UpsertUser): Promise<User>;
   updateUserRole(id: string, role: string): Promise<void>;
@@ -93,6 +96,19 @@ export class DatabaseStorage implements IStorage {
 
   async clearResetToken(id: string): Promise<void> {
     await db.update(users).set({ resetToken: null, resetTokenExpiry: null }).where(eq(users.id, id));
+  }
+
+  async getUserByVerificationToken(token: string): Promise<User | undefined> {
+    const [user] = await db.select().from(users).where(eq(users.verificationToken, token));
+    return user;
+  }
+
+  async updateUserVerificationToken(id: string, token: string): Promise<void> {
+    await db.update(users).set({ verificationToken: token, emailVerified: false }).where(eq(users.id, id));
+  }
+
+  async verifyUserEmail(id: string): Promise<void> {
+    await db.update(users).set({ emailVerified: true, verificationToken: null }).where(eq(users.id, id));
   }
 
   async createUser(userData: UpsertUser): Promise<User> {

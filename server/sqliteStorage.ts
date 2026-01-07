@@ -78,6 +78,8 @@ try {
   const cols = db.prepare("PRAGMA table_info(users)").all() as any[];
   const hasResetToken = cols.some((c) => c.name === "resetToken");
   const hasResetTokenExpiry = cols.some((c) => c.name === "resetTokenExpiry");
+  const hasEmailVerified = cols.some((c) => c.name === "emailVerified");
+  const hasVerificationToken = cols.some((c) => c.name === "verificationToken");
 
   if (!hasResetToken) {
     db.exec("ALTER TABLE users ADD COLUMN resetToken TEXT");
@@ -86,6 +88,14 @@ try {
   if (!hasResetTokenExpiry) {
     db.exec("ALTER TABLE users ADD COLUMN resetTokenExpiry TEXT");
     console.log("✓ Added users.resetTokenExpiry column");
+  }
+  if (!hasEmailVerified) {
+    db.exec("ALTER TABLE users ADD COLUMN emailVerified INTEGER DEFAULT 0");
+    console.log("✓ Added users.emailVerified column");
+  }
+  if (!hasVerificationToken) {
+    db.exec("ALTER TABLE users ADD COLUMN verificationToken TEXT");
+    console.log("✓ Added users.verificationToken column");
   }
 } catch (e) {
   console.error("Failed to ensure reset token columns:", e);
@@ -388,6 +398,36 @@ export const sqliteStorage = {
       stmt.run(id);
     } catch (e) {
       console.error("clearResetToken error:", e);
+      throw e;
+    }
+  },
+
+  async getUserByVerificationToken(token: string) {
+    try {
+      const stmt = db.prepare("SELECT * FROM users WHERE verificationToken = ?");
+      return stmt.get(token) as any;
+    } catch (e) {
+      console.error("getUserByVerificationToken error:", e);
+      return null;
+    }
+  },
+
+  async updateUserVerificationToken(id: string, token: string) {
+    try {
+      const stmt = db.prepare("UPDATE users SET verificationToken = ?, emailVerified = 0 WHERE id = ?");
+      stmt.run(token, id);
+    } catch (e) {
+      console.error("updateUserVerificationToken error:", e);
+      throw e;
+    }
+  },
+
+  async verifyUserEmail(id: string) {
+    try {
+      const stmt = db.prepare("UPDATE users SET emailVerified = 1, verificationToken = NULL WHERE id = ?");
+      stmt.run(id);
+    } catch (e) {
+      console.error("verifyUserEmail error:", e);
       throw e;
     }
   },

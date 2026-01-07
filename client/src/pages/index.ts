@@ -9,4 +9,5 @@ export { default as AdminDashboard } from "./AdminDashboard";
 export { default as ForgotPassword } from "./ForgotPassword";
 export { default as ForgotUsername } from "./ForgotUsername";
 export { default as ResetPassword } from "./ResetPassword";
+export { VerifyEmail } from "./VerifyEmail";
 export { default as NotFound } from "./not-found";

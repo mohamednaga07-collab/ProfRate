@@ -17,6 +17,7 @@ import AdminDashboard from "@/pages/AdminDashboard";
 import ForgotPassword from "@/pages/ForgotPassword";
 import ForgotUsername from "@/pages/ForgotUsername";
 import ResetPassword from "@/pages/ResetPassword";
+import { VerifyEmail } from "@/pages/VerifyEmail";
 import NotFound from "@/pages/not-found";
 import { useTranslation } from "react-i18next";
 
@@ -90,6 +91,13 @@ function Router() {
           {() => (
             <AnimatedPageWrapper>
               <ResetPassword />
+            </AnimatedPageWrapper>
+          )}
+        </Route>
+        <Route path="/verify-email">
+          {() => (
+            <AnimatedPageWrapper>
+              <VerifyEmail />
             </AnimatedPageWrapper>
           )}
         </Route>

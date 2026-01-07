@@ -41,6 +41,8 @@ export const users = pgTable("users", {
   studentId: varchar("student_id"),
   resetToken: varchar("reset_token", { length: 255 }),
   resetTokenExpiry: timestamp("reset_token_expiry"),
+  emailVerified: boolean("email_verified").default(false),
+  verificationToken: varchar("verification_token", { length: 255 }),
   createdAt: timestamp("created_at").defaultNow(),
   updatedAt: timestamp("updated_at").defaultNow(),
 });

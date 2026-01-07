@@ -166,6 +166,40 @@ export function generateForgotPasswordEmailHtml(username: string, resetLink: str
   `;
 }
 
+export function generateVerificationEmailHtml(username: string, verificationLink: string): string {
+  return `
+    <!DOCTYPE html>
+    <html>
+    <head>
+      <style>
+        body { font-family: Arial, sans-serif; line-height: 1.6; color: #333; }
+        .container { max-width: 600px; margin: 0 auto; padding: 20px; border: 1px solid #ddd; border-radius: 8px; }
+        .header { background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; padding: 20px; border-radius: 8px 8px 0 0; text-align: center; }
+        .content { padding: 20px; }
+        .button { display: inline-block; background: #667eea; color: white; padding: 12px 30px; text-decoration: none; border-radius: 5px; margin: 20px 0; }
+        .footer { font-size: 12px; color: #999; text-align: center; margin-top: 30px; border-top: 1px solid #ddd; padding-top: 20px; }
+      </style>
+    </head>
+    <body>
+      <div class="container">
+        <div class="header">
+          <h2>✅ Verify Your Email Address</h2>
+        </div>
+        <div class="content">
+          <p>Hi ${username},</p>
+          <p>Thank you for registering with Campus Ratings! Please click the button below to verify your email address and activate your account.</p>
+          <a href="${verificationLink}" class="button">Verify Email Address</a>
+          <p>Once verified, you'll be able to log in and start exploring.</p>
+          <p>If you didn't create this account, please ignore this email.</p>
+        </div>
+        <div class="footer">
+          <p>© 2026 Campus Ratings. All rights reserved.</p>
+        </div>
+      </div>
+    </body>
+    </html>
+  `;
+}
 export function generateForgotUsernameEmailHtml(username: string): string {
   return `
     <!DOCTYPE html>

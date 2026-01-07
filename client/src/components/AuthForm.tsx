@@ -42,8 +42,8 @@ export function AuthForm({ onSuccess, defaultTab = "login" }: AuthFormProps) {
   const loginRecaptchaRef = useRef<ReCAPTCHA>(null);
 
   // Register form state
+  const [registerEmail, setRegisterEmail] = useState("");
   const [registerUsername, setRegisterUsername] = useState("");
-  // const [registerEmail, setRegisterEmail] = useState(""); // Removed per user request
   const [registerPassword, setRegisterPassword] = useState("");
   const [registerPasswordConfirm, setRegisterPasswordConfirm] = useState("");
   const [passwordStrength, setPasswordStrength] = useState(0);
@@ -139,12 +139,18 @@ export function AuthForm({ onSuccess, defaultTab = "login" }: AuthFormProps) {
   const validateRegisterForm = () => {
     const errors: string[] = [];
 
-    // Validate Username as Email
-    // Validate Username as Email
+    // Validate Email
+    if (!registerEmail) {
+      errors.push(t("auth.validation.emailRequired", { defaultValue: "Email is required" }));
+    } else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(registerEmail)) {
+      errors.push(t("auth.validation.emailInvalid", { defaultValue: "Email must be valid" }));
+    }
+
+    // Validate Username
     if (!registerUsername) {
       errors.push(t("auth.validation.usernameRequired", { defaultValue: "Username is required" }));
-    } else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(registerUsername)) {
-      errors.push(t("auth.validation.usernameInvalid", { defaultValue: "Username must be a valid email address" }));
+    } else if (registerUsername.length < 3) {
+      errors.push(t("auth.validation.usernameTooShort", { defaultValue: "Username must be at least 3 characters" }));
     }
 
     if (!registerPassword) errors.push(t("auth.validation.passwordRequired", { defaultValue: "Password is required" }));
@@ -179,11 +185,12 @@ export function AuthForm({ onSuccess, defaultTab = "login" }: AuthFormProps) {
   };
 
   const canSubmitRegister = (): boolean => {
-    const hasUsername = registerUsername.trim().length >= 3; // Username is now email, so length check is still relevant
+    const hasEmail = registerEmail.trim().length >= 5 && /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(registerEmail);
+    const hasUsername = registerUsername.trim().length >= 3;
     const passwordsMatch = registerPassword === registerPasswordConfirm && registerPassword.length >= 8;
     const passwordStrong = passwordStrength >= 40; // Relaxed check
     const namesFilled = registerFirstName.trim().length > 0 && registerLastName.trim().length > 0;
-    return hasUsername && passwordsMatch && passwordStrong && namesFilled;
+    return hasEmail && hasUsername && passwordsMatch && passwordStrong && namesFilled;
   };
 
   const handleRecaptchaChange = (token: string | null) => {
@@ -413,11 +420,11 @@ export function AuthForm({ onSuccess, defaultTab = "login" }: AuthFormProps) {
     setIsLoading(true);
 
     try {
-      console.log("Attempting registration with email as username:", registerUsername);
+      console.log("Attempting registration with email:", registerEmail, "username:", registerUsername);
       const responseObj: any = await apiRequest("POST", "/api/auth/register", {
-        username: registerUsername, // Email is the username
+        email: registerEmail,
+        username: registerUsername,
         password: registerPassword,
-        email: registerUsername,    // Send same value for email
         firstName: registerFirstName,
         lastName: registerLastName,
         role: registerRole,
@@ -432,10 +439,10 @@ export function AuthForm({ onSuccess, defaultTab = "login" }: AuthFormProps) {
       if (response?.user) {
         console.log("Registration successful, user:", response.user);
 
-        // Show success toast with celebratory message
+        // Show success toast with activation message
         toast({
           title: "🎉 Account Created Successfully!",
-          description: `Welcome ${registerFirstName || registerUsername}! Your account has been created. You can now log in.`,
+          description: `Welcome ${registerFirstName || registerUsername}! A verification link has been sent to ${registerEmail}. Please check your email and click the link to activate your account before logging in.`,
         });
 
         // Set success state and switch to login tab after showing message
@@ -444,6 +451,7 @@ export function AuthForm({ onSuccess, defaultTab = "login" }: AuthFormProps) {
           setActiveTab("login");
           setRegistrationSuccess(false);
           // Reset form fields
+          setRegisterEmail("");
           setRegisterUsername("");
           setRegisterPassword("");
           setRegisterPasswordConfirm("");
@@ -709,15 +717,15 @@ export function AuthForm({ onSuccess, defaultTab = "login" }: AuthFormProps) {
               <TabsContent value="register">
                 <form onSubmit={handleRegister} className="space-y-4">
                   <div className="space-y-2">
-                    <Label htmlFor="register-username">{t("auth.username", { defaultValue: "Username" })}</Label>
+                    <Label htmlFor="register-email">{t("auth.email", { defaultValue: "Email" })}</Label>
                     <div className="relative">
-                      <User className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
+                      <Mail className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
                       <Input
-                        id="register-username"
+                        id="register-email"
                         type="email"
-                        placeholder="Enter your username (email)"
-                        value={registerUsername}
-                        onChange={(e) => setRegisterUsername(e.target.value)}
+                        placeholder="Enter your email"
+                        value={registerEmail}
+                        onChange={(e) => setRegisterEmail(e.target.value)}
                         className="pl-10"
                         required
                         disabled={isLoading}
@@ -725,7 +733,23 @@ export function AuthForm({ onSuccess, defaultTab = "login" }: AuthFormProps) {
                     </div>
                   </div>
 
-                  {/* Email field removed per request - Username serves as email */}
+                  <div className="space-y-2">
+                    <Label htmlFor="register-username">{t("auth.username", { defaultValue: "Username" })}</Label>
+                    <div className="relative">
+                      <User className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
+                      <Input
+                        id="register-username"
+                        type="text"
+                        placeholder="Choose a username"
+                        value={registerUsername}
+                        onChange={(e) => setRegisterUsername(e.target.value)}
+                        className="pl-10"
+                        required
+                        disabled={isLoading}
+                        minLength={3}
+                      />
+                    </div>
+                  </div>
 
                   <div className="space-y-2">
                     <Label htmlFor="register-password">{t("auth.password")}</Label>

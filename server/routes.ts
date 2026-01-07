@@ -6,7 +6,7 @@ import { insertDoctorSchema, insertReviewSchema } from "@shared/schema";
 import { hashPassword, verifyPassword, validatePasswordStrength, sanitizeUsername, isValidUsername, isValidEmail, recordLoginAttempt, isAccountLocked, getLockoutTimeRemaining, clearLoginAttempts, generateCsrfToken, validateCsrfToken, clearCsrfToken, validateInputLength, validateFormInputs, MAX_INPUT_LENGTHS, validateCsrfHeader, sanitizeHtmlContent, loginLimiter, registerLimiter } from "./auth";
 import { randomUUID } from "crypto";
 import crypto from "crypto";
-import { sendEmail, generateForgotPasswordEmailHtml, generateForgotUsernameEmailHtml } from "./email";
+import { sendEmail, generateForgotPasswordEmailHtml, generateForgotUsernameEmailHtml, generateVerificationEmailHtml } from "./email";
 // Extend Express session to include userId
 declare module "express-session" {
   interface SessionData {
@@ -404,6 +404,10 @@ export async function registerRoutes(httpServer: Server, app: Express): Promise<
       // Hash password and create user (async operation)
       console.log("🔐 Hashing password with bcrypt for new user:", username);
       const hashedPassword = await hashPassword(password);
+      
+      // Generate verification token
+      const verificationToken = crypto.randomBytes(32).toString("hex");
+      
       const newUser = await storage.createUser({
         id: randomUUID(),
         username,
@@ -412,18 +416,39 @@ export async function registerRoutes(httpServer: Server, app: Express): Promise<
         firstName: firstName || null,
         lastName: lastName || null,
         role,
+        emailVerified: false,
+        verificationToken,
       });
 
       console.log("✅ New user created:", username, "with role:", role);
 
-      // Set session
-      if (req.session) {
-        req.session.userId = newUser.id;
+      // Send verification email
+      const verificationLink = `${process.env.APP_URL || "http://localhost:5173"}/verify-email?token=${verificationToken}`;
+      const emailHtml = generateVerificationEmailHtml(username, verificationLink);
+      const emailText = `Hi ${username},\n\nThank you for registering! Please verify your email address: ${verificationLink}\n\nOnce verified, you'll be able to log in.`;
+      
+      try {
+        await sendEmail({
+          to: email,
+          subject: "Verify Your Campus Ratings Account",
+          html: emailHtml,
+          text: emailText,
+        });
+        console.log(`[Registration] Verification email sent to ${email}`);
+      } catch (emailError: any) {
+        console.error("Failed to send verification email:", emailError);
+        // Continue with registration even if email fails
       }
 
+      // Don't auto-login - user must verify email first
+      // Don't set session
+      
       // Don't send password to client
       const { password: _, ...userWithoutPassword } = newUser as any;
-      res.json({ user: userWithoutPassword });
+      res.json({ 
+        user: userWithoutPassword,
+        message: "Registration successful. Please check your email to verify your account."
+      });
     } catch (error) {
       console.error("Error during registration:", error);
       res.status(500).json({ message: "Registration failed" });
@@ -741,6 +766,37 @@ export async function registerRoutes(httpServer: Server, app: Express): Promise<
     } catch (error: any) {
       console.error("Unexpected error in forgot username:", error);
       res.status(500).json({ message: `Failed to process forgot username request: ${error.message}` });
+    }
+  });
+
+  // Email Verification Route
+  app.get("/api/auth/verify-email", async (req: any, res) => {
+    try {
+      const { token } = req.query;
+      console.log(`[verify-email] Received verification request with token: ${token ? token.substring(0, 8) + '...' : 'NONE'}`);
+      
+      if (!token) {
+        return res.status(400).json({ message: "Verification token is required" });
+      }
+
+      const user = await storage.getUserByVerificationToken(token as string);
+      console.log(`[verify-email] Found user: ${user ? user.username : "NOT FOUND"}`);
+      
+      if (!user) {
+        return res.status(400).json({ message: "Invalid or expired verification token" });
+      }
+
+      // Verify the user's email
+      await storage.verifyUserEmail(user.id);
+      console.log(`[verify-email] ✅ Email verified for user: ${user.username}`);
+
+      res.status(200).json({ 
+        message: "Email verified successfully! You can now log in.",
+        username: user.username
+      });
+    } catch (error: any) {
+      console.error("Error verifying email:", error);
+      res.status(500).json({ message: `Failed to verify email: ${error.message}` });
     }
   });
 
