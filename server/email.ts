@@ -167,7 +167,6 @@ export async function sendEmail(options: EmailOptions): Promise<boolean> {
     throw error;
   }
 }
-}
 
 export function generateForgotPasswordEmailHtml(username: string, resetLink: string): string {
   return `
