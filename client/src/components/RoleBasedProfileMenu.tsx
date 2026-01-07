@@ -7,6 +7,7 @@ import {
   DropdownMenuItem,
   DropdownMenuLabel,
   DropdownMenuSeparator,
+  DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
@@ -155,7 +156,9 @@ export function RoleBasedProfileMenu({
         disabled={isUploading}
       />
       <DropdownMenu open={isOpen} onOpenChange={setIsOpen}>
-        <div>{trigger}</div>
+        <DropdownMenuTrigger asChild>
+          {trigger}
+        </DropdownMenuTrigger>
         <DropdownMenuContent align={align} className="w-80 p-0 overflow-hidden bg-gradient-to-b from-background to-background/95">
           {/* Header with Role Gradient */}
           <motion.div
