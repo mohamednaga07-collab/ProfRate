@@ -1,0 +1,96 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Test Profile Picture Upload</title>
+    <style>
+        body { font-family: Arial; padding: 20px; }
+        .log { background: #f0f0f0; padding: 10px; margin: 10px 0; border-radius: 5px; }
+        .error { background: #ffebee; }
+        .success { background: #e8f5e9; }
+        button { padding: 10px 20px; font-size: 16px; cursor: pointer; }
+        input { margin: 10px 0; }
+    </style>
+</head>
+<body>
+    <h1>Profile Picture Upload Test</h1>
+    <p>This page tests the upload endpoint directly</p>
+    
+    <input type="file" id="fileInput" accept="image/*">
+    <button onclick="testUpload()">Test Upload</button>
+    
+    <div id="logs"></div>
+    
+    <script>
+        function log(message, type = 'log') {
+            const logsDiv = document.getElementById('logs');
+            const logEntry = document.createElement('div');
+            logEntry.className = 'log ' + type;
+            logEntry.textContent = new Date().toLocaleTimeString() + ' - ' + message;
+            logsDiv.appendChild(logEntry);
+            console.log(message);
+        }
+        
+        async function testUpload() {
+            const fileInput = document.getElementById('fileInput');
+            const file = fileInput.files[0];
+            
+            if (!file) {
+                log('Please select a file first!', 'error');
+                return;
+            }
+            
+            log('Starting upload test...');
+            log('File: ' + file.name + ' (' + file.size + ' bytes)');
+            
+            // Read file as base64
+            const reader = new FileReader();
+            reader.onload = async () => {
+                try {
+                    const imageData = reader.result;
+                    log('File converted to base64, length: ' + imageData.length);
+                    
+                    // Get CSRF token
+                    log('Fetching CSRF token...');
+                    const csrfResponse = await fetch('/api/auth/csrf-token');
+                    const csrfData = await csrfResponse.json();
+                    log('CSRF token: ' + csrfData.csrfToken.substring(0, 20) + '...');
+                    
+                    // Upload
+                    log('Sending upload request...');
+                    const response = await fetch('/api/auth/upload-profile-picture', {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json',
+                            'X-CSRF-Token': csrfData.csrfToken
+                        },
+                        credentials: 'include',
+                        body: JSON.stringify({ imageData })
+                    });
+                    
+                    log('Response status: ' + response.status + ' ' + response.statusText);
+                    
+                    const result = await response.json();
+                    
+                    if (response.ok) {
+                        log('✅ SUCCESS! ' + result.message, 'success');
+                        log('User has profileImageUrl: ' + (result.user.profileImageUrl ? 'YES' : 'NO'), 'success');
+                        if (result.user.profileImageUrl) {
+                            log('Image URL length: ' + result.user.profileImageUrl.length, 'success');
+                        }
+                    } else {
+                        log('❌ ERROR: ' + result.message, 'error');
+                    }
+                } catch (error) {
+                    log('❌ Exception: ' + error.message, 'error');
+                }
+            };
+            
+            reader.onerror = () => {
+                log('❌ Failed to read file', 'error');
+            };
+            
+            reader.readAsDataURL(file);
+        }
+    </script>
+</body>
+</html>
