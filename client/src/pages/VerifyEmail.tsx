@@ -92,10 +92,12 @@ export function VerifyEmail() {
             <>
               <XCircle className="h-16 w-16 text-red-500" />
               <p className="text-center text-red-600">{message}</p>
-              <div className="flex gap-2">
-                <Button onClick={() => setLocation("/register")}>
-                  Register Again
-                </Button>
+      // Redirect to login after 2 seconds (faster redirect)
+      const redirectTimer = setTimeout(() => {
+        window.location.href = "/login";
+      }, 2000);
+      
+      return () => clearTimeout(redirectTimer);
                 <Button variant="outline" onClick={() => setLocation("/login")}>
                   Try Login
                 </Button>

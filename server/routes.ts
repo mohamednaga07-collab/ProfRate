@@ -485,6 +485,22 @@ export async function registerRoutes(httpServer: Server, app: Express): Promise<
         user: userWithoutPassword,
         message: "Registration successful. Please check your email to verify your account."
       });
+
+      // Send verification email asynchronously (non-blocking) after response is sent
+      setImmediate(async () => {
+        try {
+          console.log(`📧 [Async] Sending verification email to: ${email}`);
+          await sendEmail({
+            to: email,
+            subject: "Verify Your Campus Ratings Account",
+            html: emailHtml,
+            text: emailText,
+          });
+          console.log(`✅ [Async] Verification email sent successfully to ${email}`);
+        } catch (emailError: any) {
+          console.error(`❌ [Async] Failed to send verification email to ${email}:`, emailError.message || emailError);
+        }
+      });
     } catch (error) {
       console.error("Error during registration:", error);
       res.status(500).json({ message: "Registration failed" });
