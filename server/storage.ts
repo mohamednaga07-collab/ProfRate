@@ -28,6 +28,8 @@ export interface IStorage {
   clearResetToken(id: string): Promise<void>;
   upsertUser(user: UpsertUser): Promise<User>;
   createUser(user: UpsertUser): Promise<User>;
+  updateUserRole(id: string, role: string): Promise<void>;
+  deleteUser(id: string): Promise<void>;
 
   // Doctor operations
   getAllDoctors(): Promise<DoctorWithRatings[]>;
@@ -109,6 +111,14 @@ export class DatabaseStorage implements IStorage {
       })
       .returning();
     return user;
+  }
+
+  async updateUserRole(id: string, role: string): Promise<void> {
+    await db.update(users).set({ role }).where(eq(users.id, id));
+  }
+
+  async deleteUser(id: string): Promise<void> {
+    await db.delete(users).where(eq(users.id, id));
   }
 
   // Doctor operations
