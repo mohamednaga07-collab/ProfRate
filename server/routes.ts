@@ -643,21 +643,32 @@ export async function registerRoutes(httpServer: Server, app: Express): Promise<
       const resetToken = crypto.randomBytes(32).toString("hex");
       const resetTokenExpiry = new Date(Date.now() + 24 * 60 * 60 * 1000); // 24 hours
 
-      await storage.updateUserResetToken(user.id, resetToken, resetTokenExpiry);
+      try {
+        await storage.updateUserResetToken(user.id, resetToken, resetTokenExpiry);
+      } catch (dbError: any) {
+        console.error("Database error updating reset token:", dbError);
+        return res.status(500).json({ message: `Database error: ${dbError.message}` });
+      }
 
       // Send email with reset link
       const resetLink = `${process.env.APP_URL || "http://localhost:5173"}/reset-password?token=${resetToken}`;
       const emailHtml = generateForgotPasswordEmailHtml(user.username || "User", resetLink);
-      await sendEmail({
-        to: email,
-        subject: "Reset Your Campus Ratings Password",
-        html: emailHtml,
-      });
+      
+      try {
+        await sendEmail({
+          to: email,
+          subject: "Reset Your Campus Ratings Password",
+          html: emailHtml,
+        });
+      } catch (emailError: any) {
+        console.error("Email service error:", emailError);
+        return res.status(500).json({ message: `Email sending failed: ${emailError.message}` });
+      }
 
       res.status(200).json({ message: "If an account exists, a reset link has been sent." });
     } catch (error: any) {
-      console.error("Error in forgot password:", error);
-      res.status(500).json({ message: `Failed to process forgot password request: ${error.message}` });
+      console.error("Unexpected error in forgot password:", error);
+      res.status(500).json({ message: `Unexpected error: ${error.message}` });
     }
   });
 
