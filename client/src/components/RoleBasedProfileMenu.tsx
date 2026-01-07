@@ -1,5 +1,6 @@
 import { motion } from "framer-motion";
 import { useRef, useState } from "react";
+import { useLocation } from "wouter";
 import { Upload, Settings, BarChart3, Users, Trophy, FileText, Clock, MessageCircle, Zap, Crown, BookOpen, LogOut } from "lucide-react";
 import {
   DropdownMenu,
@@ -43,6 +44,7 @@ export function RoleBasedProfileMenu({
 }: RoleBasedProfileMenuProps) {
   const { t } = useTranslation();
   const { toast } = useToast();
+  const [, navigate] = useLocation();
   const fileInputRef = useRef<HTMLInputElement>(null);
   const [isOpen, setIsOpen] = useState(false);
   const [isUploading, setIsUploading] = useState(false);
@@ -81,28 +83,38 @@ export function RoleBasedProfileMenu({
     }
 
     setIsUploading(true);
+    console.log(`📸 Starting upload for file: ${file.name} (${file.type})`);
     
     // Read file as base64
     const reader = new FileReader();
     reader.onload = async (event) => {
       const imageData = event.target?.result as string;
+      console.log(`📸 FileReader completed, image data length: ${imageData.length}`);
       
       try {
+        console.log(`📸 Sending upload request to server...`);
         const response = await apiRequest("POST", "/api/auth/upload-profile-picture", {
           imageData,
         });
         const result = await response.json();
+        console.log(`📸 Upload response:`, result);
         
         if (result.user) {
+          console.log(`📸 Updating query cache with new user data`);
           // Update query cache with new user data
           queryClient.setQueryData(["/api/auth/user"], result.user);
+          // Also invalidate to force refresh
+          await queryClient.invalidateQueries({ queryKey: ["/api/auth/user"] });
           
           toast({
             title: "Success!",
             description: "Profile picture updated successfully",
           });
+        } else {
+          throw new Error("No user data in response");
         }
       } catch (error: any) {
+        console.error(`❌ Upload error:`, error);
         toast({
           title: "Upload failed",
           description: error.message || "Failed to update profile picture",
@@ -116,6 +128,7 @@ export function RoleBasedProfileMenu({
       }
     };
     reader.onerror = () => {
+      console.error(`❌ FileReader error`);
       toast({
         title: "File read error",
         description: "Failed to read the file",
@@ -123,33 +136,83 @@ export function RoleBasedProfileMenu({
       });
       setIsUploading(false);
     };
+    console.log(`📸 Starting FileReader.readAsDataURL...`);
     reader.readAsDataURL(file);
   };
 
-  // Role-specific menu items
+  // Role-specific menu items with handlers
   const getMenuItems = () => {
+    const handleItemClick = (action: string) => {
+      switch (action) {
+        // Admin actions
+        case "manage-users":
+          navigate("/admin");
+          break;
+        case "analytics":
+          navigate("/admin");
+          toast({ title: "Analytics", description: "View admin analytics dashboard" });
+          break;
+        case "settings":
+          toast({ title: "System Settings", description: "System settings coming soon!" });
+          break;
+        case "admin-panel":
+          navigate("/admin");
+          break;
+        // Teacher actions
+        case "my-courses":
+          navigate("/teacher-dashboard");
+          break;
+        case "performance":
+          navigate("/teacher-dashboard");
+          toast({ title: "Performance Stats", description: "View your teaching performance" });
+          break;
+        case "feedback":
+          toast({ title: "Student Feedback", description: "Student feedback coming soon!" });
+          break;
+        case "portfolio":
+          toast({ title: "Teaching Portfolio", description: "Your teaching portfolio coming soon!" });
+          break;
+        // Student actions
+        case "achievements":
+          toast({ title: "My Achievements", description: "Your achievements and badges coming soon!" });
+          break;
+        case "ratings":
+          navigate("/doctors");
+          toast({ title: "Recent Ratings", description: "View your rating history" });
+          break;
+        case "stats":
+          toast({ title: "Learning Stats", description: "Your learning statistics coming soon!" });
+          break;
+        case "recommendations":
+          navigate("/doctors");
+          toast({ title: "Recommendations", description: "Personalized recommendations coming soon!" });
+          break;
+      }
+      setIsOpen(false);
+    };
+
     switch (userRole) {
       case "admin":
         return [
-          { icon: Users, label: "Manage Users", href: "#" },
-          { icon: BarChart3, label: "Dashboard Analytics", href: "#" },
-          { icon: Settings, label: "System Settings", href: "#" },
-          { icon: Crown, label: "Admin Panel", href: "#" },
+          { icon: Users, label: "Manage Users", action: "manage-users" },
+          { icon: BarChart3, label: "Dashboard Analytics", action: "analytics" },
+          { icon: Settings, label: "System Settings", action: "settings" },
+          { icon: Crown, label: "Admin Panel", action: "admin-panel" },
         ];
       case "teacher":
         return [
-          { icon: BookOpen, label: "My Courses", href: "#" },
-          { icon: BarChart3, label: "Performance Stats", href: "#" },
-          { icon: MessageCircle, label: "Student Feedback", href: "#" },
-          { icon: FileText, label: "Teaching Portfolio", href: "#" },
+          { icon: BookOpen, label: "My Courses", action: "my-courses" },
+          { icon: BarChart3, label: "Performance Stats", action: "performance" },
+          { icon: MessageCircle, label: "Student Feedback", action: "feedback" },
+          { icon: FileText, label: "Teaching Portfolio", action: "portfolio" },
         ];
       case "student":
       default:
         return [
-          { icon: Trophy, label: "My Achievements", href: "#" },
-          { icon: Clock, label: "Recent Ratings", href: "#" },
-          { icon: BarChart3, label: "Learning Stats", href: "#" },
-          { icon: Zap, label: "Recommendations", href: "#" },
+          { icon: Trophy, label: "My Achievements", action: "achievements" },
+          { icon: Clock, label: "Recent Ratings", action: "ratings" },
+          { icon: BarChart3, label: "Learning Stats", action: "stats" },
+          { icon: Zap, label: "Recommendations", action: "recommendations" },
         ];
     }
   };
@@ -304,11 +367,55 @@ export function RoleBasedProfileMenu({
                 <DropdownMenuItem asChild>
                   <button 
                     onClick={() => {
-                      toast({
-                        title: item.label,
-                        description: `${item.label} feature coming soon!`,
-                      });
-                      setIsOpen(false);
+                      const handleItemClick = (action: string) => {
+                        switch (action) {
+                          // Admin actions
+                          case "manage-users":
+                            navigate("/admin");
+                            break;
+                          case "analytics":
+                            navigate("/admin");
+                            toast({ title: "Analytics", description: "View admin analytics dashboard" });
+                            break;
+                          case "settings":
+                            toast({ title: "System Settings", description: "System settings coming soon!" });
+                            break;
+                          case "admin-panel":
+                            navigate("/admin");
+                            break;
+                          // Teacher actions
+                          case "my-courses":
+                            navigate("/teacher-dashboard");
+                            break;
+                          case "performance":
+                            navigate("/teacher-dashboard");
+                            toast({ title: "Performance Stats", description: "View your teaching performance" });
+                            break;
+                          case "feedback":
+                            toast({ title: "Student Feedback", description: "Student feedback coming soon!" });
+                            break;
+                          case "portfolio":
+                            toast({ title: "Teaching Portfolio", description: "Your teaching portfolio coming soon!" });
+                            break;
+                          // Student actions
+                          case "achievements":
+                            toast({ title: "My Achievements", description: "Your achievements and badges coming soon!" });
+                            break;
+                          case "ratings":
+                            navigate("/doctors");
+                            toast({ title: "Recent Ratings", description: "View your rating history" });
+                            break;
+                          case "stats":
+                            toast({ title: "Learning Stats", description: "Your learning statistics coming soon!" });
+                            break;
+                          case "recommendations":
+                            navigate("/doctors");
+                            toast({ title: "Recommendations", description: "Personalized recommendations coming soon!" });
+                            break;
+                        }
+                        setIsOpen(false);
+                      };
+                      handleItemClick((item as any).action);
                     }}
                     className="w-full flex items-center gap-3 cursor-pointer text-foreground hover:bg-primary/10 px-4 py-2 transition-colors"
                   >
@@ -334,7 +441,7 @@ export function RoleBasedProfileMenu({
                 onClick={() => {
                   toast({
                     title: "Profile Settings",
-                    description: "Profile settings coming soon!",
+                    description: "Profile customization coming soon!",
                   });
                   setIsOpen(false);
                 }}
