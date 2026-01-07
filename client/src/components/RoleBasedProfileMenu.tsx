@@ -51,7 +51,9 @@ export function RoleBasedProfileMenu({
   const userInitials = `${user.firstName?.[0] ?? ""}${user.lastName?.[0] ?? ""}`.toUpperCase() || "U";
 
   const handleProfilePictureClick = () => {
-    fileInputRef.current?.click();
+    if (fileInputRef.current) {
+      fileInputRef.current.click();
+    }
   };
 
   const handleFileChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -79,42 +81,49 @@ export function RoleBasedProfileMenu({
     }
 
     setIsUploading(true);
-    try {
-      // Read file as base64
-      const reader = new FileReader();
-      reader.onload = async (event) => {
-        const imageData = event.target?.result as string;
+    
+    // Read file as base64
+    const reader = new FileReader();
+    reader.onload = async (event) => {
+      const imageData = event.target?.result as string;
+      
+      try {
+        const response = await apiRequest("POST", "/api/auth/upload-profile-picture", {
+          imageData,
+        });
+        const result = await response.json();
         
-        try {
-          const response = await apiRequest("POST", "/api/auth/upload-profile-picture", {
-            imageData,
-          });
-          const result = await response.json();
+        if (result.user) {
+          // Update query cache with new user data
+          queryClient.setQueryData(["/api/auth/user"], result.user);
           
-          if (result.user) {
-            // Update query cache with new user data
-            queryClient.setQueryData(["/api/auth/user"], result.user);
-            
-            toast({
-              title: "Success!",
-              description: "Profile picture updated successfully",
-            });
-          }
-        } catch (error: any) {
           toast({
-            title: "Upload failed",
-            description: error.message || "Failed to update profile picture",
-            variant: "destructive",
+            title: "Success!",
+            description: "Profile picture updated successfully",
           });
         }
-      };
-      reader.readAsDataURL(file);
-    } finally {
-      setIsUploading(false);
-      if (fileInputRef.current) {
-        fileInputRef.current.value = "";
+      } catch (error: any) {
+        toast({
+          title: "Upload failed",
+          description: error.message || "Failed to update profile picture",
+          variant: "destructive",
+        });
+      } finally {
+        setIsUploading(false);
+        if (fileInputRef.current) {
+          fileInputRef.current.value = "";
+        }
       }
-    }
+    };
+    reader.onerror = () => {
+      toast({
+        title: "File read error",
+        description: "Failed to read the file",
+        variant: "destructive",
+      });
+      setIsUploading(false);
+    };
+    reader.readAsDataURL(file);
   };
 
   // Role-specific menu items
@@ -293,7 +302,16 @@ export function RoleBasedProfileMenu({
                 transition={{ duration: 0.2, delay: 0.2 + index * 0.05 }}
               >
                 <DropdownMenuItem asChild>
-                  <button className="w-full flex items-center gap-3 cursor-pointer text-foreground hover:bg-primary/10 px-4 py-2 transition-colors">
+                  <button 
+                    onClick={() => {
+                      toast({
+                        title: item.label,
+                        description: `${item.label} feature coming soon!`,
+                      });
+                      setIsOpen(false);
+                    }}
+                    className="w-full flex items-center gap-3 cursor-pointer text-foreground hover:bg-primary/10 px-4 py-2 transition-colors"
+                  >
                     <item.icon className={`h-4 w-4 ${roleColor.accent}`} />
                     <span className="text-sm font-medium">{item.label}</span>
                   </button>
@@ -312,7 +330,16 @@ export function RoleBasedProfileMenu({
             className="py-2"
           >
             <DropdownMenuItem asChild>
-              <button className="w-full flex items-center gap-3 cursor-pointer text-foreground hover:bg-primary/10 px-4 py-2 transition-colors">
+              <button 
+                onClick={() => {
+                  toast({
+                    title: "Profile Settings",
+                    description: "Profile settings coming soon!",
+                  });
+                  setIsOpen(false);
+                }}
+                className="w-full flex items-center gap-3 cursor-pointer text-foreground hover:bg-primary/10 px-4 py-2 transition-colors"
+              >
                 <Settings className="h-4 w-4 text-muted-foreground" />
                 <span className="text-sm font-medium">Profile Settings</span>
               </button>
