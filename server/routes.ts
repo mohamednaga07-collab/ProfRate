@@ -460,9 +460,14 @@ export async function registerRoutes(httpServer: Server, app: Express): Promise<
         console.log(`✅ [Registration] Verification email sent successfully to ${email}`);
       } catch (emailError: any) {
         console.error(`❌ [Registration] Failed to send verification email to ${email}:`, emailError.message || emailError);
+        console.error(`   Stack trace:`, emailError.stack);
         // Continue with registration even if email fails
       }
 
+      // Verify that emailVerified is set to false in the database
+      const createdUser = await storage.getUser(newUser.id);
+      console.log(`🔍 [Registration] Verification check - User created with emailVerified: ${createdUser?.emailVerified}`);
+      
       // Don't auto-login - user must verify email first
       // Don't set session
       

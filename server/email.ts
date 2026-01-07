@@ -15,7 +15,10 @@ console.log("[Email Setup] Initializing with:");
 console.log(`  EMAIL_USER: ${EMAIL_USER}`);
 console.log(`  Using Resend: ${USE_RESEND}`);
 if (USE_RESEND) {
+  console.log(`  Resend API Key: ${RESEND_API_KEY?.substring(0, 5)}...` + (RESEND_API_KEY?.length ? "" : " ❌ NOT SET"));
   console.log(`  Resend From: ${RESEND_FROM}`);
+} else {
+  console.log(`  ⚠️  RESEND_API_KEY not set - will attempt Gmail fallback`);
 }
 
 // Create Gmail transporter as fallback

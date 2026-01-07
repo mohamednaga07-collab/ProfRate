@@ -131,6 +131,15 @@ if (doctorCount.count === 0) {
   console.log("✓ Seeded sample doctors");
 }
 
+// Helper function to normalize user data from SQLite (convert 0/1 to boolean for emailVerified)
+function normalizeUser(user: any): any {
+  if (!user) return null;
+  return {
+    ...user,
+    emailVerified: user.emailVerified === 1 ? true : false,
+  };
+}
+
 export const sqliteStorage = {
   async getDoctors() {
     try {
@@ -323,8 +332,19 @@ export const sqliteStorage = {
   async createUser(user: any) {
     try {
       db.prepare(
-        "INSERT INTO users (id, username, password, email, firstName, lastName, profileImageUrl, role) VALUES (?, ?, ?, ?, ?, ?, ?, ?)"
-      ).run(user.id, user.username || null, user.password || null, user.email || null, user.firstName || null, user.lastName || null, user.profileImageUrl || null, user.role || "student");
+        "INSERT INTO users (id, username, password, email, firstName, lastName, profileImageUrl, role, emailVerified, verificationToken) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)"
+      ).run(
+        user.id, 
+        user.username || null, 
+        user.password || null, 
+        user.email || null, 
+        user.firstName || null, 
+        user.lastName || null, 
+        user.profileImageUrl || null, 
+        user.role || "student",
+        user.emailVerified ? 1 : 0,  // SQLite uses 0/1 for booleans
+        user.verificationToken || null
+      );
       return this.getUser(user.id);
     } catch (e) {
       console.error("createUser error:", e);
@@ -335,7 +355,7 @@ export const sqliteStorage = {
   async getUserByUsername(username: string) {
     try {
       const stmt = db.prepare("SELECT * FROM users WHERE username = ?");
-      return stmt.get(username) as any;
+      return normalizeUser(stmt.get(username) as any);
     } catch (e) {
       console.error("getUserByUsername error:", e);
       return null;
@@ -345,7 +365,7 @@ export const sqliteStorage = {
   async getUserByEmail(email: string) {
     try {
       const stmt = db.prepare("SELECT * FROM users WHERE email = ?");
-      return stmt.get(email) as any;
+      return normalizeUser(stmt.get(email) as any);
     } catch (e) {
       console.error("getUserByEmail error:", e);
       return null;
@@ -355,7 +375,7 @@ export const sqliteStorage = {
   async getUser(id: string) {
     try {
       const stmt = db.prepare("SELECT * FROM users WHERE id = ?");
-      return stmt.get(id) as any;
+      return normalizeUser(stmt.get(id) as any);
     } catch (e) {
       console.error("getUser error:", e);
       return null;
@@ -365,7 +385,7 @@ export const sqliteStorage = {
   async getUserByResetToken(token: string) {
     try {
       const stmt = db.prepare("SELECT * FROM users WHERE resetToken = ?");
-      return stmt.get(token) as any;
+      return normalizeUser(stmt.get(token) as any);
     } catch (e) {
       console.error("getUserByResetToken error:", e);
       return null;
@@ -405,7 +425,7 @@ export const sqliteStorage = {
   async getUserByVerificationToken(token: string) {
     try {
       const stmt = db.prepare("SELECT * FROM users WHERE verificationToken = ?");
-      return stmt.get(token) as any;
+      return normalizeUser(stmt.get(token) as any);
     } catch (e) {
       console.error("getUserByVerificationToken error:", e);
       return null;
@@ -436,7 +456,8 @@ export const sqliteStorage = {
   async getAllUsers() {
     try {
       const stmt = db.prepare("SELECT * FROM users ORDER BY createdAt DESC");
-      return stmt.all() as any[];
+      const users = stmt.all() as any[];
+      return users.map(normalizeUser);
     } catch (e) {
       console.error("getAllUsers error:", e);
       return [];
