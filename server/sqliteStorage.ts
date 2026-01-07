@@ -412,6 +412,54 @@ export const sqliteStorage = {
     }
   },
 
+  async updateUser(id: string, updates: Partial<User>) {
+    try {
+      const user = db.prepare("SELECT * FROM users WHERE id = ?").get(id) as any;
+      if (!user) {
+        throw new Error("User not found");
+      }
+      
+      const fields: string[] = [];
+      const values: any[] = [];
+      
+      if (updates.profileImageUrl !== undefined) {
+        fields.push("profileImageUrl = ?");
+        values.push(updates.profileImageUrl);
+      }
+      if (updates.firstName !== undefined) {
+        fields.push("firstName = ?");
+        values.push(updates.firstName);
+      }
+      if (updates.lastName !== undefined) {
+        fields.push("lastName = ?");
+        values.push(updates.lastName);
+      }
+      if (updates.email !== undefined) {
+        fields.push("email = ?");
+        values.push(updates.email);
+      }
+      if (updates.username !== undefined) {
+        fields.push("username = ?");
+        values.push(updates.username);
+      }
+      
+      if (fields.length > 0) {
+        fields.push("updatedAt = ?");
+        values.push(new Date().toISOString());
+        values.push(id);
+        
+        const stmt = db.prepare(`UPDATE users SET ${fields.join(", ")} WHERE id = ?`);
+        stmt.run(...values);
+      }
+      
+      const updated = db.prepare("SELECT * FROM users WHERE id = ?").get(id) as any;
+      return normalizeUser(updated);
+    } catch (e) {
+      console.error("updateUser error:", e);
+      throw e;
+    }
+  },
+
   async clearResetToken(id: string) {
     try {
       const stmt = db.prepare("UPDATE users SET resetToken = NULL, resetTokenExpiry = NULL WHERE id = ?");

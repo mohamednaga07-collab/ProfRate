@@ -102,6 +102,21 @@ export class MemoryStorage implements IStorage {
     }
   }
 
+  async updateUser(id: string, updates: Partial<User>): Promise<User> {
+    const user = this.users.get(id);
+    if (!user) {
+      throw new Error("User not found");
+    }
+    // Update only provided fields
+    if (updates.profileImageUrl !== undefined) user.profileImageUrl = updates.profileImageUrl;
+    if (updates.firstName !== undefined) user.firstName = updates.firstName;
+    if (updates.lastName !== undefined) user.lastName = updates.lastName;
+    if (updates.email !== undefined) user.email = updates.email;
+    if (updates.username !== undefined) user.username = updates.username;
+    user.updatedAt = new Date();
+    return user;
+  }
+
   async clearResetToken(id: string): Promise<void> {
     const user = this.users.get(id);
     if (user && user.resetToken) {
