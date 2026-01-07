@@ -810,11 +810,20 @@ export async function registerRoutes(httpServer: Server, app: Express): Promise<
   app.delete("/api/admin/users/:userId", isAdmin, validateCsrfHeader, async (req, res) => {
     try {
       const { userId } = req.params;
+      console.log(`[Admin] Deleting user ${userId}`);
+      
+      // Check if user exists first
+      const user = await storage.getUser(userId);
+      if (!user) {
+        return res.status(404).json({ message: "User not found" });
+      }
+
       await storage.deleteUser(userId);
+      console.log(`[Admin] User ${userId} deleted`);
       res.json({ message: "User deleted successfully" });
-    } catch (error) {
+    } catch (error: any) {
       console.error("Error deleting user:", error);
-      res.status(500).json({ message: "Failed to delete user" });
+      res.status(500).json({ message: `Failed to delete user: ${error.message}` });
     }
   });
 
