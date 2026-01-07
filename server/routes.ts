@@ -431,20 +431,26 @@ export async function registerRoutes(httpServer: Server, app: Express): Promise<
       console.log("✅ New user created:", username, "with role:", role);
 
       // Send verification email
-      const verificationLink = `${process.env.APP_URL || "http://localhost:5173"}/verify-email?token=${verificationToken}`;
+      const appUrl = process.env.APP_URL || "http://localhost:5173";
+      console.log(`📧 [Registration] APP_URL for verification link: ${appUrl}`);
+      
+      const verificationLink = `${appUrl}/verify-email?token=${verificationToken}`;
+      console.log(`📧 [Registration] Full verification link: ${verificationLink}`);
+      
       const emailHtml = generateVerificationEmailHtml(username, verificationLink);
       const emailText = `Hi ${username},\n\nThank you for registering! Please verify your email address: ${verificationLink}\n\nOnce verified, you'll be able to log in.`;
       
+      console.log(`📧 [Registration] Attempting to send verification email to: ${email}`);
       try {
-        await sendEmail({
+        const emailSent = await sendEmail({
           to: email,
           subject: "Verify Your Campus Ratings Account",
           html: emailHtml,
           text: emailText,
         });
-        console.log(`[Registration] Verification email sent to ${email}`);
+        console.log(`✅ [Registration] Verification email sent successfully to ${email}`);
       } catch (emailError: any) {
-        console.error("Failed to send verification email:", emailError);
+        console.error(`❌ [Registration] Failed to send verification email to ${email}:`, emailError.message || emailError);
         // Continue with registration even if email fails
       }
 

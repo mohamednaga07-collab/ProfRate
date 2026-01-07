@@ -61,23 +61,32 @@ interface EmailOptions {
 
 export async function sendEmail(options: EmailOptions): Promise<boolean> {
   try {
-    console.log(`[Email Send] Starting email send...`);
-    console.log(`  To: ${options.to}`);
+    console.log(`\n${'='.repeat(60)}`);
+    console.log(`[EMAIL SERVICE] Processing email request`);
+    console.log(`  Recipient: ${options.to}`);
     console.log(`  Subject: ${options.subject}`);
+    console.log(`  HTML size: ${options.html ? options.html.length : 0} bytes`);
+    console.log(`  Text size: ${options.text ? options.text.length : 0} bytes`);
+    console.log(`  Using Resend: ${USE_RESEND}`);
+    console.log(`${'='.repeat(60)}\n`);
 
     // Try Resend first if configured (simple HTTP API)
     if (USE_RESEND) {
-      console.log(`  Using Resend API`);
+      console.log(`[RESEND] Starting Resend API call...`);
+      console.log(`  From: ${RESEND_FROM}`);
+      console.log(`  Reply-To: ${EMAIL_USER}`);
+      
       try {
-        console.log(`[Email Send] Resend payload:`, {
+        const payload = {
           from: RESEND_FROM,
-          to: options.to,
+          to: [options.to],
           subject: options.subject,
-          html_length: options.html ? options.html.length : 0,
-          text_length: options.text ? options.text.length : 0,
-          has_html: !!options.html,
-          has_text: !!options.text,
-        });
+          html: options.html,
+          text: options.text,
+          reply_to: EMAIL_USER,
+        };
+        
+        console.log(`[RESEND] Sending payload to https://api.resend.com/emails`);
         
         const response = await fetch('https://api.resend.com/emails', {
           method: 'POST',
@@ -85,33 +94,29 @@ export async function sendEmail(options: EmailOptions): Promise<boolean> {
             'Authorization': `Bearer ${RESEND_API_KEY}`,
             'Content-Type': 'application/json',
           },
-          body: JSON.stringify({
-            from: RESEND_FROM,
-            to: [options.to],
-            subject: options.subject,
-            html: options.html,
-            text: options.text,
-            reply_to: EMAIL_USER,
-          }),
+          body: JSON.stringify(payload),
         });
 
         const responseData = await response.json();
+        
+        console.log(`[RESEND] Response status: ${response.status}`);
+        console.log(`[RESEND] Response data:`, responseData);
         
         if (!response.ok) {
           throw new Error(`Resend API error: ${response.status} ${JSON.stringify(responseData)}`);
         }
         
-        console.log(`[Email Send] ✅ Email sent via Resend: ${responseData.id}`);
+        console.log(`✅ [RESEND] Email sent successfully! ID: ${responseData.id}`);
+        console.log(`${'='.repeat(60)}\n`);
         return true;
       } catch (resendError: any) {
-        console.error(`[Email Send] ❌ Resend failed:`, resendError.message);
-        console.log(`[Email Send] Falling back to Gmail...`);
-        // Fall through to Gmail
+        console.error(`❌ [RESEND] Failed:`, resendError.message || resendError);
+        console.log(`[GMAIL FALLBACK] Attempting to send via Gmail SMTP...`);
       }
     }
 
     // Fallback to Gmail
-    console.log(`  Using Gmail SMTP`);
+    console.log(`[GMAIL] Starting Gmail SMTP send...`);
     const info = await gmailTransporter.sendMail({
       from: EMAIL_FROM,
       to: options.to,
@@ -120,13 +125,17 @@ export async function sendEmail(options: EmailOptions): Promise<boolean> {
       text: options.text,
     });
 
-    console.log(`[Email Send] ✅ Email sent via Gmail: ${info.messageId}`);
+    console.log(`✅ [GMAIL] Email sent successfully! Message ID: ${info.messageId}`);
+    console.log(`${'='.repeat(60)}\n`);
     return true;
   } catch (error) {
-    console.error(`[Email Send] ❌ Failed to send email to ${options.to}:`);
-    console.error(`  Error type: ${error instanceof Error ? error.constructor.name : typeof error}`);
-    console.error(`  Error message: ${error instanceof Error ? error.message : error}`);
-    // Throw the error so the route handler knows it failed
+    console.error(`\n${'='.repeat(60)}`);
+    console.error(`❌ [EMAIL SERVICE] FAILED TO SEND EMAIL`);
+    console.error(`  Recipient: ${options.to}`);
+    console.error(`  Subject: ${options.subject}`);
+    console.error(`  Error: ${error instanceof Error ? error.message : String(error)}`);
+    console.error(`  Stack: ${error instanceof Error ? error.stack : 'N/A'}`);
+    console.error(`${'='.repeat(60)}\n`);
     throw error;
   }
 }
