@@ -634,7 +634,7 @@ export default function AdminDashboard() {
                                         <Edit className="h-4 w-4" />
                                       </Button>
                                     </DialogTrigger>
-                                    <DialogContent className="sm:max-w-[425px] z-[100]">
+                                    <DialogContent className="sm:max-w-[425px]">
                                       <DialogHeader>
                                         <DialogTitle>Edit User Role</DialogTitle>
                                         <DialogDescription>Change the role for {user.username}</DialogDescription>
