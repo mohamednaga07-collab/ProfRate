@@ -440,15 +440,23 @@ export async function validateCsrfHeader(req: Request, res: Response, next: Next
   const csrfToken = req.headers["x-csrf-token"] as string;
   const sessionId = req.sessionID || (req.session as any)?.id;
   
+  console.log(`[CSRF] Validating ${method} ${req.path} - SessionID: ${sessionId?.substring(0, 8)}... Token: ${csrfToken?.substring(0, 8)}...`);
+  
   if (!csrfToken) {
     console.warn(`[CSRF] Missing token for ${method} ${req.path} from IP: ${req.ip}`);
     return res.status(403).json({ message: "CSRF token required" });
   }
   
-  if (!sessionId || !validateCsrfToken(sessionId, csrfToken)) {
-    console.warn(`[CSRF] Invalid token for ${method} ${req.path} from IP: ${req.ip}`);
-    return res.status(403).json({ message: "Invalid CSRF token" });
+  if (!sessionId) {
+    console.warn(`[CSRF] No session ID for ${method} ${req.path}`);
+    return res.status(403).json({ message: "Session required. Please refresh the page." });
   }
   
+  if (!validateCsrfToken(sessionId, csrfToken)) {
+    console.warn(`[CSRF] Invalid token for ${method} ${req.path} from IP: ${req.ip}`);
+    return res.status(403).json({ message: "Invalid CSRF token. Please refresh the page." });
+  }
+  
+  console.log(`[CSRF] ✓ Valid token for ${method} ${req.path}`);
   next();
 }
