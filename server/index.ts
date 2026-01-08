@@ -97,7 +97,7 @@ app.use((req: Request, res: Response, next: NextFunction) => {
 // Request size limits - Prevent DoS attacks (except for profile picture uploads)
 app.use(
   express.json({
-    limit: "10mb", // Increased to 10MB to support profile picture uploads (base64 encoded)
+    limit: "20mb", // Increased to 20MB to support 4K profile pictures (base64 encoded)
     verify: (req, _res, buf) => {
       req.rawBody = buf;
     },

@@ -53,11 +53,11 @@ export function ProfilePictureUpload({
       return;
     }
 
-    // Check file size (5MB max)
-    if (file.size > 5 * 1024 * 1024) {
+    // Check file size (15MB max - supports 4K images)
+    if (file.size > 15 * 1024 * 1024) {
       toast({
         title: "File too large",
-        description: "Maximum size is 5MB",
+        description: "Maximum size is 15MB",
         variant: "destructive",
       });
       return;
@@ -102,11 +102,14 @@ export function ProfilePictureUpload({
           const result = await response.json();
           console.log('🖼️ Upload successful:', result);
 
-          // Force image refresh
-          setImageKey(prev => prev + 1);
-
           // Invalidate user query to update profile picture everywhere
           await queryClient.invalidateQueries({ queryKey: ["/api/auth/user"] });
+          
+          // Small delay to ensure the new image is fully loaded before triggering animation
+          await new Promise(resolve => setTimeout(resolve, 100));
+          
+          // Force image refresh with animation
+          setImageKey(prev => prev + 1);
           
           toast({
             title: "Success!",
@@ -181,18 +184,22 @@ export function ProfilePictureUpload({
           }
         }}
       >
-        <AnimatePresence mode="popLayout">
+        <AnimatePresence mode="wait">
           <motion.div
             key={imageKey} // Unique key triggers animation on change
-            initial={{ opacity: 0, scale: 1.2, filter: "blur(4px)" }}
-            animate={{ opacity: 1, scale: 1, filter: "blur(0px)" }}
-            exit={{ opacity: 0, scale: 0.95, filter: "blur(2px)" }}
+            initial={{ opacity: 0, scale: 0.98 }}
+            animate={{ opacity: 1, scale: 1 }}
+            exit={{ opacity: 0, scale: 1.02 }}
             transition={{ 
-              duration: 0.4, 
-              ease: [0.23, 1, 0.32, 1], // Cubic bezier for smooth "ios-like" feel
+              duration: 0.35,
+              ease: [0.25, 0.46, 0.45, 0.94], // Smooth easeOutQuad for 120fps
             }}
             className="absolute inset-0 z-10 w-full h-full"
-            style={{ willChange: "transform, opacity, filter" }}
+            style={{ 
+              willChange: "transform, opacity",
+              backfaceVisibility: "hidden",
+              WebkitFontSmoothing: "subpixel-antialiased",
+            }}
           >
             <AvatarImage 
               src={user.profileImageUrl ?? undefined} 
@@ -215,7 +222,7 @@ export function ProfilePictureUpload({
         <button
           onClick={() => fileInputRef.current?.click()}
           disabled={uploading}
-          className="absolute -bottom-1 -right-1 rounded-full bg-primary p-1.5 text-primary-foreground shadow-lg hover:bg-primary/90 transition-colors disabled:opacity-50"
+          className="absolute -bottom-1 -right-1 rounded-full bg-primary p-1.5 text-primary-foreground shadow-lg hover:bg-primary/90 transition-colors disabled:opacity-50 z-20"
           title="Click to upload a new profile picture"
         >
           {uploading ? (
