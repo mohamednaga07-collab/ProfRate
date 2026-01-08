@@ -4,6 +4,7 @@ import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { useToast } from "@/hooks/use-toast";
 import { User } from "@shared/schema";
 import { useQueryClient } from "@tanstack/react-query";
+import { motion, AnimatePresence } from "framer-motion";
 import {
   Dialog,
   DialogContent,
@@ -166,7 +167,7 @@ export function ProfilePictureUpload({
       />
       
       <Avatar 
-        className={`${sizeClasses[size]} cursor-pointer transition-all hover:opacity-80`}
+        className={`${sizeClasses[size]} cursor-pointer transition-all hover:opacity-80 relative overflow-hidden`}
         onClick={() => {
           // If has profile image and edit button shown, open fullscreen or edit
           if (user.profileImageUrl) {
@@ -180,12 +181,28 @@ export function ProfilePictureUpload({
           }
         }}
       >
-        <AvatarImage 
-          key={imageKey} // Force re-render when key changes
-          src={user.profileImageUrl ?? undefined} 
-          alt={user.firstName ?? "User"} 
-        />
-        <AvatarFallback className="font-semibold">
+        <AnimatePresence mode="popLayout">
+          <motion.div
+            key={imageKey} // Unique key triggers animation on change
+            initial={{ opacity: 0, scale: 1.2, filter: "blur(4px)" }}
+            animate={{ opacity: 1, scale: 1, filter: "blur(0px)" }}
+            exit={{ opacity: 0, scale: 0.95, filter: "blur(2px)" }}
+            transition={{ 
+              duration: 0.4, 
+              ease: [0.23, 1, 0.32, 1], // Cubic bezier for smooth "ios-like" feel
+            }}
+            className="absolute inset-0 z-10 w-full h-full"
+            style={{ willChange: "transform, opacity, filter" }}
+          >
+            <AvatarImage 
+              src={user.profileImageUrl ?? undefined} 
+              alt={user.firstName ?? "User"}
+              className="w-full h-full object-cover" 
+            />
+          </motion.div>
+        </AnimatePresence>
+
+        <AvatarFallback className="font-semibold z-0">
           {uploading ? (
             <Loader2 className="h-4 w-4 animate-spin" />
           ) : (
