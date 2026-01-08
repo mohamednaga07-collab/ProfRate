@@ -135,7 +135,7 @@ function Router() {
                   <Home />
                 )
               ) : (
-                <Landing defaultTab="login" />
+                <Landing />
               )}
             </AnimatedPageWrapper>
           )}
