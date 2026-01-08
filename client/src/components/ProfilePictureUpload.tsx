@@ -177,38 +177,43 @@ export function ProfilePictureUpload({
           }
         }}
       >
-        <AnimatePresence mode="wait" initial={false}>
-          <motion.div
-            key={user.profileImageUrl || 'no-image'} // Use actual image URL as key - only animates when URL changes
-            initial={{ opacity: 0, scale: 0.98 }}
-            animate={{ opacity: 1, scale: 1 }}
-            exit={{ opacity: 0, scale: 1.02 }}
-            transition={{ 
-              duration: 0.3,
-              ease: [0.25, 0.46, 0.45, 0.94], // Smooth easeOutQuad for 120fps
-            }}
-            className="absolute inset-0 z-10 w-full h-full"
-            style={{ 
-              willChange: "transform, opacity",
-              backfaceVisibility: "hidden",
-              WebkitFontSmoothing: "subpixel-antialiased",
-            }}
-          >
-            <AvatarImage 
-              src={user.profileImageUrl ?? undefined} 
-              alt={user.firstName ?? "User"}
-              className="w-full h-full object-cover" 
-            />
-          </motion.div>
-        </AnimatePresence>
+        {/* Only show fallback when there's no profile image */}
+        {!user.profileImageUrl && (
+          <AvatarFallback className="font-semibold z-0">
+            {uploading ? (
+              <Loader2 className="h-4 w-4 animate-spin" />
+            ) : (
+              userInitials
+            )}
+          </AvatarFallback>
+        )}
 
-        <AvatarFallback className="font-semibold z-0">
-          {uploading ? (
-            <Loader2 className="h-4 w-4 animate-spin" />
-          ) : (
-            userInitials
+        {/* Image layer with smooth crossfade animation */}
+        <AnimatePresence mode="sync" initial={false}>
+          {user.profileImageUrl && (
+            <motion.div
+              key={user.profileImageUrl} // Use actual image URL as key - only animates when URL changes
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              transition={{ 
+                duration: 0.2,
+                ease: "easeInOut",
+              }}
+              className="absolute inset-0 z-10 w-full h-full"
+              style={{ 
+                willChange: "opacity",
+                backfaceVisibility: "hidden",
+              }}
+            >
+              <AvatarImage 
+                src={user.profileImageUrl} 
+                alt={user.firstName ?? "User"}
+                className="w-full h-full object-cover" 
+              />
+            </motion.div>
           )}
-        </AvatarFallback>
+        </AnimatePresence>
       </Avatar>
 
       {showEditButton && (

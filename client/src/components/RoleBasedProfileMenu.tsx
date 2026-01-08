@@ -2,6 +2,7 @@ import { motion } from "framer-motion";
 import { useState } from "react";
 import { useLocation } from "wouter";
 import { Settings, BarChart3, Users, Trophy, FileText, Clock, MessageCircle, Zap, Crown, BookOpen, LogOut } from "lucide-react";
+import { useQuery } from "@tanstack/react-query";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -40,6 +41,12 @@ export function RoleBasedProfileMenu({
   const [isOpen, setIsOpen] = useState(false);
   const userRole = (user.role as keyof typeof roleColors) || "student";
   const roleColor = roleColors[userRole];
+
+  // Fetch admin stats for real user count
+  const { data: adminStats } = useQuery<{ totalUsers: number; totalDoctors: number; totalReviews: number }>({
+    queryKey: ["/api/admin/stats"],
+    enabled: userRole === "admin", // Only fetch for admin users
+  });
 
   // Role-specific menu items with handlers
   const getMenuItems = () => {
@@ -203,15 +210,15 @@ export function RoleBasedProfileMenu({
                 <>
                   <div className="bg-gradient-to-br from-red-500/10 to-red-600/10 rounded-lg p-2 border border-red-500/20">
                     <p className="text-xs text-muted-foreground">Users</p>
-                    <p className="font-bold text-red-600">1.2K</p>
+                    <p className="font-bold text-red-600">{adminStats?.totalUsers || 0}</p>
                   </div>
                   <div className="bg-gradient-to-br from-yellow-500/10 to-yellow-600/10 rounded-lg p-2 border border-yellow-500/20">
-                    <p className="text-xs text-muted-foreground">Activity</p>
-                    <p className="font-bold text-yellow-600">98%</p>
+                    <p className="text-xs text-muted-foreground">Doctors</p>
+                    <p className="font-bold text-yellow-600">{adminStats?.totalDoctors || 0}</p>
                   </div>
                   <div className="bg-gradient-to-br from-blue-500/10 to-blue-600/10 rounded-lg p-2 border border-blue-500/20">
-                    <p className="text-xs text-muted-foreground">System</p>
-                    <p className="font-bold text-blue-600">🟢</p>
+                    <p className="text-xs text-muted-foreground">Reviews</p>
+                    <p className="font-bold text-blue-600">{adminStats?.totalReviews || 0}</p>
                   </div>
                 </>
               )}
