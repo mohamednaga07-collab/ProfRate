@@ -1,8 +1,8 @@
-import { motion } from "framer-motion";
-import { useState } from "react";
 import { useLocation } from "wouter";
 import { Settings, BarChart3, Users, Trophy, FileText, Clock, MessageCircle, Zap, Crown, BookOpen, LogOut } from "lucide-react";
 import { useQuery } from "@tanstack/react-query";
+import { useState, useEffect } from "react";
+import { motion, AnimatePresence } from "framer-motion";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -45,8 +45,35 @@ export function RoleBasedProfileMenu({
   // Fetch admin stats for real user count
   const { data: adminStats } = useQuery<{ totalUsers: number; totalDoctors: number; totalReviews: number }>({
     queryKey: ["/api/admin/stats"],
-    enabled: userRole === "admin", // Only fetch for admin users
+    enabled: userRole === "admin",
+    refetchInterval: userRole === "admin" ? 2000 : false, // Poll every 2s for live updates
   });
+
+  // Health indicator state
+  const [health, setHealth] = useState<'healthy' | 'degraded' | 'down'>('healthy');
+  const [healthPulse, setHealthPulse] = useState(false);
+  useEffect(() => {
+    let mounted = true;
+    const checkHealth = async () => {
+      try {
+        const res = await fetch("/api/health");
+        if (!mounted) return;
+        if (res.ok) {
+          const data = await res.json();
+          setHealth(data.status || 'healthy');
+        } else {
+          setHealth('degraded');
+        }
+      } catch {
+        setHealth('down');
+      }
+      setHealthPulse(true);
+      setTimeout(() => setHealthPulse(false), 600);
+    };
+    checkHealth();
+    const interval = setInterval(checkHealth, 3000);
+    return () => { mounted = false; clearInterval(interval); };
+  }, []);
 
   // Role-specific menu items with handlers
   const getMenuItems = () => {
@@ -54,17 +81,24 @@ export function RoleBasedProfileMenu({
       switch (action) {
         // Admin actions
         case "manage-users":
-          navigate("/admin");
+          navigate("/admin/users");
+          toast({ title: "Manage Users", description: "View and manage all users." });
           break;
         case "analytics":
-          navigate("/admin");
-          toast({ title: "Analytics", description: "View admin analytics dashboard" });
+          navigate("/admin/analytics");
+          toast({ title: "Dashboard Analytics", description: "View site analytics and reports." });
           break;
         case "settings":
-          toast({ title: "System Settings", description: "System settings coming soon!" });
+          navigate("/admin/settings");
+          toast({ title: "System Settings", description: "Configure system settings." });
           break;
         case "admin-panel":
           navigate("/admin");
+          toast({ title: "Admin Panel", description: "Access the main admin panel." });
+          break;
+        case "profile-settings":
+          navigate("/profile/settings");
+          toast({ title: "Profile Settings", description: "Edit your profile settings." });
           break;
         // Teacher actions
         case "my-courses":
@@ -106,6 +140,7 @@ export function RoleBasedProfileMenu({
           { icon: BarChart3, label: "Dashboard Analytics", action: "analytics" },
           { icon: Settings, label: "System Settings", action: "settings" },
           { icon: Crown, label: "Admin Panel", action: "admin-panel" },
+          { icon: BookOpen, label: "Profile Settings", action: "profile-settings" },
         ];
       case "teacher":
         return [
@@ -208,17 +243,52 @@ export function RoleBasedProfileMenu({
               )}
               {userRole === "admin" && (
                 <>
-                  <div className="bg-gradient-to-br from-red-500/10 to-red-600/10 rounded-lg p-2 border border-red-500/20">
+                  <div className="bg-gradient-to-br from-red-500/10 to-red-600/10 rounded-lg p-2 border border-red-500/20 flex flex-col items-center">
                     <p className="text-xs text-muted-foreground">Users</p>
-                    <p className="font-bold text-red-600">{adminStats?.totalUsers || 0}</p>
+                    <motion.p className="font-bold text-red-600" animate={{ scale: [1, 1.15, 1] }} transition={{ duration: 0.4 }}>
+                      <AnimatePresence mode="sync" initial={false}>
+                        <motion.span key={adminStats?.totalUsers} initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -10 }} transition={{ duration: 0.2 }}>
+                          {adminStats?.totalUsers || 0}
+                        </motion.span>
+                      </AnimatePresence>
+                    </motion.p>
+                    <button className="mt-1 text-xs text-red-500 underline" onClick={() => navigate('/admin/users')}>Manage</button>
                   </div>
-                  <div className="bg-gradient-to-br from-yellow-500/10 to-yellow-600/10 rounded-lg p-2 border border-yellow-500/20">
+                  <div className="bg-gradient-to-br from-yellow-500/10 to-yellow-600/10 rounded-lg p-2 border border-yellow-500/20 flex flex-col items-center">
                     <p className="text-xs text-muted-foreground">Doctors</p>
-                    <p className="font-bold text-yellow-600">{adminStats?.totalDoctors || 0}</p>
+                    <motion.p className="font-bold text-yellow-600" animate={{ scale: [1, 1.15, 1] }} transition={{ duration: 0.4 }}>
+                      <AnimatePresence mode="sync" initial={false}>
+                        <motion.span key={adminStats?.totalDoctors} initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -10 }} transition={{ duration: 0.2 }}>
+                          {adminStats?.totalDoctors || 0}
+                        </motion.span>
+                      </AnimatePresence>
+                    </motion.p>
+                    <button className="mt-1 text-xs text-yellow-600 underline" onClick={() => navigate('/admin/doctors')}>Manage</button>
                   </div>
-                  <div className="bg-gradient-to-br from-blue-500/10 to-blue-600/10 rounded-lg p-2 border border-blue-500/20">
+                  <div className="bg-gradient-to-br from-blue-500/10 to-blue-600/10 rounded-lg p-2 border border-blue-500/20 flex flex-col items-center">
                     <p className="text-xs text-muted-foreground">Reviews</p>
-                    <p className="font-bold text-blue-600">{adminStats?.totalReviews || 0}</p>
+                    <motion.p className="font-bold text-blue-600" animate={{ scale: [1, 1.15, 1] }} transition={{ duration: 0.4 }}>
+                      <AnimatePresence mode="sync" initial={false}>
+                        <motion.span key={adminStats?.totalReviews} initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -10 }} transition={{ duration: 0.2 }}>
+                          {adminStats?.totalReviews || 0}
+                        </motion.span>
+                      </AnimatePresence>
+                    </motion.p>
+                    <button className="mt-1 text-xs text-blue-600 underline" onClick={() => navigate('/admin/reviews')}>Manage</button>
+                  </div>
+                  {/* Health indicator */}
+                  <div className="col-span-3 flex items-center justify-center mt-2">
+                    <motion.div
+                      className={`flex items-center gap-2 px-3 py-1 rounded-full border ${health === 'healthy' ? 'border-green-500 bg-green-500/10' : health === 'degraded' ? 'border-yellow-500 bg-yellow-500/10' : 'border-red-500 bg-red-500/10'}`}
+                      animate={{ scale: healthPulse ? 1.1 : 1, boxShadow: healthPulse ? '0 0 8px 2px #22c55e' : 'none' }}
+                      transition={{ duration: 0.3 }}
+                    >
+                      <span className={`inline-block w-3 h-3 rounded-full ${health === 'healthy' ? 'bg-green-500' : health === 'degraded' ? 'bg-yellow-500' : 'bg-red-500'} animate-pulse`}></span>
+                      <span className="text-xs font-semibold">
+                        {health === 'healthy' ? 'Healthy' : health === 'degraded' ? 'Degraded' : 'Down'}
+                      </span>
+                      <button className="ml-2 text-xs underline" onClick={() => window.location.reload()}>Refresh</button>
+                    </motion.div>
                   </div>
                 </>
               )}
