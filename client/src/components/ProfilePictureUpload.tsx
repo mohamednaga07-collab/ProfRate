@@ -104,7 +104,7 @@ export function ProfilePictureUpload({
 
           toast({
             title: "Success!",
-            description: "Profile picture updated. Reloading...",
+            description: "Profile picture updated",
           });
 
           // Callback for parent to refresh
@@ -112,11 +112,7 @@ export function ProfilePictureUpload({
             onUploadComplete();
           }
 
-          // Force page reload to ensure everything updates
-          console.log('🖼️ Reloading page in 500ms...');
-          setTimeout(() => {
-            window.location.reload();
-          }, 500);
+          setUploading(false);
 
         } catch (error: any) {
           console.error('🖼️ Upload error:', error);
@@ -210,9 +206,9 @@ export function ProfilePictureUpload({
 
       {/* Full-size image viewer modal */}
       <Dialog open={showFullSize} onOpenChange={setShowFullSize}>
-        <DialogContent className="max-w-4xl max-h-[90vh] p-0 border-0 bg-black/95 backdrop-blur-sm">
-          <DialogClose className="absolute right-4 top-4 z-50 rounded-full bg-white/10 p-2 text-white hover:bg-white/20 transition-colors">
-            <X className="h-6 w-6" />
+        <DialogContent className="max-w-4xl max-h-[90vh] p-0 border bg-background">
+          <DialogClose className="absolute right-4 top-4 z-50 rounded-md border border-input bg-background p-1.5 text-foreground hover:bg-accent hover:text-accent-foreground transition-colors">
+            <X className="h-5 w-5" />
           </DialogClose>
           
           <div className="flex items-center justify-center h-full w-full p-4">
@@ -223,24 +219,12 @@ export function ProfilePictureUpload({
                 className="max-w-full max-h-[80vh] rounded-lg object-contain"
               />
             ) : (
-              <div className="text-white text-center">
-                <ZoomIn className="h-16 w-16 mx-auto mb-4 text-gray-400" />
+              <div className="text-center text-muted-foreground">
+                <ZoomIn className="h-16 w-16 mx-auto mb-4 opacity-50" />
                 <p>No profile picture</p>
               </div>
             )}
           </div>
-
-          {/* Image info footer */}
-          {user.profileImageUrl && (
-            <div className="absolute bottom-4 left-4 right-4 text-white text-sm bg-black/50 p-3 rounded-lg backdrop-blur-sm">
-              <p className="font-semibold">{user.firstName} {user.lastName}</p>
-              <p className="text-gray-300">Profile Picture</p>
-              <p className="text-xs text-gray-400 mt-1">
-                {user.profileImageUrl.length > 0 && 
-                  `Size: ${(user.profileImageUrl.length / 1024 / 1024).toFixed(2)}MB`}
-              </p>
-            </div>
-          )}
         </DialogContent>
       </Dialog>
     </div>
