@@ -19,6 +19,12 @@ import ForgotUsername from "@/pages/ForgotUsername";
 import ResetPassword from "@/pages/ResetPassword";
 import { VerifyEmail } from "@/pages/VerifyEmail";
 import NotFound from "@/pages/not-found";
+import AdminUsers from "@/pages/AdminUsers";
+import AdminDoctors from "@/pages/AdminDoctors";
+import AdminReviews from "@/pages/AdminReviews";
+import AdminAnalytics from "@/pages/AdminAnalytics";
+import AdminSettings from "@/pages/AdminSettings";
+import ProfileSettings from "@/pages/ProfileSettings";
 import { useTranslation } from "react-i18next";
 
 const pageVariants = {
@@ -195,6 +201,48 @@ function Router() {
               ) : (
                 <NotFound />
               )}
+            </AnimatedPageWrapper>
+          )}
+        </Route>
+        <Route path="/admin/users">
+          {() => (
+            <AnimatedPageWrapper>
+              {!isAuthenticated ? <Landing /> : user?.role === "admin" ? <AdminUsers /> : <NotFound />}
+            </AnimatedPageWrapper>
+          )}
+        </Route>
+        <Route path="/admin/doctors">
+          {() => (
+            <AnimatedPageWrapper>
+              {!isAuthenticated ? <Landing /> : user?.role === "admin" ? <AdminDoctors /> : <NotFound />}
+            </AnimatedPageWrapper>
+          )}
+        </Route>
+        <Route path="/admin/reviews">
+          {() => (
+            <AnimatedPageWrapper>
+              {!isAuthenticated ? <Landing /> : user?.role === "admin" ? <AdminReviews /> : <NotFound />}
+            </AnimatedPageWrapper>
+          )}
+        </Route>
+        <Route path="/admin/analytics">
+          {() => (
+            <AnimatedPageWrapper>
+              {!isAuthenticated ? <Landing /> : user?.role === "admin" ? <AdminAnalytics /> : <NotFound />}
+            </AnimatedPageWrapper>
+          )}
+        </Route>
+        <Route path="/admin/settings">
+          {() => (
+            <AnimatedPageWrapper>
+              {!isAuthenticated ? <Landing /> : user?.role === "admin" ? <AdminSettings /> : <NotFound />}
+            </AnimatedPageWrapper>
+          )}
+        </Route>
+        <Route path="/profile/settings">
+          {() => (
+            <AnimatedPageWrapper>
+              {!isAuthenticated ? <Landing /> : <ProfileSettings />}
             </AnimatedPageWrapper>
           )}
         </Route>
