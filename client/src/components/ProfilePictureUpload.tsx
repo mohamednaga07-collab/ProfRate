@@ -3,6 +3,7 @@ import { Camera, Loader2, X, ZoomIn } from "lucide-react";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { useToast } from "@/hooks/use-toast";
 import { User } from "@shared/schema";
+import { useQueryClient } from "@tanstack/react-query";
 import {
   Dialog,
   DialogContent,
@@ -28,6 +29,7 @@ export function ProfilePictureUpload({
   const [cacheBuster, setCacheBuster] = useState(0); // Cache-bust image URL
   const fileInputRef = useRef<HTMLInputElement>(null);
   const { toast } = useToast();
+  const queryClient = useQueryClient();
 
   const sizeClasses = {
     sm: "h-8 w-8",
@@ -103,7 +105,10 @@ export function ProfilePictureUpload({
           // Force image refresh with cache buster
           setImageKey(prev => prev + 1);
           setCacheBuster(prev => prev + 1);
+// Invalidate user query to update profile picture everywhere
+          await queryClient.invalidateQueries({ queryKey: ["/api/auth/user"] });
 
+          
           toast({
             title: "Success!",
             description: "Profile picture updated",
