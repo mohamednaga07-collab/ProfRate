@@ -51,6 +51,10 @@ async function seedSampleData() {
 }
 
 export async function registerRoutes(httpServer: Server, app: Express): Promise<Server> {
+    // Health check endpoint for frontend indicator
+    app.get("/api/health", (_req, res) => {
+      res.json({ status: "healthy" });
+    });
   // Auth middleware
   await setupAuth(app);
 
