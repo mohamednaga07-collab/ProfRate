@@ -1,0 +1,21 @@
+.healthValue {
+  transition-property: color, transform;
+  --health-scale: 1;
+  transform: scale(var(--health-scale));
+}
+
+[data-health-scale] {
+  --health-scale: attr(data-health-scale number);
+}
+
+.healthValueExcellent {
+  color: #ea580c;
+}
+
+.healthValueGood {
+  color: #f59e42;
+}
+
+.healthValueWarning {
+  color: #eab308;
+}

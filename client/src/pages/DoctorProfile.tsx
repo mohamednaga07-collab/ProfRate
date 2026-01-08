@@ -225,7 +225,7 @@ export default function DoctorProfile() {
                               {t("doctorProfile.writeReview")}
                             </Button>
                           </DialogTrigger>
-                          <DialogContent className="max-w-lg max-h-[90vh] overflow-y-auto">
+                          <DialogContent className="max-w-lg max-h-[100vh] overflow-y-auto !top-0 !translate-y-0">
                             <DialogHeader>
                               <DialogTitle>
                                 {t("doctorProfile.rateDoctorTitle", {

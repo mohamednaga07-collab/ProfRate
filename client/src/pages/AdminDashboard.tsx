@@ -3,6 +3,7 @@ import { useQuery, useMutation } from "@tanstack/react-query";
 import { Header } from "@/components/Header";
 import { apiRequest } from "@/lib/queryClient";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
+import HealthStatus from "@/components/ui/HealthStatus";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -38,7 +39,7 @@ import {
   Settings,
   Database,
   Zap,
-  Star
+  Star,
 } from "lucide-react";
 import { useTranslation } from "react-i18next";
 
@@ -47,7 +48,6 @@ interface User {
   username: string;
   email: string;
   role: string;
-  firstName?: string;
   lastName?: string;
   createdAt: string;
 }
@@ -56,7 +56,6 @@ interface Doctor {
   id: number;
   name: string;
   department: string;
-  title?: string;
   bio?: string;
   profileImageUrl?: string;
   createdAt: string;
@@ -322,7 +321,7 @@ export default function AdminDashboard() {
             transition={{ duration: 0.1 }}
           >
             <Card className="relative overflow-hidden border-0 shadow-lg hover:shadow-xl transition-all duration-100 bg-blue-50/50 dark:bg-blue-950/50">
-              <CardContent className="pt-6">
+              <CardContent className="pt-6 h-[140px] flex flex-col justify-between">
                 <div className="flex items-center justify-between mb-4">
                   <div className="h-12 w-12 rounded-full bg-blue-500/10 dark:bg-blue-500/20 flex items-center justify-center">
                     <Users className="h-6 w-6 text-blue-600 dark:text-blue-400" />
@@ -332,9 +331,13 @@ export default function AdminDashboard() {
                     +12%
                   </Badge>
                 </div>
-                <p className="text-sm text-muted-foreground mb-1">{t("admin.stats.totalUsers")}</p>
-                <h3 className="text-3xl font-bold text-blue-600 dark:text-blue-400">{stats?.totalUsers || 0}</h3>
-                <p className="text-xs text-muted-foreground mt-2">{t("admin.stats.activeMembers")}</p>
+                <div className="flex flex-col flex-1 justify-end">
+                  <p className="text-sm text-muted-foreground mb-1">{t("admin.stats.totalUsers")}</p>
+                  <div className="flex flex-col items-start">
+                    <h3 className="text-3xl font-bold text-blue-600 dark:text-blue-400 leading-tight">{stats?.totalUsers || 0}</h3>
+                    <p className="text-xs text-muted-foreground leading-tight">{t("admin.stats.activeMembers")}</p>
+                  </div>
+                </div>
               </CardContent>
             </Card>
           </motion.div>
@@ -392,18 +395,8 @@ export default function AdminDashboard() {
           >
             <Card className="relative overflow-hidden border-0 shadow-lg hover:shadow-xl transition-all duration-100 bg-orange-50/50 dark:bg-orange-950/50">
               <CardContent className="pt-6">
-                <div className="flex items-center justify-between mb-4">
-                  <div className="h-12 w-12 rounded-full bg-orange-500/10 dark:bg-orange-500/20 flex items-center justify-center">
-                    <Activity className="h-6 w-6 text-orange-600 dark:text-orange-400" />
-                  </div>
-                  <Badge variant="secondary" className="gap-1">
-                    <Zap className="h-3 w-3" />
-                    {t("admin.stats.live")}
-                  </Badge>
-                </div>
-                <p className="text-sm text-muted-foreground mb-1">{t("admin.stats.systemHealth")}</p>
-                <h3 className="text-3xl font-bold text-orange-600 dark:text-orange-400">98.5%</h3>
-                <p className="text-xs text-muted-foreground mt-2">{t("admin.stats.uptimeStatus")}</p>
+                {/* Live HealthStatus component with smooth animation */}
+                <HealthStatus />
               </CardContent>
             </Card>
           </motion.div>
@@ -427,11 +420,11 @@ export default function AdminDashboard() {
               <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
                 <Button variant="outline" className="h-auto py-4 flex-col gap-2 hover:bg-blue-50 dark:hover:bg-blue-950" onClick={() => { setSelectedTab("users"); setTimeout(scrollToTabs, 100); }}>
                   <UserPlus className="h-5 w-5" />
-                  <span className="text-sm">{t("admin.quickActions.manageUsers")}</span>
+                  <span className="text-sm">{t("admin.quickActions.viewUsers")}</span>
                 </Button>
                 <Button variant="outline" className="h-auto py-4 flex-col gap-2 hover:bg-green-50 dark:hover:bg-green-950" onClick={() => { setSelectedTab("doctors"); setTimeout(scrollToTabs, 100); }}>
                   <GraduationCap className="h-5 w-5" />
-                  <span className="text-sm">{t("admin.quickActions.manageDoctors")}</span>
+                  <span className="text-sm">{t("admin.quickActions.viewDoctors")}</span>
                 </Button>
                 <Button variant="outline" className="h-auto py-4 flex-col gap-2 hover:bg-purple-50 dark:hover:bg-purple-950" onClick={() => { setSelectedTab("reviews"); setTimeout(scrollToTabs, 100); }}>
                   <MessageSquare className="h-5 w-5" />
@@ -939,11 +932,11 @@ export default function AdminDashboard() {
                   </Button>
                   <Button variant="outline" size="sm" onClick={() => { setShowSettings(false); setSelectedTab("users"); setTimeout(scrollToTabs, 100); }} className="justify-start gap-2">
                     <Users className="h-4 w-4" />
-                    {t("admin.quickActions.manageUsers")}
+                    <span className="text-sm">{t("admin.quickActions.viewUsers")}</span>
                   </Button>
                   <Button variant="outline" size="sm" onClick={() => { setShowSettings(false); setSelectedTab("doctors"); setTimeout(scrollToTabs, 100); }} className="justify-start gap-2">
                     <GraduationCap className="h-4 w-4" />
-                    {t("admin.quickActions.manageDoctors")}
+                    <span className="text-sm">{t("admin.quickActions.viewDoctors")}</span>
                   </Button>
                 </div>
               </div>

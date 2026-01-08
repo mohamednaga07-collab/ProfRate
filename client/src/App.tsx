@@ -204,27 +204,7 @@ function Router() {
             </AnimatedPageWrapper>
           )}
         </Route>
-        <Route path="/admin/users">
-          {() => (
-            <AnimatedPageWrapper>
-              {!isAuthenticated ? <Landing /> : user?.role === "admin" ? <AdminUsers /> : <NotFound />}
-            </AnimatedPageWrapper>
-          )}
-        </Route>
-        <Route path="/admin/doctors">
-          {() => (
-            <AnimatedPageWrapper>
-              {!isAuthenticated ? <Landing /> : user?.role === "admin" ? <AdminDoctors /> : <NotFound />}
-            </AnimatedPageWrapper>
-          )}
-        </Route>
-        <Route path="/admin/reviews">
-          {() => (
-            <AnimatedPageWrapper>
-              {!isAuthenticated ? <Landing /> : user?.role === "admin" ? <AdminReviews /> : <NotFound />}
-            </AnimatedPageWrapper>
-          )}
-        </Route>
+        {/* Removed admin management routes for Users, Doctors, Reviews */}
         <Route path="/admin/analytics">
           {() => (
             <AnimatedPageWrapper>

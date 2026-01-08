@@ -51,6 +51,7 @@ export function RoleBasedProfileMenu({
 
   // Health indicator state
   const [health, setHealth] = useState<'healthy' | 'degraded' | 'down'>('healthy');
+  const [healthPercent, setHealthPercent] = useState(100);
   const [healthPulse, setHealthPulse] = useState(false);
   useEffect(() => {
     let mounted = true;
@@ -61,11 +62,14 @@ export function RoleBasedProfileMenu({
         if (res.ok) {
           const data = await res.json();
           setHealth(data.status || 'healthy');
+          setHealthPercent(typeof data.percent === 'number' ? data.percent : 100);
         } else {
           setHealth('degraded');
+          setHealthPercent(60);
         }
       } catch {
         setHealth('down');
+        setHealthPercent(0);
       }
       setHealthPulse(true);
       setTimeout(() => setHealthPulse(false), 600);
@@ -136,7 +140,6 @@ export function RoleBasedProfileMenu({
     switch (userRole) {
       case "admin":
         return [
-          { icon: Users, label: "Manage Users", action: "manage-users" },
           { icon: BarChart3, label: "Dashboard Analytics", action: "analytics" },
           { icon: Settings, label: "System Settings", action: "settings" },
           { icon: Crown, label: "Admin Panel", action: "admin-panel" },
@@ -252,7 +255,7 @@ export function RoleBasedProfileMenu({
                         </motion.span>
                       </AnimatePresence>
                     </motion.p>
-                    <button className="mt-1 text-xs text-red-500 underline" onClick={() => navigate('/admin/users')}>Manage</button>
+                    {/* Manage button removed */}
                   </div>
                   <div className="bg-gradient-to-br from-yellow-500/10 to-yellow-600/10 rounded-lg p-2 border border-yellow-500/20 flex flex-col items-center">
                     <p className="text-xs text-muted-foreground">Doctors</p>
@@ -263,7 +266,7 @@ export function RoleBasedProfileMenu({
                         </motion.span>
                       </AnimatePresence>
                     </motion.p>
-                    <button className="mt-1 text-xs text-yellow-600 underline" onClick={() => navigate('/admin/doctors')}>Manage</button>
+                    {/* Manage button removed */}
                   </div>
                   <div className="bg-gradient-to-br from-blue-500/10 to-blue-600/10 rounded-lg p-2 border border-blue-500/20 flex flex-col items-center">
                     <p className="text-xs text-muted-foreground">Reviews</p>
@@ -274,10 +277,10 @@ export function RoleBasedProfileMenu({
                         </motion.span>
                       </AnimatePresence>
                     </motion.p>
-                    <button className="mt-1 text-xs text-blue-600 underline" onClick={() => navigate('/admin/reviews')}>Manage</button>
+                    {/* Manage button removed */}
                   </div>
-                  {/* Health indicator */}
-                  <div className="col-span-3 flex items-center justify-center mt-2">
+                  {/* Health indicator with percentage and bar */}
+                  <div className="col-span-3 flex flex-col items-center justify-center mt-2">
                     <motion.div
                       className={`flex items-center gap-2 px-3 py-1 rounded-full border ${health === 'healthy' ? 'border-green-500 bg-green-500/10' : health === 'degraded' ? 'border-yellow-500 bg-yellow-500/10' : 'border-red-500 bg-red-500/10'}`}
                       animate={{ scale: healthPulse ? 1.1 : 1, boxShadow: healthPulse ? '0 0 8px 2px #22c55e' : 'none' }}
@@ -287,8 +290,19 @@ export function RoleBasedProfileMenu({
                       <span className="text-xs font-semibold">
                         {health === 'healthy' ? 'Healthy' : health === 'degraded' ? 'Degraded' : 'Down'}
                       </span>
+                      <motion.span className="ml-2 text-xs font-bold" animate={{ color: health === 'healthy' ? '#22c55e' : health === 'degraded' ? '#eab308' : '#ef4444' }}>
+                        {healthPercent}%
+                      </motion.span>
                       <button className="ml-2 text-xs underline" onClick={() => window.location.reload()}>Refresh</button>
                     </motion.div>
+                    <div className="w-40 h-2 mt-2 bg-gray-200 rounded-full overflow-hidden">
+                      <motion.div
+                        className={`h-2 rounded-full ${health === 'healthy' ? 'bg-green-500' : health === 'degraded' ? 'bg-yellow-500' : 'bg-red-500'}`}
+                        initial={{ width: 0 }}
+                        animate={{ width: `${healthPercent}%` }}
+                        transition={{ duration: 0.5 }}
+                      />
+                    </div>
                   </div>
                 </>
               )}
@@ -383,21 +397,7 @@ export function RoleBasedProfileMenu({
             transition={{ duration: 0.3, delay: 0.3 }}
             className="py-2"
           >
-            <DropdownMenuItem asChild>
-              <button 
-                onClick={() => {
-                  toast({
-                    title: "Profile Settings",
-                    description: "Profile customization coming soon!",
-                  });
-                  setIsOpen(false);
-                }}
-                className="w-full flex items-center gap-3 cursor-pointer text-foreground hover:bg-primary/10 px-4 py-2 transition-colors"
-              >
-                <Settings className="h-4 w-4 text-muted-foreground" />
-                <span className="text-sm font-medium">Profile Settings</span>
-              </button>
-            </DropdownMenuItem>
+            {/* Removed duplicate Profile Settings button */}
             <DropdownMenuItem
               onClick={onLogout}
               className="cursor-pointer text-rose-600 dark:text-rose-400 hover:bg-rose-500/10 px-4 py-2 transition-colors"

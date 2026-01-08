@@ -503,6 +503,8 @@
       "title": "إجراءات سريعة",
       "manageUsers": "إدارة المستخدمين",
       "manageDoctors": "إدارة الأساتذة",
+      "viewUsers": "عرض المستخدمين",
+      "viewDoctors": "عرض الأساتذة",
       "viewReviews": "عرض المراجعات",
       "exportData": "تصدير البيانات"
     },

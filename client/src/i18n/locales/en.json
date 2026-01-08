@@ -494,6 +494,8 @@
       "title": "Quick Actions",
       "manageUsers": "Manage Users",
       "manageDoctors": "Manage Professors",
+      "viewUsers": "View Users",
+      "viewDoctors": "View Doctors",
       "viewReviews": "View Reviews",
       "exportData": "Export Data"
     },
