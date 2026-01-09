@@ -51,36 +51,6 @@ async function seedSampleData() {
 }
 
 export async function registerRoutes(httpServer: Server, app: Express): Promise<Server> {
-    // Health check endpoint for frontend indicator
-    app.get("/api/health", (_req, res) => {
-      // Simulate health checks
-      let percent = 100;
-      let status = "healthy";
-      // Example: check database connectivity
-      try {
-        // If storage is connected, good; if not, degrade
-        if (typeof storage.getAllUsers === "function") {
-          // Try a simple query
-          storage.getAllUsers().then(() => {
-            percent = 100;
-            status = "healthy";
-          }).catch(() => {
-            percent = 60;
-            status = "degraded";
-          }).finally(() => {
-            res.json({ status, percent });
-          });
-          return;
-        } else {
-          percent = 60;
-          status = "degraded";
-        }
-      } catch {
-        percent = 0;
-        status = "down";
-      }
-      res.json({ status, percent });
-    });
   // Auth middleware
   await setupAuth(app);
 
