@@ -143,60 +143,6 @@ function normalizeUser(user: any): any {
   };
 }
 
-// Export sqliteStorage object at the very end of the file
-
-// Migration and seeding logic moved above export
-try {
-  const cols = db.prepare("PRAGMA table_info(users)").all() as any[];
-  const hasResetToken = cols.some((c) => c.name === "resetToken");
-  const hasResetTokenExpiry = cols.some((c) => c.name === "resetTokenExpiry");
-  const hasEmailVerified = cols.some((c) => c.name === "emailVerified");
-  const hasVerificationToken = cols.some((c) => c.name === "verificationToken");
-  if (!hasResetToken) {
-    db.exec("ALTER TABLE users ADD COLUMN resetToken TEXT");
-    console.log("✓ Added users.resetToken column");
-  }
-  if (!hasResetTokenExpiry) {
-    db.exec("ALTER TABLE users ADD COLUMN resetTokenExpiry TEXT");
-    console.log("✓ Added users.resetTokenExpiry column");
-  }
-  if (!hasEmailVerified) {
-    db.exec("ALTER TABLE users ADD COLUMN emailVerified INTEGER DEFAULT 0");
-    console.log("✓ Added users.emailVerified column");
-  }
-  if (!hasVerificationToken) {
-    db.exec("ALTER TABLE users ADD COLUMN verificationToken TEXT");
-    console.log("✓ Added users.verificationToken column");
-  }
-} catch (e) {
-  console.error("Failed to ensure reset token columns:", e);
-}
-
-const doctorCount = db.prepare("SELECT COUNT(*) as count FROM doctors").get() as any;
-if (doctorCount.count === 0) {
-  const doctors = [
-    { name: "Dr. Smith", department: "Computer Science", title: "Professor" },
-    { name: "Dr. Johnson", department: "Mathematics", title: "Associate Professor" },
-    { name: "Dr. Williams", department: "Physics", title: "Professor" },
-    { name: "Dr. Brown", department: "Chemistry", title: "Lecturer" },
-    { name: "Dr. Jones", department: "Biology", title: "Professor" },
-  ];
-  const insertDoctor = db.prepare(
-    "INSERT INTO doctors (name, department, title) VALUES (?, ?, ?)"
-  );
-  const insertRating = db.prepare(
-    "INSERT INTO doctor_ratings (doctorId, avgTeachingQuality, avgAvailability, avgCommunication, avgKnowledge, avgFairness, overallRating, totalReviews) VALUES (?, 0, 0, 0, 0, 0, 0, 0)"
-  );
-  const transaction = db.transaction((doctors: any[]) => {
-    for (const doc of doctors) {
-      const result = insertDoctor.run(doc.name, doc.department, doc.title) as any;
-      insertRating.run(result.lastInsertRowid);
-    }
-  });
-  transaction(doctors);
-  console.log("✓ Seeded sample doctors");
-}
-
 export const sqliteStorage = {
 // All methods are now inside the single export below. No duplicates or trailing code.
 
@@ -235,42 +181,42 @@ export const sqliteStorage = {
     }
   },
 
+  async getDoctor(id: number): Promise<any | null> {
+    try {
+      const stmt = db.prepare("SELECT d.*, dr.* FROM doctors d LEFT JOIN doctor_ratings dr ON d.id = dr.doctorId WHERE d.id = ?");
+      const row = stmt.get(id) as any;
+      if (!row) return null;
+      return {
+        id: row.id,
+        name: row.name,
+        department: row.department,
+        title: row.title,
+        bio: row.bio,
+        profileImageUrl: row.profileImageUrl,
+        createdAt: row.createdAt,
+        updatedAt: row.updatedAt,
+        ratings: row.doctorId
+          ? {
+              id: row.doctorId,
+              doctorId: row.doctorId,
+              avgTeachingQuality: row.avgTeachingQuality || 0,
+              avgAvailability: row.avgAvailability || 0,
+              avgCommunication: row.avgCommunication || 0,
+              avgKnowledge: row.avgKnowledge || 0,
+              avgFairness: row.avgFairness || 0,
+              overallRating: row.overallRating || 0,
+              totalReviews: row.totalReviews || 0,
+              updatedAt: row.updatedAt,
+            }
+          : null,
+      };
+    } catch (e) {
+      console.error("getDoctor error:", e);
+      return null;
+    }
+  },
+
   async updateDoctor(id: number, updates: any): Promise<any> {
-      // Add missing getDoctor method
-      async getDoctor(id: number): Promise<any | null> {
-        try {
-          const stmt = db.prepare("SELECT d.*, dr.* FROM doctors d LEFT JOIN doctor_ratings dr ON d.id = dr.doctorId WHERE d.id = ?");
-          const row = stmt.get(id) as any;
-          if (!row) return null;
-          return {
-            id: row.id,
-            name: row.name,
-            department: row.department,
-            title: row.title,
-            bio: row.bio,
-            profileImageUrl: row.profileImageUrl,
-            createdAt: row.createdAt,
-            updatedAt: row.updatedAt,
-            ratings: row.doctorId
-              ? {
-                  id: row.doctorId,
-                  doctorId: row.doctorId,
-                  avgTeachingQuality: row.avgTeachingQuality || 0,
-                  avgAvailability: row.avgAvailability || 0,
-                  avgCommunication: row.avgCommunication || 0,
-                  avgKnowledge: row.avgKnowledge || 0,
-                  avgFairness: row.avgFairness || 0,
-                  overallRating: row.overallRating || 0,
-                  totalReviews: row.totalReviews || 0,
-                  updatedAt: row.updatedAt,
-                }
-              : null,
-          };
-        } catch (e) {
-          console.error("getDoctor error:", e);
-          return null;
-        }
-      },
     try {
       const fields = [];
       const values = [];
@@ -347,8 +293,10 @@ export const sqliteStorage = {
       db.prepare(
         "INSERT INTO users (id, username, password, email, firstName, lastName, profileImageUrl, role) VALUES (?, ?, ?, ?, ?, ?, ?, ?) ON CONFLICT(id) DO UPDATE SET email = excluded.email, firstName = excluded.firstName, lastName = excluded.lastName, profileImageUrl = excluded.profileImageUrl, role = excluded.role"
       ).run(user.id, user.username || null, user.password || null, user.email, user.firstName, user.lastName, user.profileImageUrl, user.role || "student");
+      return this.getUser(user.id);
     } catch (e) {
       console.error("upsertUser error:", e);
+      throw e;
     }
   },
 
@@ -625,6 +573,7 @@ export const sqliteStorage = {
       db.prepare("DELETE FROM doctor_ratings WHERE doctorId = ?").run(id);
       // Delete doctor
       db.prepare("DELETE FROM doctors WHERE id = ?").run(id);
+      return true;
     } catch (e) {
       console.error("deleteDoctor error:", e);
       throw e;

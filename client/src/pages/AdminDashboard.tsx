@@ -48,6 +48,7 @@ interface User {
   username: string;
   email: string;
   role: string;
+  firstName?: string;
   lastName?: string;
   createdAt: string;
 }
@@ -56,6 +57,7 @@ interface Doctor {
   id: number;
   name: string;
   department: string;
+  title?: string;
   bio?: string;
   profileImageUrl?: string;
   createdAt: string;

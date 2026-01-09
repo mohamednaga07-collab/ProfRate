@@ -3,6 +3,7 @@ import {
   doctors,
   reviews,
   doctorRatings,
+  activityLogs,
   type User,
   type UpsertUser,
   type Doctor,
@@ -283,7 +284,7 @@ export class DatabaseStorage implements IStorage {
     ipAddress?: string;
     userAgent?: string;
   }): Promise<void> {
-    await db.insert('activity_logs').values({
+    await db.insert(activityLogs).values({
       userId: data.userId,
       username: data.username,
       role: data.role,
@@ -296,7 +297,7 @@ export class DatabaseStorage implements IStorage {
   }
 
   async getActivityLogs(limit: number = 50): Promise<any[]> {
-    return db.select().from('activity_logs').orderBy(desc('timestamp')).limit(limit);
+    return db.select().from(activityLogs).orderBy(desc(activityLogs.timestamp)).limit(limit);
   }
 
   async updateUser(id: string, updates: Partial<User>): Promise<User> {

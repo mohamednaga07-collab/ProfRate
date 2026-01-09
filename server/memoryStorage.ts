@@ -22,9 +22,11 @@ export class MemoryStorage implements IStorage {
   private usersByUsername = new Map<string, User>();
   private usersByEmail = new Map<string, User>();
   private usersByResetToken = new Map<string, User>();
+  private usersByVerificationToken = new Map<string, User>();
   private doctors = new Map<number, Doctor>();
   private reviews = new Map<number, Review>();
   private doctorRatings = new Map<number, DoctorRating>();
+  private activityLogs: any[] = [];
   private nextDoctorId = 1;
   private nextReviewId = 1;
 
@@ -52,6 +54,8 @@ export class MemoryStorage implements IStorage {
           studentId: row.studentId,
           resetToken: row.resetToken,
           resetTokenExpiry: row.resetTokenExpiry ? new Date(row.resetTokenExpiry) : null,
+          emailVerified: row.emailVerified === 1 ? true : false,
+          verificationToken: row.verificationToken,
           createdAt: new Date(row.createdAt),
           updatedAt: new Date(row.updatedAt),
         };
@@ -140,6 +144,8 @@ export class MemoryStorage implements IStorage {
       studentId: userData.studentId ?? null,
       resetToken: null,
       resetTokenExpiry: null,
+      emailVerified: (userData as any).emailVerified ?? false,
+      verificationToken: (userData as any).verificationToken ?? null,
       createdAt: new Date(),
       updatedAt: new Date(),
     };
@@ -167,6 +173,8 @@ export class MemoryStorage implements IStorage {
       studentId: userData.studentId ?? null,
       resetToken: null,
       resetTokenExpiry: null,
+      emailVerified: (userData as any).emailVerified ?? false,
+      verificationToken: (userData as any).verificationToken ?? null,
       createdAt: new Date(),
       updatedAt: new Date(),
     };
@@ -307,5 +315,94 @@ export class MemoryStorage implements IStorage {
       totalDoctors: this.doctors.size,
       totalReviews: this.reviews.size,
     };
+  }
+
+  // Email verification methods
+  async getUserByVerificationToken(token: string): Promise<User | undefined> {
+    return this.usersByVerificationToken.get(token);
+  }
+
+  async updateUserVerificationToken(id: string, token: string): Promise<void> {
+    const user = this.users.get(id);
+    if (user) {
+      user.verificationToken = token;
+      user.emailVerified = false;
+      this.usersByVerificationToken.set(token, user);
+    }
+  }
+
+  async verifyUserEmail(id: string): Promise<void> {
+    const user = this.users.get(id);
+    if (user) {
+      user.emailVerified = true;
+      if (user.verificationToken) {
+        this.usersByVerificationToken.delete(user.verificationToken);
+      }
+      user.verificationToken = null;
+    }
+  }
+
+  // Admin methods
+  async getAllUsers(): Promise<User[]> {
+    return Array.from(this.users.values()).sort((a, b) => {
+      const aTime = a.createdAt ? new Date(a.createdAt).getTime() : 0;
+      const bTime = b.createdAt ? new Date(b.createdAt).getTime() : 0;
+      return bTime - aTime;
+    });
+  }
+
+  async updateUserRole(id: string, role: string): Promise<void> {
+    const user = this.users.get(id);
+    if (user) {
+      user.role = role;
+      user.updatedAt = new Date();
+    }
+  }
+
+  async deleteUser(id: string): Promise<void> {
+    const user = this.users.get(id);
+    if (user) {
+      this.users.delete(id);
+      if (user.username) this.usersByUsername.delete(user.username);
+      if (user.email) this.usersByEmail.delete(user.email);
+      if (user.resetToken) this.usersByResetToken.delete(user.resetToken);
+      if (user.verificationToken) this.usersByVerificationToken.delete(user.verificationToken);
+    }
+  }
+
+  async getAllReviews(): Promise<Review[]> {
+    return Array.from(this.reviews.values()).sort((a, b) => {
+      const aTime = a.createdAt ? new Date(a.createdAt).getTime() : 0;
+      const bTime = b.createdAt ? new Date(b.createdAt).getTime() : 0;
+      return bTime - aTime;
+    });
+  }
+
+  async deleteReview(id: number): Promise<void> {
+    const review = this.reviews.get(id);
+    if (review) {
+      this.reviews.delete(id);
+      await this.updateDoctorRatings(review.doctorId);
+    }
+  }
+
+  async logActivity(data: {
+    userId: string;
+    username: string;
+    role: string;
+    action: string;
+    type: string;
+    ipAddress?: string;
+    userAgent?: string;
+  }): Promise<void> {
+    this.activityLogs.push({
+      id: this.activityLogs.length + 1,
+      ...data,
+      timestamp: new Date(),
+    });
+  }
+
+  async getActivityLogs(limit: number = 50): Promise<any[]> {
+    return this.activityLogs.slice(-limit).reverse();
   }
 }
