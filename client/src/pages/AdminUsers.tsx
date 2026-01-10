@@ -1,8 +1,10 @@
 
 import { useQuery } from "@tanstack/react-query";
 import { Loader2 } from "lucide-react";
+import { useTranslation } from "react-i18next";
 
 export default function AdminUsers() {
+  const { t } = useTranslation();
   const { data: users, isLoading, error } = useQuery({
     queryKey: ["/api/admin/users"],
     queryFn: async () => {
