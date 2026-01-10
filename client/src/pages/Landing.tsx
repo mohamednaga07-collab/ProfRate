@@ -40,13 +40,13 @@ export default function Landing() {
   useEffect(() => {
     const interval = setInterval(() => {
       const timeSinceLastInteraction = Date.now() - lastInteraction;
-      // Use 2000ms (2s) pause after interaction as requested
+    // Use 2000ms (2s) pause after interaction as requested
       if (!isDragging && (timeSinceLastInteraction > 2000 || lastInteraction === 0)) {
         handleNext();
       }
     }, 5000); 
     return () => clearInterval(interval);
-  }, [isDragging, lastInteraction]); // Do NOT depend on currentIndex
+  }, [isDragging, lastInteraction, handleNext]);
 
   const handleNext = useCallback(() => {
     if (isTransitioning) return;
@@ -129,7 +129,6 @@ export default function Landing() {
             }}
             onAnimationComplete={handleTransitionEnd}
             drag="x"
-            dragConstraints={{ left: 0, right: 0 }}
             dragElastic={1} 
             dragMomentum={false}
             onDragStart={() => setIsDragging(true)}
