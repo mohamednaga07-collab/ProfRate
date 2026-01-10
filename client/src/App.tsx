@@ -7,25 +7,29 @@ import { useAuth } from "@/hooks/useAuth";
 import { motion, AnimatePresence } from "framer-motion";
 import React from "react";
 // Page imports - explicitly typed to help IDE resolution
-import Landing from "@/pages/Landing";
-import Home from "@/pages/Home";
-import DoctorListing from "@/pages/DoctorListing";
-import DoctorProfile from "@/pages/DoctorProfile";
-import Compare from "@/pages/Compare";
-import TeacherDashboard from "@/pages/TeacherDashboard";
-import AdminDashboard from "@/pages/AdminDashboard";
-import ForgotPassword from "@/pages/ForgotPassword";
-import ForgotUsername from "@/pages/ForgotUsername";
-import ResetPassword from "@/pages/ResetPassword";
-import { VerifyEmail } from "@/pages/VerifyEmail";
-import NotFound from "@/pages/not-found";
-import AdminUsers from "@/pages/AdminUsers";
-import AdminDoctors from "@/pages/AdminDoctors";
-import AdminReviews from "@/pages/AdminReviews";
-import AdminAnalytics from "@/pages/AdminAnalytics";
-import AdminSettings from "@/pages/AdminSettings";
-import ProfileSettings from "@/pages/ProfileSettings";
 import { useTranslation } from "react-i18next";
+import { ErrorBoundary } from "@/components/ErrorBoundary";
+import { Suspense, lazy } from "react";
+import { Loader2 } from "lucide-react";
+
+// Lazy load pages for performance
+const Landing = lazy(() => import("@/pages/Landing"));
+const Home = lazy(() => import("@/pages/Home"));
+const DoctorListing = lazy(() => import("@/pages/DoctorListing"));
+const DoctorProfile = lazy(() => import("@/pages/DoctorProfile"));
+const Compare = lazy(() => import("@/pages/Compare"));
+const TeacherDashboard = lazy(() => import("@/pages/TeacherDashboard"));
+const AdminDashboard = lazy(() => import("@/pages/AdminDashboard"));
+const ForgotPassword = lazy(() => import("@/pages/ForgotPassword"));
+const ForgotUsername = lazy(() => import("@/pages/ForgotUsername"));
+const ResetPassword = lazy(() => import("@/pages/ResetPassword"));
+const VerifyEmail = lazy(() => import("@/pages/VerifyEmail").then(module => ({ default: module.VerifyEmail })));
+const NotFound = lazy(() => import("@/pages/not-found"));
+const AdminUsers = lazy(() => import("@/pages/AdminUsers"));
+const AdminDoctors = lazy(() => import("@/pages/AdminDoctors"));
+const AdminAnalytics = lazy(() => import("@/pages/AdminAnalytics"));
+const AdminSettings = lazy(() => import("@/pages/AdminSettings"));
+const ProfileSettings = lazy(() => import("@/pages/ProfileSettings"));
 
 const pageVariants = {
   initial: {
@@ -250,7 +254,19 @@ function App() {
     <QueryClientProvider client={queryClient}>
       <TooltipProvider>
         <Toaster />
-        <Router />
+        <ErrorBoundary>
+          <Suspense 
+            fallback={
+              <div className="min-h-screen bg-[#0f172a] flex items-center justify-center">
+                <div className="flex flex-col items-center gap-4">
+                  <Loader2 className="h-10 w-10 animate-spin text-blue-500" />
+                </div>
+              </div>
+            }
+          >
+            <Router />
+          </Suspense>
+        </ErrorBoundary>
       </TooltipProvider>
     </QueryClientProvider>
   );

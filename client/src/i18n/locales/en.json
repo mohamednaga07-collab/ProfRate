@@ -629,7 +629,7 @@
         "title": "Edit User Role",
         "subtitle": "Change the role for {{username}}",
         "role": "Role",
-        "save": "Save Changes",
+        "save": "Save",
         "contact": "Contact & Status",
         "verified": "Verified",
         "unverified": "Unverified",
