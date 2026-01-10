@@ -237,6 +237,15 @@ function Router() {
 }
 
 function App() {
+  const { i18n } = useTranslation();
+
+  // Handle RTL/LTR document direction
+  React.useLayoutEffect(() => {
+    const isRTL = i18n.language === 'ar';
+    document.documentElement.dir = isRTL ? 'rtl' : 'ltr';
+    document.documentElement.lang = i18n.language;
+  }, [i18n.language]);
+
   return (
     <QueryClientProvider client={queryClient}>
       <TooltipProvider>

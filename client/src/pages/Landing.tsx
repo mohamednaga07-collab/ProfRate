@@ -107,7 +107,7 @@ export default function Landing() {
 
       <main>
         {/* Hero Section with Infinite Continuous Strip Carousel */}
-        <section className="relative h-[450px] lg:h-[650px] w-full overflow-hidden bg-slate-900">
+        <section className="relative h-[450px] lg:h-[650px] w-full overflow-hidden bg-slate-900" dir="ltr">
           <motion.div
             className="flex h-full will-change-transform"
             style={{
@@ -385,15 +385,15 @@ export default function Landing() {
               <ul className="space-y-3 text-muted-foreground dark:text-white/80">
                 <li className="flex items-start gap-3">
                   <CheckCircle className="h-5 w-5 text-emerald-500 dark:text-emerald-300 mt-0.5" />
-                  <span>Stay anonymous to peers while your profile stays verified.</span>
+                  <span>{t("landing.hero.features.anonymous")}</span>
                 </li>
                 <li className="flex items-start gap-3">
                   <CheckCircle className="h-5 w-5 text-emerald-500 dark:text-emerald-300 mt-0.5" />
-                  <span>Sync saved campuses, educators, and follow-ups across devices.</span>
+                  <span>{t("landing.hero.features.sync")}</span>
                 </li>
                 <li className="flex items-start gap-3">
                   <MapPin className="h-5 w-5 text-sky-500 dark:text-sky-200 mt-0.5" />
-                  <span>Surface nearby or online options tailored to your preferences.</span>
+                  <span>{t("landing.hero.features.preferences")}</span>
                 </li>
               </ul>
             </motion.div>

@@ -94,7 +94,7 @@ export default function Home() {
       <Header />
 
       {/* Hero Section with Infinite Continuous Strip Carousel */}
-      <section className="relative h-[300px] lg:h-[450px] overflow-hidden bg-slate-900 -mt-0">
+      <section className="relative h-[300px] lg:h-[450px] overflow-hidden bg-slate-900 -mt-0" dir="ltr">
         <motion.div
           className="flex h-full will-change-transform"
           style={{
@@ -375,8 +375,8 @@ export default function Home() {
                 <div className="rounded-lg border border-border/80 bg-muted/40 p-3 text-sm text-foreground">
                   <div className="grid grid-cols-3 text-xs font-semibold text-muted-foreground mb-2">
                     <span>{t("home.enhance.factor", { defaultValue: "Factor" })}</span>
-                    <span className="text-center">A</span>
-                    <span className="text-center">B</span>
+                    <span className="text-center">{t("home.enhance.doctorA", { defaultValue: "A" })}</span>
+                    <span className="text-center">{t("home.enhance.doctorB", { defaultValue: "B" })}</span>
                   </div>
                   {[ 
                     { label: t("home.enhance.clarity", { defaultValue: "Clarity" }), a: "4.8", b: "4.2" },

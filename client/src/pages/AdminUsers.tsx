@@ -14,7 +14,7 @@ export default function AdminUsers() {
 
   return (
     <div className="p-8">
-      <h1 className="text-2xl font-bold mb-4">Manage Users</h1>
+      <h1 className="text-2xl font-bold mb-4">{t("admin.titles.users")}</h1>
       {isLoading && (
         <div className="flex items-center gap-2"><Loader2 className="animate-spin" /> Loading users...</div>
       )}
@@ -25,10 +25,10 @@ export default function AdminUsers() {
         <table className="min-w-full border rounded-lg overflow-hidden mt-4">
           <thead className="bg-gray-100">
             <tr>
-              <th className="px-4 py-2 text-left">Name</th>
-              <th className="px-4 py-2 text-left">Email</th>
-              <th className="px-4 py-2 text-left">Role</th>
-              <th className="px-4 py-2 text-left">Status</th>
+              <th className="px-4 py-2 text-left">{t("admin.table.name")}</th>
+              <th className="px-4 py-2 text-left">{t("admin.table.email")}</th>
+              <th className="px-4 py-2 text-left">{t("admin.table.role")}</th>
+              <th className="px-4 py-2 text-left">{t("admin.table.status")}</th>
             </tr>
           </thead>
           <tbody>

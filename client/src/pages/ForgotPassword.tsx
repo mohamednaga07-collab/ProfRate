@@ -142,9 +142,7 @@ export default function ForgotPassword() {
                     {t("auth.forgotPassword", { defaultValue: "Forgot Password?" })}
                   </CardTitle>
                   <CardDescription className="mt-2 text-sm">
-                    {t("auth.forgotPasswordDesc", {
-                      defaultValue: "Enter your email address and we'll send you a link to reset your password.",
-                    })}
+                    {t("auth.enterEmailForReset")}
                   </CardDescription>
                 </div>
               </CardHeader>

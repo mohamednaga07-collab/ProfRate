@@ -21,7 +21,7 @@ interface AuthFormProps {
 }
 
 export function AuthForm({ onSuccess, defaultTab = "login" }: AuthFormProps) {
-  const { t } = useTranslation();
+  const { t, i18n } = useTranslation();
   const { toast } = useToast();
   const [isLoading, setIsLoading] = useState(false);
   const [activeTab, setActiveTab] = useState(defaultTab);
@@ -33,6 +33,7 @@ export function AuthForm({ onSuccess, defaultTab = "login" }: AuthFormProps) {
   const recaptchaEnabled = import.meta.env.VITE_RECAPTCHA_ENABLED === "true";
   const recaptchaSiteKey =
     import.meta.env.VITE_RECAPTCHA_SITE_KEY || "6LeIxAcTAAAAAJcZVRqyHh71UMIEGNQ_MXjiZKhI";
+
 
   // Login form state
   const [loginUsername, setLoginUsername] = useState("");
@@ -199,7 +200,7 @@ export function AuthForm({ onSuccess, defaultTab = "login" }: AuthFormProps) {
     } else if (registerUsername.length < 3) {
       errors.push(t("auth.validation.usernameTooShort", { defaultValue: "Username must be at least 3 characters" }));
     } else if (registerUsername.toLowerCase() === "admin") {
-      errors.push("Username 'admin' is reserved and cannot be used. Please choose a different username.");
+      errors.push(t("auth.errors.usernameReserved", { username: "admin" }));
     }
 
     if (!registerPassword) errors.push(t("auth.validation.passwordRequired", { defaultValue: "Password is required" }));
@@ -207,7 +208,7 @@ export function AuthForm({ onSuccess, defaultTab = "login" }: AuthFormProps) {
 
     // Relaxed password rules check (>= 40 is fair)
     if (passwordStrength < 40) {
-      errors.push("Password is too weak. Please make it at least 'Fair'.");
+      errors.push(t("auth.errors.passwordTooWeakDesc"));
     }
 
     if (recaptchaEnabled && !recaptchaToken && !isSessionVerified) {
@@ -347,13 +348,13 @@ export function AuthForm({ onSuccess, defaultTab = "login" }: AuthFormProps) {
         console.log("📢 Showing success toast");
         if (actualRole !== selectedRole && actualRole !== "admin") {
           toast({
-            title: "✅ Logged In Success!",
-            description: `Welcome back! Note: This account is registered as a ${actualRole}. Redirecting you to the ${actualRole} section.`,
+            title: t("auth.success.login"),
+            description: t("auth.errors.roleMismatchDesc", { role: actualRole }),
           });
         } else {
           toast({
-            title: "✅ Logged In Successfully!",
-            description: `Welcome back ${response.user.firstName || loginUsername}! Ready to explore?`,
+            title: t("auth.success.login"),
+            description: t("auth.success.loginWelcome", { name: response.user.firstName || loginUsername }),
           });
         }
 
@@ -393,8 +394,8 @@ export function AuthForm({ onSuccess, defaultTab = "login" }: AuthFormProps) {
       if (/invalid username or password|username.*found|cannot be found|check your username or create/i.test(errorMessage) || error?.response?.status === 401) {
         console.log("📢 Login failed - Invalid credentials or unregistered username");
         toast({
-          title: "❌ Login Failed",
-          description: `The username "${loginUsername}" doesn't exist or the password is incorrect. Please check and try again, or create a new account.`,
+          title: t("auth.errors.loginFailed"),
+          description: t("auth.errors.userNotFoundDesc", { username: loginUsername }),
           variant: "destructive",
           duration: 5000,
         });
@@ -437,25 +438,25 @@ export function AuthForm({ onSuccess, defaultTab = "login" }: AuthFormProps) {
       }
 
       // Check for specific error messages
-      let title = "❌ Login Failed";
-      let description = errorMessage || "An error occurred during login. Please try again.";
+      let title = t("auth.errors.loginFailed");
+      let description = errorMessage || t("auth.errors.generic");
 
       if (errorMessage.toLowerCase().includes("invalid password")) {
-        title = "❌ Incorrect Password";
-        description = "The password you entered is incorrect. Please try again.";
+        title = t("auth.errors.incorrectPassword");
+        description = t("auth.errors.incorrectPasswordDesc");
       } else if (errorMessage.toLowerCase().includes("role mismatch") || 
                  errorMessage.toLowerCase().includes("account type mismatch") ||
                  errorMessage.toLowerCase().includes("invalid username or password")) {
-        title = "❌ Account Type Mismatch";
-        description = errorMessage || `This account is not registered as a ${loginAs}. Please select the correct role or create a new account.`;
+        title = t("auth.errors.roleMismatch");
+        description = errorMessage || t("auth.errors.roleMismatchDesc", { role: loginAs });
       } else if (errorMessage.toLowerCase().includes("account locked")) {
-        title = "🔒 Account Locked";
+        title = t("auth.errors.accountLocked");
         description = errorMessage;
       } else if (errorMessage.toLowerCase().includes("user not found")) {
-        title = "❓ Invalid Username";
-        description = "Invalid username. Did you forget your username? or Create a new account";
+        title = t("auth.errors.userNotFound");
+        description = t("auth.errors.userNotFoundDesc");
       } else if (errorMessage.toLowerCase().includes("recaptcha")) {
-        title = "🤖 Verification Failed";
+        title = t("auth.errors.verificationFailed");
         description = errorMessage;
       }
 
@@ -501,8 +502,8 @@ export function AuthForm({ onSuccess, defaultTab = "login" }: AuthFormProps) {
 
         // Show success toast with activation message
         toast({
-          title: "🎉 Account Created Successfully!",
-          description: `Welcome ${registerFirstName || registerUsername}! A verification link has been sent to ${registerEmail}. Please check your email and click the link to activate your account before logging in.`,
+          title: t("auth.success.registration"),
+          description: t("auth.success.verificationSent", { email: registerEmail, name: registerFirstName || registerUsername }),
         });
 
         // Set success state and switch to login tab after showing message
@@ -527,18 +528,18 @@ export function AuthForm({ onSuccess, defaultTab = "login" }: AuthFormProps) {
     } catch (error: any) {
       console.error("Registration error:", error);
 
-      let errorTitle = "❌ Registration Failed";
-      let errorDescription = error.message || "An error occurred during registration. Please try again.";
+      let errorTitle = t("auth.errors.registrationFailed");
+      let errorDescription = error.message || t("auth.errors.generic");
 
-      if (error.message.includes("already exists")) {
-        errorTitle = "⚠️ Username Taken";
-        errorDescription = `The username "${registerUsername}" is already taken. Please choose a different username.`;
+       if (error.message.includes("already exists")) {
+        errorTitle = t("auth.errors.usernameTaken");
+        errorDescription = t("auth.errors.usernameTakenDesc", { username: registerUsername });
       } else if (error.message.includes("reCAPTCHA")) {
-        errorTitle = "🤖 Verification Failed";
-        errorDescription = "reCAPTCHA verification failed. Please try again.";
+        errorTitle = t("auth.errors.recaptchaFailed");
+        errorDescription = t("auth.errors.recaptchaFailedDesc");
       } else if (error.message.includes("password")) {
-        errorTitle = "🔑 Password Requirements";
-        errorDescription = "Your password doesn't meet the security requirements. Please make it stronger.";
+        errorTitle = t("auth.errors.passwordTooWeak");
+        errorDescription = t("auth.errors.passwordTooWeakDesc");
       }
 
       toast({
@@ -578,9 +579,9 @@ export function AuthForm({ onSuccess, defaultTab = "login" }: AuthFormProps) {
               >
                 🎉
               </motion.div>
-              <h2 className="text-3xl font-bold text-green-600">Account Created!</h2>
+              <h2 className="text-3xl font-bold text-green-600">{t("auth.success.registration")}</h2>
               <p className="text-lg text-muted-foreground font-medium">
-                Welcome to Campus Ratings. Redirecting you to login...
+                {t("auth.success.registrationWelcome", { name: registerFirstName || registerUsername })}
               </p>
             </CardContent>
           </Card>
@@ -699,10 +700,10 @@ export function AuthForm({ onSuccess, defaultTab = "login" }: AuthFormProps) {
                   )}
 
                   {/* Show admin badge when admin username is entered */}
-                  {isAdminLogin && (
+                    {isAdminLogin && (
                     <div className="flex items-center justify-center gap-2 p-3 bg-red-500/10 border border-red-500/20 rounded-lg">
                       <UserCircle className="h-5 w-5 text-red-500" />
-                      <span className="text-sm font-medium text-red-500">Admin Login</span>
+                      <span className="text-sm font-medium text-red-500">{t("auth.adminLogin")}</span>
                     </div>
                   )}
 
@@ -795,7 +796,7 @@ export function AuthForm({ onSuccess, defaultTab = "login" }: AuthFormProps) {
                       <Input
                         id="register-email"
                         type="email"
-                        placeholder="Enter your email"
+                        placeholder={t("auth.enterEmail")}
                         value={registerEmail}
                         onChange={(e) => setRegisterEmail(e.target.value)}
                         className="pl-10"
@@ -812,7 +813,7 @@ export function AuthForm({ onSuccess, defaultTab = "login" }: AuthFormProps) {
                       <Input
                         id="register-username"
                         type="text"
-                        placeholder="Choose a username"
+                        placeholder={t("auth.chooseUsername")}
                         value={registerUsername}
                         onChange={(e) => setRegisterUsername(e.target.value)}
                         className="pl-10"

@@ -1,12 +1,13 @@
 
 import { useEffect, useRef, useState } from "react";
-import styles from "./HealthStatus.module.css";
+import { useTranslation } from "react-i18next";
 import { Activity, Zap } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { fetchSystemHealth } from "@/lib/healthUtils";
 
 
 export default function HealthStatus() {
+  const { t } = useTranslation();
   const [health, setHealth] = useState(100);
   const [targetHealth, setTargetHealth] = useState(100);
   const requestRef = useRef<number>();
@@ -49,10 +50,13 @@ export default function HealthStatus() {
       <div className="flex flex-col h-full justify-between">
         <div>
           <p className="text-sm font-medium text-muted-foreground mb-0.5">
-            System Health: <span className="font-semibold text-green-600">{health > 97 ? "Excellent" : health > 94 ? "Good" : "Warning"}</span>
+            {t("admin.stats.systemHealth")}: <span className="font-semibold text-green-600">{health > 97 ? t("admin.stats.healthExcellent") : health > 94 ? t("admin.stats.healthGood") : t("admin.stats.healthWarning")}</span>
           </p>
           <h3
-            className={["text-3xl font-bold tracking-tight transition-all duration-300", health > 97 ? styles.healthValueExcellent : health > 94 ? styles.healthValueGood : styles.healthValueWarning].join(" ")}
+            className={[
+              "text-3xl font-bold tracking-tight transition-all duration-300",
+              health > 97 ? "text-green-600 dark:text-green-400" : health > 94 ? "text-yellow-600 dark:text-yellow-400" : "text-red-600 dark:text-red-400"
+            ].join(" ")}
           >
             {health.toFixed(2)}%
           </h3>

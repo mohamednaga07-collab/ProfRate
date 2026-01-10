@@ -33,7 +33,12 @@
     "hero": {
       "title": "قيّم أساتذتك",
       "highlight": "بصدق وبشكل مجهول",
-      "description": "ساعد الطلاب الآخرين على اتخاذ قرارات أفضل. قيّم الأساتذة بناءً على جودة التدريس، التوفر، التواصل، المعرفة، والإنصاف."
+      "description": "ساعد الطلاب الآخرين على اتخاذ قرارات أفضل. قيّم الأساتذة بناءً على جودة التدريس، التوفر، التواصل، المعرفة، والإنصاف.",
+      "features": {
+        "anonymous": "ابق مجهول الهوية لزملائك مع الحفاظ على ملفك الشخصي موثقًا.",
+        "sync": "مزامنة الجامعات والأساتذة والمتابعات المحفوظة عبر أجهزتك.",
+        "preferences": "اعرض الخيارات القريبة أو عبر الإنترنت المصممة حسب تفضيلاتك."
+      }
     },
     "features": {
       "title": "لماذا تستخدم بروف ريت؟",
@@ -73,27 +78,19 @@
   "auth": {
     "login": "تسجيل الدخول",
     "register": "إنشاء حساب",
-    "loginAs": "تسجيل الدخول كـ",
+    "logout": "تسجيل الخروج",
     "username": "اسم المستخدم",
     "password": "كلمة المرور",
-    "confirmPassword": "تأكيد كلمة المرور",
-    "firstName": "الاسم الأول",
-    "lastName": "الاسم الأخير",
-    "iAm": "أنا",
-    "student": "طالب",
-    "teacher": "معلم",
-    "createAccount": "إنشاء حساب",
-    "createNewAccount": "إنشاء حساب جديد",
-    "haveAccount": "هل لديك حساب بالفعل؟",
-    "noAccount": "ليس لديك حساب؟",
-    "loginTab": "تسجيل الدخول",
-    "registerTab": "إنشاء حساب",
-    "successTitle": "تم إنشاء الحساب!",
-    "successDescription": "تم إنشاء حسابك بنجاح.",
-    "welcomeTitle": "مرحباً بك في بروف ريت",
-    "welcomeDescription": "سجّل الدخول أو أنشئ حساباً للبدء",
-    "loggingIn": "جاري تسجيل الدخول...",
-    "creatingAccount": "جاري إنشاء الحساب...",
+    "loginTab": "دخول",
+    "registerTab": "تسجيل",
+    "welcomeTitle": "مرحباً بك مجدداً",
+    "welcomeDescription": "قم بتسجيل الدخول إلى حسابك للمتابعة",
+    "loginAs": "تسجيل الدخول كـ",
+    "loggingIn": "جاري الدخول...",
+    "verifiedHuman": "تم التحقق من بشريتك",
+    "adminLogin": "دخول المسؤول",
+    "forgotPassword": "نسيت كلمة المرور؟",
+    "forgotUsername": "نسيت اسم المستخدم؟",
     "placeholders": {
       "username": "أدخل اسم المستخدم",
       "password": "أدخل كلمة المرور",
@@ -103,76 +100,81 @@
       "firstName": "الاسم الأول",
       "lastName": "اسم العائلة"
     },
+    "serverUnavailableTitle": "الخادم غير متاح",
+    "serverUnavailableDescription": "تعذر الاتصال بالخادم في {{origin}}.",
+    "iAm": "أنا...",
+    "createAccount": "إنشاء حساب",
+    "creatingAccount": "جاري إنشاء الحساب...",
+    "confirmPassword": "تأكيد كلمة المرور",
+    "firstName": "الاسم الأول",
+    "lastName": "اسم العائلة",
     "passwordStrength": {
-      "label": "القوة:",
+      "label": "قوة كلمة المرور",
       "weak": "ضعيفة",
       "fair": "متوسطة",
       "strong": "قوية"
     },
-    "success": {
-      "welcomeBackTitle": "مرحباً بعودتك!",
-      "welcomeBackDescription": "تم تسجيل الدخول باسم {{name}}.",
-      "accountCreatedTitle": "تم إنشاء الحساب!",
-      "accountCreatedDescription": "مرحباً {{name}}! تم إنشاء حسابك بنجاح.",
-      "overlayTitle": "تم إنشاء الحساب!",
-      "overlayDescription": "تم إنشاء حسابك بنجاح. سيتم تحويلك إلى تسجيل الدخول..."
-    },
     "validation": {
-      "passwordsDontMatch": "كلمتا المرور غير متطابقتين",
-      "passwordsMatch": "✓ كلمتا المرور متطابقتان",
-      "passwordsMustMatch": "يجب أن تتطابق كلمتا المرور",
-      "passwordMustBeAtLeastFair": "يجب أن تكون كلمة المرور على الأقل متوسطة القوة",
-      "passwordRequirementsNotMet": "لم يتم استيفاء متطلبات كلمة المرور"
+      "emailRequired": "البريد الإلكتروني مطلوب",
+      "emailInvalid": "يجب أن يكون البريد الإلكتروني صالحاً",
+      "usernameRequired": "اسم المستخدم مطلوب",
+      "usernameTooShort": "يجب أن يكون اسم المستخدم 3 أحرف على الأقل",
+      "passwordRequired": "كلمة المرور مطلوبة",
+      "passwordsDontMatch": "كلمات المرور غير متطابقة",
+      "passwordsMustMatch": "يجب أن تتطابق كلمات المرور",
+      "passwordMustBeAtLeastFair": "يجب أن تكون كلمة المرور 'متوسطة' على الأقل",
+      "passwordRequirementsNotMet": "لم يتم استيفاء متطلبات كلمة المرور",
+      "passwordsMatch": "كلمات المرور متطابقة",
+      "recaptchaRequired": "يرجى التحقق من أنك لست روبوتًا",
+      "firstNameRequired": "الاسم الأول مطلوب",
+      "lastNameRequired": "اسم العائلة مطلوب"
+    },
+    "success": {
+      "login": "تم تسجيل الدخول بنجاح!",
+      "loginWelcome": "مرحباً بك مجدداً {{name}}! جاهز للاستكشاف؟",
+      "registration": "تم إنشاء الحساب بنجاح!",
+      "registrationWelcome": "مرحباً بك {{name}}!",
+      "verificationSent": "تم إرسال رابط التحقق إلى {{email}}. يرجى مراجعة بريدك لتفعيل الحساب."
     },
     "errors": {
+      "generic": "حدث خطأ ما. نحن آسفون، ولكن حدث خطأ غير متوقع. يرجى المحاولة لإعادة تحميل الصفحة.",
+      "loginFailed": "فشل تسجيل الدخول",
+      "invalidCredentials": "اسم المستخدم أو كلمة المرور غير صحيحة.",
+      "roleMismatch": "عدم تطابق نوع الحساب",
+      "roleMismatchDesc": "هذا الحساب غير مسجل كـ {{role}}. يرجى اختيار الدور الصحيح.",
+      "accountLocked": "الحساب مغلق",
+      "userNotFound": "اسم مستخدم غير صالح",
+      "userNotFoundDesc": "اسم المستخدم غير موجود. يرجى التأكد أو إنشاء حساب جديد.",
+      "incorrectPassword": "كلمة المرور غير صحيحة",
+      "incorrectPasswordDesc": "كلمة المرور التي أدخلتها غير صحيحة.",
+      "verificationFailed": "فشل التحقق",
       "usernameRequiredTitle": "اسم المستخدم مطلوب",
-      "usernameRequiredDescription": "يرجى إدخال اسم المستخدم",
+      "usernameRequiredDescription": "يرجى إدخال اسم المستخدم لتسجيل الدخول.",
       "passwordRequiredTitle": "كلمة المرور مطلوبة",
-      "passwordRequiredDescription": "يرجى إدخال كلمة المرور",
-      "loginFailedTitle": "فشل تسجيل الدخول",
-      "loginFailedDescription": "اسم المستخدم أو كلمة المرور غير صحيحة. تحقق من بياناتك أو أنشئ حساباً جديداً.",
-      "serverUnavailableTitle": "تعذر الاتصال بالخادم",
-      "serverUnavailableDescription": "لا يمكن للتطبيق الوصول إلى واجهة API من {{origin}}. شغّل الخادم بالأمر npm run dev (يعمل عادة على http://127.0.0.1:5000) وافتح الموقع من نفس المنفذ.",
-      "invalidPasswordTitle": "كلمة مرور غير صحيحة",
-      "invalidPasswordDescription": "كلمة المرور التي أدخلتها غير صحيحة. يرجى المحاولة مرة أخرى.",
-      "userNotFoundTitle": "اسم المستخدم غير موجود",
-      "userNotFoundDescription": "لا يمكن العثور على اسم المستخدم هذا. يرجى تسجيل الدخول باسم مستخدم صالح.",
-      "accountNotFound": "لم يتم العثور على اسم المستخدم \"{{username}}\" في نظامنا.",
-      "wouldYouLikeToRegister": "هل ترغب في إنشاء حساب جديد؟",
-      "recaptchaRequiredTitle": "مطلوب reCAPTCHA",
-      "recaptchaRequiredDescription": "يرجى إكمال التحقق من reCAPTCHA.",
-      "passwordsDontMatchTitle": "كلمتا المرور غير متطابقتين",
-      "passwordsDontMatchDescription": "يرجى التأكد من تطابق كلمتي المرور.",
-      "passwordTooWeakTitle": "كلمة المرور ضعيفة",
-      "passwordTooWeakDescription": "يجب أن تكون كلمة المرور على الأقل متوسطة القوة.",
-      "registrationFailedTitle": "فشل إنشاء الحساب",
-      "registrationFailedDescription": "تعذر إنشاء الحساب. يرجى المحاولة مرة أخرى."
+      "passwordRequiredDescription": "يرجى إدخال كلمة المرور لتسجيل الدخول.",
+      "recaptchaRequiredTitle": "مطلوب التحقق",
+      "recaptchaRequiredDescription": "يرجى التحقق من أنك لست روبوتًا.",
+      "serverUnavailableTitle": "الخادم غير متاح",
+      "serverUnavailableDescription": "تعذر الاتصال بالخادم في {{origin}}.",
+      "usernameReserved": "اسم المستخدم '{{username}}' محجوز",
+      "usernameTaken": "اسم المستخدم مأخوذ",
+      "usernameTakenDesc": "اسم المستخدم \"{{username}}\" مأخوذ بالفعل. يرجى اختيار اسم مستخدم آخر.",
+      "passwordTooWeak": "كلمة المرور ضعيفة جداً",
+      "passwordTooWeakDesc": "لا تفي كلمة المرور بمتطلبات الأمان. يرجى جعلها أقوى.",
+      "recaptchaFailed": "فشل التحقق",
+      "recaptchaFailedDesc": "فشل التحقق من reCAPTCHA. حاول مرة أخرى.",
+      "registrationFailed": "فشل إنشاء الحساب"
     },
-    "signIn": "تسجيل الدخول",
-    "signingIn": "جاري تسجيل الدخول...",
-    "forgotPassword": "هل نسيت كلمة المرور؟",
-    "forgotUsername": "هل نسيت اسم المستخدم؟",
-    "forgotPasswordDesc": "أدخل عنوان بريدك الإلكتروني وسنرسل لك رابطاً لإعادة تعيين كلمة المرور.",
-    "forgotUsernameDesc": "أدخل عنوان بريدك الإلكتروني وسنرسل لك اسم المستخدم.",
+    "backToLogin": "العودة لتسجيل الدخول",
     "resetPassword": "إعادة تعيين كلمة المرور",
     "resetPasswordDesc": "أدخل كلمة المرور الجديدة أدناه",
-    "newPassword": "كلمة مرور جديدة",
-    "resetLinkSent": "تم إرسال رابط إعادة التعيين!",
-    "resetLinkSentDesc": "تحقق من بريدك الإلكتروني للحصول على رابط لإعادة تعيين كلمة المرور. سينتهي الرابط في 24 ساعة.",
-    "passwordReset": "تم إعادة تعيين كلمة المرور بنجاح!",
-    "passwordResetDesc": "تم إعادة تعيين كلمة المرور. يمكنك الآن تسجيل الدخول باستخدام كلمة المرور الجديدة.",
+    "resetLinkSent": "تم إرسال رابط التعيين!",
+    "resetLinkSentDesc": "تحقق من بريدك للحصول على رابط إعادة التعيين.",
+    "passwordReset": "تمت إعادة تعيين كلمة المرور!",
     "usernameSent": "تم إرسال اسم المستخدم!",
-    "usernameSentDesc": "تحقق من بريدك الإلكتروني للحصول على اسم المستخدم.",
-    "backToLogin": "العودة إلى تسجيل الدخول",
-    "rememberedPassword": "العودة إلى تسجيل الدخول",
-    "rememberedUsername": "العودة إلى تسجيل الدخول",
-    "sendResetLink": "إرسال رابط إعادة التعيين",
-    "sendUsername": "إرسال اسم المستخدم",
-    "sending": "جاري الإرسال...",
-    "resetting": "جاري إعادة التعيين...",
     "email": "البريد الإلكتروني",
-    "emailPlaceholder": "you@example.com",
-    "invalidResetLink": "رابط إعادة تعيين غير صحيح",
+    "sending": "جاري الإرسال...",
+    "resetting": "جاري التعيين...",
     "invalidToken": "رمز إعادة التعيين غير صحيح",
     "passwordMismatch": "كلمات المرور غير متطابقة",
     "passwordTooShort": "يجب أن تكون كلمة المرور 8 أحرف على الأقل",
@@ -183,7 +185,26 @@
     "passReq8Char": "8 أحرف على الأقل",
     "passReqLower": "أحرف صغيرة",
     "passReqUpper": "أحرف كبيرة",
-    "passReqNumber": "أرقام"
+    "passReqLower": "أحرف صغيرة",
+    "passReqUpper": "أحرف كبيرة",
+    "passReqNumber": "أرقام",
+    "enterEmailForReset": "أدخل بريدك الإلكتروني وسنرسل لك رابطاً لإعادة تعيين كلمة المرور.",
+    "enterEmailForUsername": "أدخل بريدك الإلكتروني وسنرسل لك اسم المستخدم الخاص بك."
+  },
+  "verify": {
+    "title": "تحقق من البريد الإلكتروني",
+    "verifying": "جاري التحقق من بريدك...",
+    "success": "تم بنجاح!",
+    "failed": "فشل التحقق",
+    "wait": "يرجى الانتظار...",
+    "redirecting": "جاري تحويلك لصفحة الدخول...",
+    "loginCta": "اذهب للدخول الآن",
+    "registerCta": "سجل مرة أخرى",
+    "tryLoginCta": "جرب الدخول",
+    "successMsg": "تم التحقق من البريد بنجاح!",
+    "failedMsg": "فشل التحقق",
+    "errorMsg": "فشل في التحقق من البريد",
+    "noToken": "لا يوجد رمز تحقق متاح"
   },
   "doctors": {
     "title": "الأساتذة",
@@ -198,8 +219,12 @@
     "auto": "تلقائي",
     "cancel": "إلغاء",
     "save": "حفظ",
+    "saving": "جاري الحفظ...",
+    "savingProgress": "جاري حفظ التقدم...",
     "delete": "حذف",
     "edit": "تعديل",
+    "refresh": "تحديث",
+    "days": "أيام",
     "user": "مستخدم",
     "a11y": {
       "close": "إغلاق",
@@ -242,10 +267,44 @@
       "feedbackCta": "استكشف الرؤى"
     },
     "stats": {
+      "title": "نظرة عامة على المنصة",
+      "description": "احصل على رؤى حول تقييمات الأساتذة لدينا",
       "totalProfessors": "إجمالي الأساتذة",
       "totalReviews": "إجمالي المراجعات",
       "avgRating": "متوسط التقييم",
       "departments": "الأقسام"
+    },
+    "depts": {
+      "all": "كل الأقسام",
+      "cs": "علوم الحاسب",
+      "it": "تكنولوجيا المعلومات",
+      "is": "نظم المعلومات",
+      "eng": "الهندسة",
+      "med": "الطب",
+      "law": "الحقوق",
+      "art": "الآداب",
+      "sci": "العلوم",
+      "bus": "التجارة",
+      "vet": "الطب البيطري"
+    },
+    "departments": {
+      "Computer Science": "علوم الحاسب",
+      "Information Technology": "تكنولوجيا المعلومات",
+      "Information Systems": "نظم المعلومات",
+      "Engineering": "الهندسة",
+      "Medicine": "الطب",
+      "Law": "الحقوق",
+      "Arts": "الآداب",
+      "Science": "العلوم",
+      "Science": "العلوم",
+      "Business": "التجارة",
+      "Veterinary Medicine": "الطب البيطري",
+      "Physics": "الفيزياء",
+      "Mathematics": "الرياضيات",
+      "Chemistry": "الكيمياء",
+      "Lecturer": "محاضر",
+      "Associate Professor": "أستاذ مشارك",
+      "Professor": "أستاذ"
     },
     "topRated": {
       "title": "أفضل الأساتذة تقييماً",
@@ -256,6 +315,8 @@
       "compareLabel": "مقارنة",
       "compareTitle": "وضوح جنباً إلى جنب",
       "factor": "العامل",
+      "doctorA": "أستاذ أ",
+      "doctorB": "أستاذ ب",
       "clarity": "الوضوح",
       "support": "الدعم",
       "fairness": "الإنصاف",
@@ -284,6 +345,11 @@
   "teacherDashboard": {
     "title": "لوحة الأستاذ",
     "subtitle": "اعرض التعليقات والتقييمات التي تلقيتها من الطلاب",
+    "hero": {
+      "badge": "عرض الملاحظات والتقييمات التي تلقيتها من الطلاب",
+      "title": "لوحة تحكم الأستاذ",
+      "description": "تتبع أداء التدريس، وملاحظات الطلاب، ومقاييس التحسين المستمر في الوقت الفعلي."
+    },
     "loading": "جارٍ تحميل التعليقات...",
     "empty": "لا توجد مراجعات بعد. عندما يرسل الطلاب مراجعاتهم، ستظهر ملاحظاتك هنا.",
     "noProfile": "لا يوجد ملف أستاذ يطابق اسم حسابك ({{name}}). اطلب من المسؤول ربط حساب المعلم بملف أستاذ.",
@@ -309,6 +375,7 @@
       "ratingLabel": "التقييم"
     },
     "radar": {
+      "title": "تفاصيل الأداء",
       "description": "تمثيل بصري لمقاييس التدريس الخاصة بك"
     }
   },
@@ -497,7 +564,25 @@
       "registeredProfiles": "الملفات المسجلة",
       "submittedRatings": "التقييمات المرسلة",
       "uptimeStatus": "حالة التشغيل",
-      "live": "مباشر"
+      "live": "مباشر",
+      "healthHealthy": "سليم",
+      "healthDegraded": "م تدهور",
+      "healthDown": "متوقف",
+      "healthExcellent": "ممتاز",
+      "healthGood": "جيد",
+      "healthWarning": "تحذير"
+    },
+    "nav": {
+      "analytics": "تحليلات لوحة التحكم",
+      "analyticsDesc": "عرض تحليلات الموقع والتقارير.",
+      "settings": "إعدادات النظام",
+      "settingsDesc": "تكوين إعدادات النظام.",
+      "panel": "لوحة الإدارة",
+      "panelDesc": "الوصول إلى لوحة الإدارة الرئيسية.",
+      "manageUsers": "المستخدمين",
+      "manageUsersDesc": "عرض وإدارة جميع المستخدمين.",
+      "manageDoctors": "الأساتذة",
+      "manageReviews": "المراجعات"
     },
     "quickActions": {
       "title": "إجراءات سريعة",
@@ -531,17 +616,57 @@
         "name": "الاسم",
         "role": "الدور",
         "joined": "تاريخ الانضمام",
-        "actions": "الإجراءات"
+        "actions": "الإجراءات",
+        "editRoleDesc": "إدارة صلاحيات وصول المستخدمين"
+      },
+      "titles": {
+        "users": "إدارة المستخدمين",
+        "reviews": "إدارة المراجعات",
+        "doctors": "إدارة الأساتذة",
+        "settings": "إعدادات النظام",
+        "analytics": "تحليلات لوحة التحكم"
+      },
+      "table": {
+        "name": "الاسم",
+        "email": "البريد الإلكتروني",
+        "role": "الدور",
+        "status": "الحالة",
+        "user": "المستخدم",
+        "doctor": "الأستاذ",
+        "rating": "التقييم",
+        "comment": "التعليق",
+        "department": "القسم",
+        "title": "اللقب",
+        "specialty": "التخصص"
+      }
+    },
+    "components": {
+      "profileUpload": {
+        "noPicture": "لا توجد صورة شخصية",
+        "clickToUpload": "اضغط لرفع صورة جديدة",
+        "title": "رفع صورة شخصية"
       },
       "edit": {
         "title": "تعديل دور المستخدم",
         "subtitle": "تغيير الدور لـ {{username}}",
         "role": "الدور",
-        "save": "حفظ التغييرات"
+        "save": "حفظ التغييرات",
+        "contact": "معلومات الاتصال والحالة",
+        "verified": "موثق",
+        "unverified": "غير موثق",
+        "joined": "انضم منذ",
+        "actions": "الإجراءات",
+        "roleAssignment": "تعيين الدور"
       },
       "delete": {
+        "button": "حذف المستخدم",
         "confirm": "هل تريد حذف المستخدم {{username}}؟"
       }
+    },
+    "common": {
+      "confirmDeleteTitle": "هل أنت متأكد تمامًا؟",
+      "confirmDeleteDesc": "لا يمكن التراجع عن هذا الإجراء. سيؤدي هذا إلى حذف المستخدم نهائيًا",
+      "confirmDeleteRemoveData": "وإزالة بياناتهم من خوادمنا."
     },
     "doctors": {
       "title": "إدارة الأساتذة",
@@ -612,6 +737,77 @@
       "doctorDeleteFailed": "فشل في حذف ملف الأستاذ",
       "reviewDeleted": "تم حذف المراجعة بنجاح",
       "reviewDeleteFailed": "فشل في حذف المراجعة"
+    },
+    "errors": {
+      "somethingWentWrong": "حدث خطأ ما",
+      "unexpectedError": "نحن آسفون، ولكن حدث خطأ غير متوقع. يرجى المحاولة لإعادة تحميل الصفحة."
+    }
+  },
+  "profile": {
+    "personalInfo": "المعلومات الشخصية",
+    "personalInfoDesc": "معلومات عن حسابك ودورك.",
+    "username": "اسم المستخدم",
+    "email": "البريد الإلكتروني",
+    "role": "الدور",
+    "settings": "إعدادات الملف الشخصي",
+    "settingsDesc": "تعديل إعدادات ملفك الشخصي.",
+    "upload": {
+      "success": "تم بنجاح",
+      "successDesc": "تم تحديث صورة الملف الشخصي بنجاح",
+      "error": {
+        "type": "نوع ملف غير صالح",
+        "typeDesc": "يرجى تحميل ملف صورة",
+        "size": "الملف كبير جدًا",
+        "sizeDesc": "الحد الأقصى للحجم هو 5 ميجابايت",
+        "failed": "فشل التحميل",
+        "failedDesc": "تعذر تحميل الصورة",
+        "read": "فشل في قراءة الملف"
+      }
+    },
+    "success": "تم تحديث اسم المستخدم",
+    "successDesc": "تم تغيير اسم المستخدم الخاص بك بنجاح.",
+    "error": {
+      "short": "اسم المستخدم قصير جدًا",
+      "shortDesc": "يجب أن يكون اسم المستخدم 3 أحرف على الأقل."
+    },
+    "changeUsername": {
+      "title": "تغيير اسم المستخدم",
+      "desc": "تحديث اسم العرض الخاص بك. يتطلب التحقق من كلمة المرور.",
+      "newLabel": "اسم المستخدم الجديد",
+      "newPlaceholder": "أدخل اسم المستخدم الجديد",
+      "emailPlaceholder": "name@example.com",
+      "enterEmail": "أدخل بريدك الإلكتروني",
+      "chooseUsername": "اختر اسم مستخدم",
+      "passwordPlaceholder": "••••••••",
+      "submit": "تحديث اسم المستخدم"
+    },
+    "stats": {
+      "ratings": "التقييمات",
+      "streak": "الاستمرارية",
+      "points": "النقاط",
+      "rating": "التقييم",
+      "students": "الطلاب",
+      "reviews": "المراجعات"
+    }
+  },
+  "teacher": {
+    "nav": {
+      "courses": "مساقاتي",
+      "performance": "إحصائيات الأداء",
+      "performanceDesc": "عرض أداء التدريس الخاص بك",
+      "feedback": "ملاحظات الطلاب",
+      "portfolio": "ملف التدريس",
+      "soon": "قريبًا!"
+    }
+  },
+  "student": {
+    "nav": {
+      "achievements": "إنجازاتي",
+      "ratings": "التقييمات الأخيرة",
+      "ratingsDesc": "عرض سجل التقييمات الخاص بك",
+      "stats": "إحصائيات التعلم",
+      "recommendations": "التوصيات",
+      "soon": "قريبًا!"
     }
   }
 }

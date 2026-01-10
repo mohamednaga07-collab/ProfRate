@@ -643,7 +643,7 @@ export default function AdminDashboard() {
 
                         <div className="mt-8 grid gap-4">
                           <div className="grid gap-1.5">
-                            <Label className="text-xs text-muted-foreground uppercase font-semibold tracking-wider">Contact & Status</Label>
+                            <Label className="text-xs text-muted-foreground uppercase font-semibold tracking-wider">{t("admin.users.edit.contact")}</Label>
                             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                               <div className="flex items-center gap-2 p-3 rounded-lg bg-muted/50 border border-border/50">
                                 <div className="h-8 w-8 rounded-full bg-blue-100 dark:bg-blue-900/30 flex items-center justify-center">
@@ -653,9 +653,9 @@ export default function AdminDashboard() {
                                   <p className="text-sm font-medium truncate" title={editingUser?.email}>{editingUser?.email}</p>
                                   <div className="flex items-center gap-1 mt-0.5">
                                     {editingUser?.emailVerified ?
-                                      <span className="text-[10px] bg-green-100 dark:bg-green-900/30 text-green-600 dark:text-green-400 px-1.5 py-0.5 rounded-full flex items-center gap-0.5 w-fit"><CheckCircle className="h-3 w-3" /> Verified</span>
+                                      <span className="text-[10px] bg-green-100 dark:bg-green-900/30 text-green-600 dark:text-green-400 px-1.5 py-0.5 rounded-full flex items-center gap-0.5 w-fit"><CheckCircle className="h-3 w-3" /> {t("admin.users.edit.verified")}</span>
                                       :
-                                      <span className="text-[10px] bg-yellow-100 dark:bg-yellow-900/30 text-yellow-600 dark:text-yellow-400 px-1.5 py-0.5 rounded-full w-fit">Unverified</span>
+                                      <span className="text-[10px] bg-yellow-100 dark:bg-yellow-900/30 text-yellow-600 dark:text-yellow-400 px-1.5 py-0.5 rounded-full w-fit">{t("admin.users.edit.unverified")}</span>
                                     }
                                   </div>
                                 </div>
@@ -666,7 +666,7 @@ export default function AdminDashboard() {
                                   <Calendar className="h-4 w-4 text-purple-600 dark:text-purple-400" />
                                 </div>
                                 <div>
-                                  <p className="text-sm font-medium">Joined {editingUser?.createdAt && new Date(editingUser.createdAt).toLocaleDateString()}</p>
+                                  <p className="text-sm font-medium">{t("admin.users.edit.joined")} {editingUser?.createdAt && new Date(editingUser.createdAt).toLocaleDateString()}</p>
                                   <p className="text-xs text-muted-foreground">{editingUser?.createdAt && new Date(editingUser.createdAt).toLocaleTimeString()}</p>
                                 </div>
                               </div>
@@ -674,11 +674,11 @@ export default function AdminDashboard() {
                           </div>
 
                           <div className="grid gap-1.5 mt-2">
-                            <Label className="text-xs text-muted-foreground uppercase font-semibold tracking-wider">Actions</Label>
+                            <Label className="text-xs text-muted-foreground uppercase font-semibold tracking-wider">{t("admin.users.edit.actions")}</Label>
                             <Card className="border shadow-none">
                               <CardContent className="p-4 flex items-center justify-between gap-4">
                                 <div className="flex-1">
-                                  <Label htmlFor="edit-role" className="mb-1 block">Role Assignment</Label>
+                                  <Label htmlFor="edit-role" className="mb-1 block">{t("admin.users.edit.roleAssignment")}</Label>
                                   <p className="text-xs text-muted-foreground">{t("admin.users.editRoleDesc", "Manage user access permissions")}</p>
                                 </div>
                                 <div className="w-[140px]">
@@ -702,7 +702,7 @@ export default function AdminDashboard() {
                         </div>
 
                         <DialogFooter className="mt-8 gap-2">
-                          <Button variant="outline" onClick={() => setIsEditUserOpen(false)}>Cancel</Button>
+                          <Button variant="outline" onClick={() => setIsEditUserOpen(false)}>{t("common.cancel")}</Button>
                           <Button
                             disabled={(updateUserRole as any).isLoading || (updateUserRole as any).isPending}
                             onClick={() => {
@@ -715,7 +715,7 @@ export default function AdminDashboard() {
                             }}
                             className="bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 text-white shadow-md"
                           >
-                            {((updateUserRole as any).isLoading || (updateUserRole as any).isPending) ? "Saving..." : "Save Changes"}
+                            {((updateUserRole as any).isLoading || (updateUserRole as any).isPending) ? t("common.saving") : t("admin.users.edit.save")}
                           </Button>
                         </DialogFooter>
                       </div>
@@ -1022,15 +1022,15 @@ export default function AdminDashboard() {
       <AlertDialog open={deleteConfirmOpen} onOpenChange={setDeleteConfirmOpen}>
         <AlertDialogContent>
           <AlertDialogHeader>
-            <AlertDialogTitle>Are you absolutely sure?</AlertDialogTitle>
+            <AlertDialogTitle>{t("admin.common.confirmDeleteTitle")}</AlertDialogTitle>
             <AlertDialogDescription>
-              This action cannot be undone. This will permanently delete the user
+              {t("admin.common.confirmDeleteDesc")}
               <span className="font-semibold text-foreground"> {userToDelete?.username} </span>
-              and remove their data from our servers.
+              {t("admin.common.confirmDeleteRemoveData")}
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
-            <AlertDialogCancel>Cancel</AlertDialogCancel>
+            <AlertDialogCancel>{t("common.cancel")}</AlertDialogCancel>
             <AlertDialogAction
               className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
               onClick={() => {
@@ -1041,7 +1041,7 @@ export default function AdminDashboard() {
                 }
               }}
             >
-              Delete User
+              {t("admin.users.delete.button")}
             </AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>

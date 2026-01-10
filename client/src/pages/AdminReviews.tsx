@@ -14,7 +14,7 @@ export default function AdminReviews() {
 
   return (
     <div className="p-8">
-      <h1 className="text-2xl font-bold mb-4">Manage Reviews</h1>
+      <h1 className="text-2xl font-bold mb-4">{t("admin.titles.reviews")}</h1>
       {isLoading && (
         <div className="flex items-center gap-2"><Loader2 className="animate-spin" /> Loading reviews...</div>
       )}
@@ -25,10 +25,10 @@ export default function AdminReviews() {
         <table className="min-w-full border rounded-lg overflow-hidden mt-4">
           <thead className="bg-gray-100">
             <tr>
-              <th className="px-4 py-2 text-left">User</th>
-              <th className="px-4 py-2 text-left">Doctor</th>
-              <th className="px-4 py-2 text-left">Rating</th>
-              <th className="px-4 py-2 text-left">Comment</th>
+              <th className="px-4 py-2 text-left">{t("admin.table.user")}</th>
+              <th className="px-4 py-2 text-left">{t("admin.table.doctor")}</th>
+              <th className="px-4 py-2 text-left">{t("admin.table.rating")}</th>
+              <th className="px-4 py-2 text-left">{t("admin.table.comment")}</th>
             </tr>
           </thead>
           <tbody>

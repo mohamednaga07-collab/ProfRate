@@ -2,10 +2,12 @@ import { useEffect, useState } from "react";
 import { useLocation } from "wouter";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
+import { useTranslation } from "react-i18next";
 import { CheckCircle2, XCircle, Loader2 } from "lucide-react";
 import { apiRequest } from "@/lib/queryClient";
 
 export function VerifyEmail() {
+  const { t } = useTranslation();
   const [, setLocation] = useLocation();
   const [status, setStatus] = useState<"loading" | "success" | "error">("loading");
   const [message, setMessage] = useState("");
@@ -20,7 +22,7 @@ export function VerifyEmail() {
 
         if (!token) {
           setStatus("error");
-          setMessage("No verification token provided");
+          setMessage(t("auth.verify.noToken"));
           return;
         }
 
@@ -30,7 +32,7 @@ export function VerifyEmail() {
 
         if (response.ok) {
           setStatus("success");
-          setMessage(data.message || "Email verified successfully!");
+          setMessage(data.message || t("auth.verify.successMsg"));
           setUsername(data.username || "");
           
           // Redirect to login after 2 seconds (faster redirect)
@@ -41,12 +43,12 @@ export function VerifyEmail() {
           return () => clearTimeout(redirectTimer);
         } else {
           setStatus("error");
-          setMessage(data.message || "Verification failed");
+          setMessage(data.message || t("auth.verify.failedMsg"));
         }
       } catch (error: any) {
         console.error("Verification error:", error);
         setStatus("error");
-        setMessage(error.message || "Failed to verify email");
+        setMessage(error.message || t("auth.verify.errorMsg"));
       }
     };
 
@@ -57,18 +59,18 @@ export function VerifyEmail() {
     <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-indigo-500 via-purple-500 to-pink-500 p-4">
       <Card className="w-full max-w-md">
         <CardHeader className="text-center">
-          <CardTitle>Email Verification</CardTitle>
+          <CardTitle>{t("auth.verify.title")}</CardTitle>
           <CardDescription>
-            {status === "loading" && "Verifying your email..."}
-            {status === "success" && "Success!"}
-            {status === "error" && "Verification Failed"}
+            {status === "loading" && t("auth.verify.verifying")}
+            {status === "success" && t("auth.verify.success")}
+            {status === "error" && t("auth.verify.failed")}
           </CardDescription>
         </CardHeader>
         <CardContent className="flex flex-col items-center space-y-4">
           {status === "loading" && (
             <>
               <Loader2 className="h-16 w-16 text-primary animate-spin" />
-              <p className="text-muted-foreground">Please wait...</p>
+              <p className="text-muted-foreground">{t("auth.verify.wait")}</p>
             </>
           )}
 
@@ -78,14 +80,14 @@ export function VerifyEmail() {
               <p className="text-center">{message}</p>
               {username && (
                 <p className="text-sm text-muted-foreground">
-                  Username: <span className="font-semibold">{username}</span>
+                  {t("auth.username")}: <span className="font-semibold">{username}</span>
                 </p>
               )}
               <p className="text-sm text-muted-foreground">
-                Redirecting to login page...
+                {t("auth.verify.redirecting")}
               </p>
               <Button onClick={() => setLocation("/login")}>
-                Go to Login Now
+                {t("auth.verify.loginCta")}
               </Button>
             </>
           )}
@@ -96,10 +98,10 @@ export function VerifyEmail() {
               <p className="text-center text-red-600">{message}</p>
               <div className="flex gap-2">
                 <Button onClick={() => setLocation("/register")}>
-                  Register Again
+                  {t("auth.verify.registerCta")}
                 </Button>
                 <Button variant="outline" onClick={() => setLocation("/login")}>
-                  Try Login
+                  {t("auth.verify.tryLoginCta")}
                 </Button>
               </div>
             </>

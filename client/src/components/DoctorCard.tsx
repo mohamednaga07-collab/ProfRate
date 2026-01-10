@@ -25,6 +25,22 @@ export function DoctorCard({ doctor, onCompareToggle, isComparing }: DoctorCardP
     .toUpperCase()
     .slice(0, 2);
 
+  const getDepartmentTranslationKey = (dept: string) => {
+    const map: Record<string, string> = {
+      "Computer Science": "home.depts.cs",
+      "Information Technology": "home.depts.it",
+      "Information Systems": "home.depts.is",
+      "Engineering": "home.depts.eng",
+      "Medicine": "home.depts.med",
+      "Law": "home.depts.law",
+      "Arts": "home.depts.art",
+      "Science": "home.depts.sci",
+      "Business": "home.depts.bus",
+      "Veterinary Medicine": "home.depts.vet"
+    };
+    return map[dept] ? t(map[dept]) : dept;
+  };
+
   const overallRating = doctor.ratings?.overallRating ?? 0;
   const totalReviews = doctor.ratings?.totalReviews ?? 0;
 
@@ -46,9 +62,9 @@ export function DoctorCard({ doctor, onCompareToggle, isComparing }: DoctorCardP
           </Avatar>
           <div className="flex-1 min-w-0">
             <h3 className="font-semibold text-lg truncate" data-testid={`text-doctor-name-${doctor.id}`}>
-              Dr. {formatName(doctor.name)}
+              {t("doctorProfile.doctorPrefix")} {formatName(doctor.name)}
             </h3>
-            <p className="text-sm text-muted-foreground truncate">{doctor.department}</p>
+            <p className="text-sm text-muted-foreground truncate">{getDepartmentTranslationKey(doctor.department)}</p>
             {doctor.title && (
               <Badge variant="secondary" className="mt-2">
                 {doctor.title}

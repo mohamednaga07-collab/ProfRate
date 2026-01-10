@@ -4,9 +4,7 @@ import * as AlertDialogPrimitive from "@radix-ui/react-alert-dialog"
 import { cn } from "@/lib/utils"
 import { buttonVariants } from "@/components/ui/button"
 
-const AlertDialog = ({ modal = false, ...props }: React.ComponentProps<typeof AlertDialogPrimitive.Root>) => (
-  <AlertDialogPrimitive.Root modal={modal} {...props} />
-)
+const AlertDialog = AlertDialogPrimitive.Root
 
 const AlertDialogTrigger = AlertDialogPrimitive.Trigger
 

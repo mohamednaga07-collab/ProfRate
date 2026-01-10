@@ -142,9 +142,7 @@ export default function ForgotUsername() {
                     {t("auth.forgotUsername", { defaultValue: "Forgot Username?" })}
                   </CardTitle>
                   <CardDescription className="mt-2 text-sm">
-                    {t("auth.forgotUsernameDesc", {
-                      defaultValue: "Enter your email address and we'll send you your username.",
-                    })}
+                    {t("auth.enterEmailForUsername")}
                   </CardDescription>
                 </div>
               </CardHeader>

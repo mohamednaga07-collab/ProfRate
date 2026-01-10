@@ -211,7 +211,9 @@ export default function DoctorProfile() {
                           <h1 className="text-2xl font-bold" data-testid="text-doctor-name">
                             {t("doctorProfile.doctorPrefix")} {doctor.name.replace(/^Dr\.?\s+/i, "")}
                           </h1>
-                          <p className="text-muted-foreground">{doctor.department}</p>
+                          <p className="text-muted-foreground">
+                            {t(`home.departments.${doctor.department}`, { defaultValue: doctor.department })}
+                          </p>
                           {doctor.title && (
                             <Badge variant="secondary" className="mt-2">
                               {doctor.title}

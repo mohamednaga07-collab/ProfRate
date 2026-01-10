@@ -1356,8 +1356,9 @@ export async function registerRoutes(httpServer: Server, app: Express): Promise<
           }
           
           // Fallback: match by username if no match yet (and username is not "admin")
-          if (!matchedDoctor && updatedUser.username.toLowerCase() !== 'admin') {
-             matchedDoctor = doctors.find(d => d.name.toLowerCase().includes((updatedUser.username || "").toLowerCase()));
+          if (!matchedDoctor && updatedUser.username && updatedUser.username.toLowerCase() !== 'admin') {
+             const username = updatedUser.username;
+             matchedDoctor = doctors.find(d => d.name.toLowerCase().includes(username.toLowerCase()));
           }
 
           if (matchedDoctor) {

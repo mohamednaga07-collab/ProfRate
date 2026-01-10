@@ -14,7 +14,7 @@ export default function AdminDoctors() {
 
   return (
     <div className="p-8">
-      <h1 className="text-2xl font-bold mb-4">Manage Doctors</h1>
+      <h1 className="text-2xl font-bold mb-4">{t("admin.titles.doctors")}</h1>
       {isLoading && (
         <div className="flex items-center gap-2"><Loader2 className="animate-spin" /> Loading doctors...</div>
       )}
@@ -25,10 +25,10 @@ export default function AdminDoctors() {
         <table className="min-w-full border rounded-lg overflow-hidden mt-4">
           <thead className="bg-gray-100">
             <tr>
-              <th className="px-4 py-2 text-left">Name</th>
-              <th className="px-4 py-2 text-left">Department</th>
-              <th className="px-4 py-2 text-left">Title</th>
-              <th className="px-4 py-2 text-left">Specialty</th>
+              <th className="px-4 py-2 text-left">{t("admin.table.name")}</th>
+              <th className="px-4 py-2 text-left">{t("admin.table.department")}</th>
+              <th className="px-4 py-2 text-left">{t("admin.table.title")}</th>
+              <th className="px-4 py-2 text-left">{t("admin.table.specialty")}</th>
             </tr>
           </thead>
           <tbody>

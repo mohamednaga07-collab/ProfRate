@@ -310,10 +310,23 @@ export class MemoryStorage implements IStorage {
   }
 
   // Stats
-  async getStats(): Promise<{ totalDoctors: number; totalReviews: number }> {
+  async getStats(): Promise<{
+    totalUsers: number;
+    totalDoctors: number;
+    totalReviews: number;
+    activeUsers: number;
+    usersGrowth: number;
+    doctorsGrowth: number;
+    reviewsGrowth: number;
+  }> {
     return {
+      totalUsers: this.users.size,
       totalDoctors: this.doctors.size,
       totalReviews: this.reviews.size,
+      activeUsers: Math.min(this.users.size, 5), // Mock active users
+      usersGrowth: 0,
+      doctorsGrowth: 0,
+      reviewsGrowth: 0,
     };
   }
 

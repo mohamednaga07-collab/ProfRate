@@ -5,6 +5,7 @@ import { useToast } from "@/hooks/use-toast";
 import { User } from "@shared/schema";
 import { useQueryClient } from "@tanstack/react-query";
 import { motion, AnimatePresence } from "framer-motion";
+import { useTranslation } from "react-i18next";
 import {
   Dialog,
   DialogContent,
@@ -29,6 +30,7 @@ export function ProfilePictureUpload({
   const fileInputRef = useRef<HTMLInputElement>(null);
   const { toast } = useToast();
   const queryClient = useQueryClient();
+  const { t } = useTranslation();
 
   const sizeClasses = {
     sm: "h-8 w-8",
@@ -221,7 +223,7 @@ export function ProfilePictureUpload({
           onClick={() => fileInputRef.current?.click()}
           disabled={uploading}
           className="absolute -bottom-1 -right-1 rounded-full bg-primary p-1.5 text-primary-foreground shadow-lg hover:bg-primary/90 transition-colors disabled:opacity-50 z-20"
-          title="Click to upload a new profile picture"
+          title={t("components.profileUpload.clickToUpload", { defaultValue: "Click to upload a new profile picture" })}
         >
           {uploading ? (
             <Loader2 className="h-3 w-3 animate-spin" />
@@ -248,7 +250,7 @@ export function ProfilePictureUpload({
             ) : (
               <div className="text-center text-muted-foreground">
                 <ZoomIn className="h-16 w-16 mx-auto mb-4 opacity-50" />
-                <p>No profile picture</p>
+                <p>{t("components.profileUpload.noPicture")}</p>
               </div>
             )}
           </div>

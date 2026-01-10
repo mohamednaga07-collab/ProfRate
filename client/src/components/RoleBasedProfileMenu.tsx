@@ -89,23 +89,23 @@ export function RoleBasedProfileMenu({
         // Admin actions
         case "manage-users":
           navigate("/admin/users");
-          toast({ title: "Manage Users", description: "View and manage all users." });
+          toast({ title: t("admin.nav.manageUsers"), description: t("admin.nav.manageUsersDesc") });
           break;
         case "analytics":
           navigate("/admin/analytics");
-          toast({ title: "Dashboard Analytics", description: "View site analytics and reports." });
+          toast({ title: t("admin.nav.analytics"), description: t("admin.nav.analyticsDesc") });
           break;
         case "settings":
           navigate("/admin/settings");
-          toast({ title: "System Settings", description: "Configure system settings." });
+          toast({ title: t("admin.nav.settings"), description: t("admin.nav.settingsDesc") });
           break;
         case "admin-panel":
           navigate("/admin");
-          toast({ title: "Admin Panel", description: "Access the main admin panel." });
+          toast({ title: t("admin.nav.panel"), description: t("admin.nav.panelDesc") });
           break;
         case "profile-settings":
           navigate("/profile/settings");
-          toast({ title: "Profile Settings", description: "Edit your profile settings." });
+          toast({ title: t("profile.settings"), description: t("profile.settingsDesc") });
           break;
         // Teacher actions
         case "my-courses":
@@ -113,28 +113,28 @@ export function RoleBasedProfileMenu({
           break;
         case "performance":
           navigate("/teacher-dashboard");
-          toast({ title: "Performance Stats", description: "View your teaching performance" });
+          toast({ title: t("teacher.nav.performance"), description: t("teacher.nav.performanceDesc") });
           break;
         case "feedback":
-          toast({ title: "Student Feedback", description: "Student feedback coming soon!" });
+          toast({ title: t("teacher.nav.feedback"), description: t("teacher.nav.soon") });
           break;
         case "portfolio":
-          toast({ title: "Teaching Portfolio", description: "Your teaching portfolio coming soon!" });
+          toast({ title: t("teacher.nav.portfolio"), description: t("teacher.nav.soon") });
           break;
         // Student actions
         case "achievements":
-          toast({ title: "My Achievements", description: "Your achievements and badges coming soon!" });
+          toast({ title: t("student.nav.achievements"), description: t("student.nav.soon") });
           break;
         case "ratings":
           navigate("/doctors");
-          toast({ title: "Recent Ratings", description: "View your rating history" });
+          toast({ title: t("student.nav.ratings"), description: t("student.nav.ratingsDesc") });
           break;
         case "stats":
-          toast({ title: "Learning Stats", description: "Your learning statistics coming soon!" });
+          toast({ title: t("student.nav.stats"), description: t("student.nav.soon") });
           break;
         case "recommendations":
           navigate("/doctors");
-          toast({ title: "Recommendations", description: "Personalized recommendations coming soon!" });
+          toast({ title: t("student.nav.recommendations"), description: t("student.nav.soon") });
           break;
       }
       setIsOpen(false);
@@ -143,25 +143,25 @@ export function RoleBasedProfileMenu({
     switch (userRole) {
       case "admin":
         return [
-          { icon: BarChart3, label: "Dashboard Analytics", action: "analytics" },
-          { icon: Settings, label: "System Settings", action: "settings" },
-          { icon: Crown, label: "Admin Panel", action: "admin-panel" },
-          { icon: BookOpen, label: "Profile Settings", action: "profile-settings" },
+          { icon: BarChart3, label: t("admin.nav.analytics"), action: "analytics" },
+          { icon: Settings, label: t("admin.nav.settings"), action: "settings" },
+          { icon: Crown, label: t("admin.nav.panel"), action: "admin-panel" },
+          { icon: BookOpen, label: t("profile.settings"), action: "profile-settings" },
         ];
       case "teacher":
         return [
-          { icon: BookOpen, label: "My Courses", action: "my-courses" },
-          { icon: BarChart3, label: "Performance Stats", action: "performance" },
-          { icon: MessageCircle, label: "Student Feedback", action: "feedback" },
-          { icon: FileText, label: "Teaching Portfolio", action: "portfolio" },
+          { icon: BookOpen, label: t("teacher.nav.courses"), action: "my-courses" },
+          { icon: BarChart3, label: t("teacher.nav.performance"), action: "performance" },
+          { icon: MessageCircle, label: t("teacher.nav.feedback"), action: "feedback" },
+          { icon: FileText, label: t("teacher.nav.portfolio"), action: "portfolio" },
         ];
       case "student":
       default:
         return [
-          { icon: Trophy, label: "My Achievements", action: "achievements" },
-          { icon: Clock, label: "Recent Ratings", action: "ratings" },
-          { icon: BarChart3, label: "Learning Stats", action: "stats" },
-          { icon: Zap, label: "Recommendations", action: "recommendations" },
+          { icon: Trophy, label: t("student.nav.achievements"), action: "achievements" },
+          { icon: Clock, label: t("student.nav.ratings"), action: "ratings" },
+          { icon: BarChart3, label: t("student.nav.stats"), action: "stats" },
+          { icon: Zap, label: t("student.nav.recommendations"), action: "recommendations" },
         ];
     }
   };
@@ -217,32 +217,32 @@ export function RoleBasedProfileMenu({
             <div className="grid grid-cols-3 gap-2 mb-4">
               {userRole === "student" && (
                 <>
-                  <div className="bg-gradient-to-br from-green-500/10 to-green-600/10 rounded-lg p-2 border border-green-500/20">
-                    <p className="text-xs text-muted-foreground">Ratings</p>
+                  <div className="bg-gradient-to-br from-green-500/10 to-green-600/10 rounded-lg p-2 border border-green-500/20 text-center">
+                    <p className="text-xs text-muted-foreground">{t("profile.stats.ratings")}</p>
                     <p className="font-bold text-green-600">12</p>
                   </div>
-                  <div className="bg-gradient-to-br from-blue-500/10 to-blue-600/10 rounded-lg p-2 border border-blue-500/20">
-                    <p className="text-xs text-muted-foreground">Streak</p>
-                    <p className="font-bold text-blue-600">3 days</p>
+                  <div className="bg-gradient-to-br from-blue-500/10 to-blue-600/10 rounded-lg p-2 border border-blue-500/20 text-center">
+                    <p className="text-xs text-muted-foreground">{t("profile.stats.streak")}</p>
+                    <p className="font-bold text-blue-600">3 {t("common.days")}</p>
                   </div>
-                  <div className="bg-gradient-to-br from-purple-500/10 to-purple-600/10 rounded-lg p-2 border border-purple-500/20">
-                    <p className="text-xs text-muted-foreground">Points</p>
+                  <div className="bg-gradient-to-br from-purple-500/10 to-purple-600/10 rounded-lg p-2 border border-purple-500/20 text-center">
+                    <p className="text-xs text-muted-foreground">{t("profile.stats.points")}</p>
                     <p className="font-bold text-purple-600">450</p>
                   </div>
                 </>
               )}
               {userRole === "teacher" && (
                 <>
-                  <div className="bg-gradient-to-br from-blue-500/10 to-blue-600/10 rounded-lg p-2 border border-blue-500/20">
-                    <p className="text-xs text-muted-foreground">Rating</p>
+                  <div className="bg-gradient-to-br from-blue-500/10 to-blue-600/10 rounded-lg p-2 border border-blue-500/20 text-center">
+                    <p className="text-xs text-muted-foreground">{t("profile.stats.rating")}</p>
                     <p className="font-bold text-blue-600">4.8</p>
                   </div>
-                  <div className="bg-gradient-to-br from-purple-500/10 to-purple-600/10 rounded-lg p-2 border border-purple-500/20">
-                    <p className="text-xs text-muted-foreground">Students</p>
+                  <div className="bg-gradient-to-br from-purple-500/10 to-purple-600/10 rounded-lg p-2 border border-purple-500/20 text-center">
+                    <p className="text-xs text-muted-foreground">{t("profile.stats.students")}</p>
                     <p className="font-bold text-purple-600">240</p>
                   </div>
-                  <div className="bg-gradient-to-br from-orange-500/10 to-orange-600/10 rounded-lg p-2 border border-orange-500/20">
-                    <p className="text-xs text-muted-foreground">Reviews</p>
+                  <div className="bg-gradient-to-br from-orange-500/10 to-orange-600/10 rounded-lg p-2 border border-orange-500/20 text-center">
+                    <p className="text-xs text-muted-foreground">{t("profile.stats.reviews")}</p>
                     <p className="font-bold text-orange-600">85</p>
                   </div>
                 </>
@@ -250,7 +250,7 @@ export function RoleBasedProfileMenu({
               {userRole === "admin" && (
                 <>
                   <div className="bg-gradient-to-br from-red-500/10 to-red-600/10 rounded-lg p-2 border border-red-500/20 flex flex-col items-center">
-                    <p className="text-xs text-muted-foreground">Users</p>
+                    <p className="text-xs text-muted-foreground">{t("admin.nav.manageUsers")}</p>
                     <motion.p className="font-bold text-red-600" animate={{ scale: [1, 1.15, 1] }} transition={{ duration: 0.4 }}>
                       <AnimatePresence mode="sync" initial={false}>
                         <motion.span key={adminStats?.totalUsers} initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -10 }} transition={{ duration: 0.2 }}>
@@ -261,7 +261,7 @@ export function RoleBasedProfileMenu({
                     {/* Manage button removed */}
                   </div>
                   <div className="bg-gradient-to-br from-yellow-500/10 to-yellow-600/10 rounded-lg p-2 border border-yellow-500/20 flex flex-col items-center">
-                    <p className="text-xs text-muted-foreground">Doctors</p>
+                    <p className="text-xs text-muted-foreground">{t("admin.nav.manageDoctors")}</p>
                     <motion.p className="font-bold text-yellow-600" animate={{ scale: [1, 1.15, 1] }} transition={{ duration: 0.4 }}>
                       <AnimatePresence mode="sync" initial={false}>
                         <motion.span key={adminStats?.totalDoctors} initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -10 }} transition={{ duration: 0.2 }}>
@@ -272,7 +272,7 @@ export function RoleBasedProfileMenu({
                     {/* Manage button removed */}
                   </div>
                   <div className="bg-gradient-to-br from-blue-500/10 to-blue-600/10 rounded-lg p-2 border border-blue-500/20 flex flex-col items-center">
-                    <p className="text-xs text-muted-foreground">Reviews</p>
+                    <p className="text-xs text-muted-foreground">{t("admin.nav.manageReviews")}</p>
                     <motion.p className="font-bold text-blue-600" animate={{ scale: [1, 1.15, 1] }} transition={{ duration: 0.4 }}>
                       <AnimatePresence mode="sync" initial={false}>
                         <motion.span key={adminStats?.totalReviews} initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -10 }} transition={{ duration: 0.2 }}>
@@ -291,12 +291,12 @@ export function RoleBasedProfileMenu({
                     >
                       <span className={`inline-block w-3 h-3 rounded-full ${health === 'healthy' ? 'bg-green-500' : health === 'degraded' ? 'bg-yellow-500' : 'bg-red-500'} animate-pulse`}></span>
                       <span className="text-xs font-semibold">
-                        {health === 'healthy' ? 'Healthy' : health === 'degraded' ? 'Degraded' : 'Down'}
+                        {health === 'healthy' ? t("admin.stats.healthHealthy") : health === 'degraded' ? t("admin.stats.healthDegraded") : t("admin.stats.healthDown")}
                       </span>
                       <motion.span className="ml-2 text-xs font-bold" animate={{ color: health === 'healthy' ? '#22c55e' : health === 'degraded' ? '#eab308' : '#ef4444' }}>
                         {healthPercent}%
                       </motion.span>
-                      <button className="ml-2 text-xs underline" onClick={() => window.location.reload()}>Refresh</button>
+                      <button className="ml-2 text-xs underline" onClick={() => window.location.reload()}>{t("common.refresh")}</button>
                     </motion.div>
                     <div className="w-40 h-2 mt-2 bg-gray-200 rounded-full overflow-hidden">
                       <motion.div
@@ -415,7 +415,7 @@ export function RoleBasedProfileMenu({
               className="cursor-pointer text-rose-600 dark:text-rose-400 hover:bg-rose-500/10 px-4 py-2 transition-colors"
             >
               <LogOut className="h-4 w-4 mr-3" />
-              <span className="text-sm font-medium">Logout</span>
+              <span className="text-sm font-medium">{t("auth.logout")}</span>
             </DropdownMenuItem>
           </motion.div>
         </DropdownMenuContent>

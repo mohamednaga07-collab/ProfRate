@@ -173,7 +173,7 @@ export default function TeacherDashboard() {
       <Header />
       
       {/* Hero Section with Infinite Continuous Strip Carousel */}
-      <section className="relative h-[300px] lg:h-[450px] overflow-hidden bg-slate-900">
+      <section className="relative h-[300px] lg:h-[450px] overflow-hidden bg-slate-900" dir="ltr">
         <motion.div
           className="flex h-full will-change-transform"
           style={{
@@ -282,16 +282,16 @@ export default function TeacherDashboard() {
               <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-blue-500/20 border border-blue-400/30 mb-4">
                 <Sparkles className="h-4 w-4 text-blue-300 animate-pulse" />
                 <span className="text-blue-100/90 text-sm font-medium">
-                  View the feedback and ratings you've received from students
+                  {t("teacherDashboard.hero.badge")}
                 </span>
               </div>
               
               <h1 className="text-4xl md:text-5xl font-bold text-white tracking-tight mb-4">
-                Teacher Dashboard
+                {t("teacherDashboard.hero.title")}
               </h1>
               
               <p className="text-lg text-blue-100/80 leading-relaxed">
-                Track your teaching performance, student feedback, and continuous improvement metrics in real-time.
+                {t("teacherDashboard.hero.description")}
               </p>
             </motion.div>
           </div>

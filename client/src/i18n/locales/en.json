@@ -33,7 +33,12 @@
     "hero": {
       "title": "Rate Your Professors",
       "highlight": "Honestly & Anonymously",
-      "description": "Help fellow students make informed decisions. Rate professors on teaching quality, availability, communication, knowledge, and fairness."
+      "description": "Help fellow students make informed decisions. Rate professors on teaching quality, availability, communication, knowledge, and fairness.",
+      "features": {
+        "anonymous": "Stay anonymous to peers while your profile stays verified.",
+        "sync": "Sync saved campuses, educators, and follow-ups across devices.",
+        "preferences": "Surface nearby or online options tailored to your preferences."
+      }
     },
     "features": {
       "title": "Why Use ProfRate?",
@@ -73,27 +78,19 @@
   "auth": {
     "login": "Login",
     "register": "Register",
-    "loginAs": "Login as",
+    "logout": "Logout",
     "username": "Username",
     "password": "Password",
-    "confirmPassword": "Confirm Password",
-    "firstName": "First Name",
-    "lastName": "Last Name",
-    "iAm": "I am a",
-    "student": "Student",
-    "teacher": "Teacher",
-    "createAccount": "Create Account",
-    "createNewAccount": "Create New Account",
-    "haveAccount": "Already have an account?",
-    "noAccount": "Don't have an account?",
     "loginTab": "Login",
     "registerTab": "Register",
-    "successTitle": "Account Created!",
-    "successDescription": "Your account has been created successfully.",
-    "welcomeTitle": "Welcome to ProfRate",
-    "welcomeDescription": "Login or create an account to get started",
+    "welcomeTitle": "Welcome Back",
+    "welcomeDescription": "Sign in to your account to continue",
+    "loginAs": "Login as",
     "loggingIn": "Logging in...",
-    "creatingAccount": "Creating account...",
+    "verifiedHuman": "Verified Human",
+    "adminLogin": "Admin Login",
+    "forgotPassword": "Forgot password?",
+    "forgotUsername": "Forgot username?",
     "placeholders": {
       "username": "Enter your username",
       "password": "Enter your password",
@@ -103,87 +100,98 @@
       "firstName": "First name",
       "lastName": "Last name"
     },
+    "serverUnavailableTitle": "Server Unavailable",
+    "serverUnavailableDescription": "Could not connect to the server at {{origin}}.",
+    "iAm": "I am a...",
+    "createAccount": "Create Account",
+    "creatingAccount": "Creating Account...",
+    "confirmPassword": "Confirm Password",
+    "firstName": "First Name",
+    "lastName": "Last Name",
     "passwordStrength": {
-      "label": "Strength:",
+      "label": "Password Strength",
       "weak": "Weak",
       "fair": "Fair",
       "strong": "Strong"
     },
-    "success": {
-      "welcomeBackTitle": "Welcome Back!",
-      "welcomeBackDescription": "Logged in as {{name}}.",
-      "accountCreatedTitle": "Account Created!",
-      "accountCreatedDescription": "Welcome {{name}}! Your account has been created successfully.",
-      "overlayTitle": "Account Created!",
-      "overlayDescription": "Your account has been successfully created. Redirecting you to login..."
-    },
     "validation": {
-      "passwordsDontMatch": "Passwords don't match",
-      "passwordsMatch": "✓ Passwords match",
+      "emailRequired": "Email is required",
+      "emailInvalid": "Email must be valid",
+      "usernameRequired": "Username is required",
+      "usernameTooShort": "Username must be at least 3 characters",
+      "passwordRequired": "Password is required",
+      "passwordsDontMatch": "Passwords do not match",
       "passwordsMustMatch": "Passwords must match",
-      "passwordMustBeAtLeastFair": "Password must be at least Fair strength",
-      "passwordRequirementsNotMet": "Password requirements not met"
+      "passwordMustBeAtLeastFair": "Password must be at least 'Fair'",
+      "passwordRequirementsNotMet": "Password requirements not met",
+      "passwordsMatch": "Passwords match",
+      "recaptchaRequired": "Please verify you are human",
+      "firstNameRequired": "First Name is required",
+      "lastNameRequired": "Last Name is required"
+    },
+    "success": {
+      "login": "Logged In Successfully!",
+      "loginWelcome": "Welcome back {{name}}! Ready to explore?",
+      "registration": "Account Created Successfully!",
+      "registrationWelcome": "Welcome {{name}}!",
+      "verificationSent": "A verification link has been sent to {{email}}. Please check your email to activate your account."
     },
     "errors": {
+      "generic": "Something went wrong. We're sorry, but an unexpected error occurred. Please try to reload the page.",
+      "loginFailed": "Login Failed",
+      "invalidCredentials": "The username or password you entered is incorrect.",
+      "roleMismatch": "Account Type Mismatch",
+      "roleMismatchDesc": "This account is not registered as a {{role}}. Please select the correct role.",
+      "accountLocked": "Account Locked",
+      "userNotFound": "Invalid Username",
+      "userNotFoundDesc": "The username doesn't exist. Please check or create a new account.",
+      "incorrectPassword": "Incorrect Password",
+      "incorrectPasswordDesc": "The password you entered is incorrect.",
+      "verificationFailed": "Verification Failed",
       "usernameRequiredTitle": "Username Required",
-      "usernameRequiredDescription": "Please enter your username",
+      "usernameRequiredDescription": "Please enter your username to login.",
       "passwordRequiredTitle": "Password Required",
-      "passwordRequiredDescription": "Please enter your password",
-      "loginFailedTitle": "Login Failed",
-      "loginFailedDescription": "Invalid username or password. Please check your credentials or create a new account.",
-      "serverUnavailableTitle": "Server Not Reachable",
-      "serverUnavailableDescription": "The app can't reach the API from {{origin}}. Start the backend with 'npm run dev' (it should be on http://127.0.0.1:5000) and open the site from that same port.",
-      "invalidPasswordTitle": "Invalid Password",
-      "invalidPasswordDescription": "The password you entered is incorrect. Please check your password and try again.",
-      "userNotFoundTitle": "Username Not Found",
-      "userNotFoundDescription": "This username cannot be found. Please login with a valid username.",
-      "accountNotFound": "The username \"{{username}}\" was not found in our system.",
-      "wouldYouLikeToRegister": "Would you like to create a new account?",
-      "recaptchaRequiredTitle": "reCAPTCHA Required",
-      "recaptchaRequiredDescription": "Please complete the reCAPTCHA verification.",
-      "passwordsDontMatchTitle": "Passwords Don't Match",
-      "passwordsDontMatchDescription": "Please make sure both passwords are the same.",
-      "passwordTooWeakTitle": "Password Too Weak",
-      "passwordTooWeakDescription": "Password must be at least Fair strength (yellow).",
-      "registrationFailedTitle": "Registration Failed",
-      "registrationFailedDescription": "Could not create account. Please try again."
+      "passwordRequiredDescription": "Please enter your password to login.",
+      "recaptchaRequiredTitle": "Verification Required",
+      "recaptchaRequiredDescription": "Please verify that you are a human.",
+      "serverUnavailableTitle": "Server Unavailable",
+      "serverUnavailableDescription": "Could not connect to the server at {{origin}}.",
+      "usernameReserved": "Username '{{username}}' is reserved",
+      "usernameTaken": "Username Taken",
+      "usernameTakenDesc": "The username \"{{username}}\" is already taken. Please choose a different username.",
+      "passwordTooWeak": "Password Too Weak",
+      "passwordTooWeakDesc": "Your password doesn't meet the security requirements. Please make it stronger.",
+      "recaptchaFailed": "Verification Failed",
+      "recaptchaFailedDesc": "reCAPTCHA verification failed. Please try again.",
+      "registrationFailed": "Registration Failed"
     },
-    "signIn": "Sign In",
-    "signingIn": "Signing in...",
-    "forgotPassword": "Forgot Password?",
-    "forgotUsername": "Forgot Username?",
-    "forgotPasswordDesc": "Enter your email address and we'll send you a link to reset your password.",
-    "forgotUsernameDesc": "Enter your email address and we'll send you your username.",
+    "backToLogin": "Back to Login",
     "resetPassword": "Reset Password",
     "resetPasswordDesc": "Enter your new password below",
-    "newPassword": "New Password",
     "resetLinkSent": "Reset link sent!",
-    "resetLinkSentDesc": "Check your email for a link to reset your password. The link will expire in 24 hours.",
+    "resetLinkSentDesc": "Check your email for a link to reset your password.",
     "passwordReset": "Password reset successful!",
-    "passwordResetDesc": "Your password has been reset. You can now log in with your new password.",
     "usernameSent": "Username sent!",
-    "usernameSentDesc": "Check your email for your username.",
-    "backToLogin": "Back to Login",
-    "rememberedPassword": "Back to Login",
-    "rememberedUsername": "Back to Login",
-    "sendResetLink": "Send Reset Link",
-    "sendUsername": "Send Username",
+    "email": "Email",
     "sending": "Sending...",
     "resetting": "Resetting...",
-    "email": "Email",
-    "emailPlaceholder": "you@example.com",
-    "invalidResetLink": "Invalid reset link",
-    "invalidToken": "Invalid reset token",
-    "passwordMismatch": "Passwords do not match",
-    "passwordTooShort": "Password must be at least 8 characters",
-    "passwordNeedLower": "Password must contain lowercase letters",
-    "passwordNeedUpper": "Password must contain uppercase letters",
-    "passwordNeedNumber": "Password must contain numbers",
-    "passwordRequirements": "Password requirements:",
-    "passReq8Char": "At least 8 characters",
-    "passReqLower": "Lowercase letters",
-    "passReqUpper": "Uppercase letters",
-    "passReqNumber": "Numbers"
+    "enterEmailForReset": "Enter your email address and we'll send you a link to reset your password.",
+    "enterEmailForUsername": "Enter your email address and we'll send you your username."
+  },
+  "verify": {
+    "title": "Email Verification",
+    "verifying": "Verifying your email...",
+    "success": "Success!",
+    "failed": "Verification Failed",
+    "wait": "Please wait...",
+    "redirecting": "Redirecting to login page...",
+    "loginCta": "Go to Login Now",
+    "registerCta": "Register Again",
+    "tryLoginCta": "Try Login",
+    "successMsg": "Email verified successfully!",
+    "failedMsg": "Verification failed",
+    "errorMsg": "Failed to verify email",
+    "noToken": "No verification token provided"
   },
   "doctors": {
     "title": "Professors",
@@ -198,8 +206,12 @@
     "auto": "Auto",
     "cancel": "Cancel",
     "save": "Save",
+    "saving": "Saving...",
+    "savingProgress": "Saving progress...",
     "delete": "Delete",
     "edit": "Edit",
+    "refresh": "Refresh",
+    "days": "days",
     "user": "User",
     "a11y": {
       "close": "Close",
@@ -242,10 +254,44 @@
       "feedbackCta": "Explore insights"
     },
     "stats": {
+      "title": "Platform Overview",
+      "description": "Get insights into our professor ratings",
       "totalProfessors": "Total Professors",
       "totalReviews": "Total Reviews",
       "avgRating": "Avg Rating",
       "departments": "Departments"
+    },
+    "depts": {
+      "all": "All Departments",
+      "cs": "Computer Science",
+      "it": "Information Technology",
+      "is": "Information Systems",
+      "eng": "Engineering",
+      "med": "Medicine",
+      "law": "Law",
+      "art": "Arts",
+      "sci": "Science",
+      "bus": "Business",
+      "vet": "Veterinary Medicine"
+    },
+    "departments": {
+      "Computer Science": "Computer Science",
+      "Information Technology": "Information Technology",
+      "Information Systems": "Information Systems",
+      "Engineering": "Engineering",
+      "Medicine": "Medicine",
+      "Law": "Law",
+      "Arts": "Arts",
+      "Science": "Science",
+      "Science": "Science",
+      "Business": "Business",
+      "Veterinary Medicine": "Veterinary Medicine",
+      "Physics": "Physics",
+      "Mathematics": "Mathematics",
+      "Chemistry": "Chemistry",
+      "Lecturer": "Lecturer",
+      "Associate Professor": "Associate Professor",
+      "Professor": "Professor"
     },
     "topRated": {
       "title": "Top Rated Professors",
@@ -256,6 +302,8 @@
       "compareLabel": "Compare",
       "compareTitle": "Side-by-side clarity",
       "factor": "Factor",
+      "doctorA": "Prof. A",
+      "doctorB": "Prof. B",
       "clarity": "Clarity",
       "support": "Support",
       "fairness": "Fairness",
@@ -284,6 +332,11 @@
   "teacherDashboard": {
     "title": "Teacher Dashboard",
     "subtitle": "View the feedback and ratings you've received from students",
+    "hero": {
+      "badge": "View the feedback and ratings you've received from students",
+      "title": "Teacher Dashboard",
+      "description": "Track your teaching performance, student feedback, and continuous improvement metrics in real-time."
+    },
     "loading": "Loading feedback...",
     "empty": "No reviews yet. Once students submit reviews, you'll see your feedback here.",
     "noProfile": "No professor profile matches your account name ({{name}}). Ask an admin to link your teacher account to a professor profile.",
@@ -306,6 +359,7 @@
       "ratingLabel": "Rating"
     },
     "radar": {
+      "title": "Performance Breakdown",
       "description": "Visual representation of your teaching metrics"
     }
   },
@@ -488,7 +542,26 @@
       "registeredProfiles": "Registered profiles",
       "submittedRatings": "Submitted ratings",
       "uptimeStatus": "Uptime status",
-      "live": "Live"
+      "live": "Live",
+      "systemHealth": "System Health",
+      "healthHealthy": "Healthy",
+      "healthDegraded": "Degraded",
+      "healthDown": "Down",
+      "healthExcellent": "Excellent",
+      "healthGood": "Good",
+      "healthWarning": "Warning"
+    },
+    "nav": {
+      "analytics": "Dashboard Analytics",
+      "analyticsDesc": "View site analytics and reports.",
+      "settings": "System Settings",
+      "settingsDesc": "Configure system settings.",
+      "panel": "Admin Panel",
+      "panelDesc": "Access the main admin panel.",
+      "manageUsers": "Users",
+      "manageUsersDesc": "View and manage all users.",
+      "manageDoctors": "Doctors",
+      "manageReviews": "Reviews"
     },
     "quickActions": {
       "title": "Quick Actions",
@@ -522,17 +595,57 @@
         "name": "Name",
         "role": "Role",
         "joined": "Joined",
-        "actions": "Actions"
+        "actions": "Actions",
+        "editRoleDesc": "Manage user access permissions"
+      },
+      "titles": {
+        "users": "Manage Users",
+        "reviews": "Manage Reviews",
+        "doctors": "Manage Doctors",
+        "settings": "System Settings",
+        "analytics": "Dashboard Analytics"
+      },
+      "table": {
+        "name": "Name",
+        "email": "Email",
+        "role": "Role",
+        "status": "Status",
+        "user": "User",
+        "doctor": "Doctor",
+        "rating": "Rating",
+        "comment": "Comment",
+        "department": "Department",
+        "title": "Title",
+        "specialty": "Specialty"
+      }
+    },
+    "components": {
+      "profileUpload": {
+        "noPicture": "No profile picture",
+        "clickToUpload": "Click to upload a new profile picture",
+        "title": "Profile picture upload"
       },
       "edit": {
         "title": "Edit User Role",
         "subtitle": "Change the role for {{username}}",
         "role": "Role",
-        "save": "Save Changes"
+        "save": "Save Changes",
+        "contact": "Contact & Status",
+        "verified": "Verified",
+        "unverified": "Unverified",
+        "joined": "Joined",
+        "actions": "Actions",
+        "roleAssignment": "Role Assignment"
       },
       "delete": {
+        "button": "Delete User",
         "confirm": "Delete user {{username}}?"
       }
+    },
+    "common": {
+      "confirmDeleteTitle": "Are you absolutely sure?",
+      "confirmDeleteDesc": "This action cannot be undone. This will permanently delete the user",
+      "confirmDeleteRemoveData": "and remove their data from our servers."
     },
     "doctors": {
       "title": "Professor Management",
@@ -603,6 +716,78 @@
       "doctorDeleteFailed": "Failed to delete professor",
       "reviewDeleted": "Review deleted successfully",
       "reviewDeleteFailed": "Failed to delete review"
+    },
+    "errors": {
+      "somethingWentWrong": "Something went wrong",
+      "unexpectedError": "We're sorry, but an unexpected error occurred. Please try to reload the page."
+    }
+  },
+  "profile": {
+    "personalInfo": "Personal Information",
+    "personalInfoDesc": "Information about your account and role.",
+    "username": "Username",
+    "email": "Email",
+    "role": "Role",
+    "settings": "Profile Settings",
+    "settingsDesc": "Edit your profile settings.",
+    "upload": {
+      "success": "Success",
+      "successDesc": "Profile picture updated successfully",
+      "error": {
+        "type": "Invalid file type",
+        "typeDesc": "Please upload an image file",
+        "size": "File too large",
+        "sizeDesc": "Max size is 5MB",
+        "failed": "Upload failed",
+        "failedDesc": "Could not upload image",
+        "read": "Failed to read file"
+      }
+    },
+    "username": {
+      "success": "Username Updated",
+      "successDesc": "Your username has been changed successfully.",
+      "error": {
+        "short": "Username too short",
+        "shortDesc": "Username must be at least 3 characters."
+      }
+    },
+    "changeUsername": {
+      "title": "Change Username",
+      "desc": "Update your display name. Requires password verification.",
+      "newLabel": "New Username",
+      "emailPlaceholder": "you@example.com",
+    "enterEmail": "Enter your email",
+    "chooseUsername": "Choose a username",
+    "passwordPlaceholder": "••••••••",
+      "submit": "Update Username"
+    },
+    "stats": {
+      "ratings": "Ratings",
+      "streak": "Streak",
+      "points": "Points",
+      "rating": "Rating",
+      "students": "Students",
+      "reviews": "Reviews"
+    }
+  },
+  "teacher": {
+    "nav": {
+      "courses": "My Courses",
+      "performance": "Performance Stats",
+      "performanceDesc": "View your teaching performance",
+      "feedback": "Student Feedback",
+      "portfolio": "Teaching Portfolio",
+      "soon": "Coming soon!"
+    }
+  },
+  "student": {
+    "nav": {
+      "achievements": "My Achievements",
+      "ratings": "Recent Ratings",
+      "ratingsDesc": "View your rating history",
+      "stats": "Learning Stats",
+      "recommendations": "Recommendations",
+      "soon": "Coming soon!"
     }
   }
 }
