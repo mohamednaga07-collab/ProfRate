@@ -106,15 +106,17 @@ export default function Home() {
           }}
           transition={{
             type: "spring",
-            stiffness: 18,    // Majestic Deep Liquid flow (restored)
-            damping: 22,     // Cinematic settling
-            mass: 2.5,       // Elite weighted physical feel
+            stiffness: 260,
+            damping: 30,
+            mass: 1,
+            tension: 170,
+            friction: 26,
             duration: isTransitioning ? undefined : 0
           }}
           onAnimationComplete={handleTransitionEnd}
           drag="x"
-          dragConstraints={{ left: -150, right: 150 }} // Limit drag distance for discrete feel
-          dragElastic={0.7} 
+          dragConstraints={{ left: 0, right: 0 }}
+          dragElastic={1} 
           dragMomentum={false}
           onDragStart={() => setIsDragging(true)}
           onDragEnd={(e, { offset, velocity }) => {
@@ -123,6 +125,7 @@ export default function Home() {
             const swipeVelocity = velocity.x; 
             
             // Discrete Swipe Guard: Trigger exactly one slide change
+            // and ignore excessive momentum
             if (swipe < -40 || swipeVelocity < -250) {
               handleNext();
               setLastInteraction(Date.now());

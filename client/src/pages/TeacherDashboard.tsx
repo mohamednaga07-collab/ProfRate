@@ -183,34 +183,37 @@ export default function TeacherDashboard() {
           animate={{
             x: `-${currentIndex * (100 / extendedImages.length)}%`,
           }}
-          transition={{
-            type: "spring",
-            stiffness: 18,    // Majestic Deep Liquid flow (restored)
-            damping: 22,     // Cinematic settling
-            mass: 2.5,       // Elite weighted physical feel
-            duration: isTransitioning ? undefined : 0
-          }}
-          onAnimationComplete={handleTransitionEnd}
-          drag="x"
-          dragConstraints={{ left: -150, right: 150 }} // Limit drag distance for discrete feel
-          dragElastic={0.7} 
-          dragMomentum={false}
-          onDragStart={() => setIsDragging(true)}
-          onDragEnd={(e, { offset, velocity }) => {
-            setIsDragging(false);
-            const swipe = offset.x; 
-            const swipeVelocity = velocity.x; 
-            
-            // Discrete Swipe Guard: Trigger exactly one slide change
-            if (swipe < -40 || swipeVelocity < -250) {
-              handleNext();
-              setLastInteraction(Date.now());
-            } else if (swipe > 40 || swipeVelocity > 250) {
-              handlePrev();
-              setLastInteraction(Date.now());
-            }
-          }}
-        >
+            transition={{
+              type: "spring",
+              stiffness: 260,
+              damping: 30,
+              mass: 1,
+              tension: 170,
+              friction: 26,
+              duration: isTransitioning ? undefined : 0
+            }}
+            onAnimationComplete={handleTransitionEnd}
+            drag="x"
+            dragConstraints={{ left: 0, right: 0 }}
+            dragElastic={1} 
+            dragMomentum={false}
+            onDragStart={() => setIsDragging(true)}
+            onDragEnd={(e, { offset, velocity }) => {
+              setIsDragging(false);
+              const swipe = offset.x; 
+              const swipeVelocity = velocity.x; 
+              
+              // Discrete Swipe Guard: Trigger exactly one slide change
+              // and ignore excessive momentum
+              if (swipe < -40 || swipeVelocity < -250) {
+                handleNext();
+                setLastInteraction(Date.now());
+              } else if (swipe > 40 || swipeVelocity > 250) {
+                handlePrev();
+                setLastInteraction(Date.now());
+              }
+            }}
+          >
           {extendedImages.map((src, index) => {
             const isActive = index === currentIndex;
             const isVisible = Math.abs(index - currentIndex) <= 1;
