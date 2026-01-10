@@ -856,8 +856,9 @@ export async function registerRoutes(httpServer: Server, app: Express): Promise<
   // Forgot Password Route
   app.post("/api/auth/forgot-password", validateCsrfHeader, async (req: any, res) => {
     try {
-      const { email } = req.body;
-      console.log(`[forgot-password] Received request for email: ${email}`);
+      const { email: rawEmail } = req.body;
+      const email = rawEmail ? rawEmail.trim() : "";
+      console.log(`[forgot-password] Received request for email: '${email}'`);
       if (!email) {
         return res.status(400).json({ message: "Email is required" });
       }
@@ -934,8 +935,9 @@ export async function registerRoutes(httpServer: Server, app: Express): Promise<
   // Forgot Username Route
   app.post("/api/auth/forgot-username", validateCsrfHeader, async (req: any, res) => {
     try {
-      const { email } = req.body;
-      console.log(`[forgot-username] Received request for email: ${email}`);
+      const { email: rawEmail } = req.body;
+      const email = rawEmail ? rawEmail.trim() : "";
+      console.log(`[forgot-username] Received request for email: '${email}'`);
       
       if (!email) {
         return res.status(400).json({ message: "Email is required" });
