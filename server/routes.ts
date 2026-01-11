@@ -167,7 +167,13 @@ export async function registerRoutes(httpServer: Server, app: Express): Promise<
       if (req.user?.claims?.sub) {
         const userId = req.user.claims.sub;
         const user = await storage.getUser(userId);
-        return res.json(user);
+        // PERFORMANCE OPTIMIZATION: Truncate giant base64 images in auth user object
+    if (req.user && req.user.profileImageUrl && req.user.profileImageUrl.length > 50000) {
+      const optimizedUser = { ...req.user };
+      optimizedUser.profileImageUrl = optimizedUser.profileImageUrl.substring(0, 100) + "... (image too large)";
+      return res.json(optimizedUser);
+    }
+    return res.json(req.user);
       }
       
       // No authenticated user - return null (expected on first load)
@@ -282,14 +288,20 @@ export async function registerRoutes(httpServer: Server, app: Express): Promise<
               console.warn("⚠️  Suspicious activity detected from IP:", req.ip);
               return res.status(400).json({ message: "Suspicious activity detected. Please try again." });
             }
-        } catch (recaptchaError) {
-          console.error("Error verifying reCAPTCHA:", recaptchaError);
-          return res.status(500).json({ message: "reCAPTCHA verification error" });
-        }
       } else {
         console.log("✅ Skipping reCAPTCHA verification (session verified)");
       }
-      }
+
+      // Clear validation errors on success
+      req.session.recaptchaVerified = true;
+    } catch (recaptchaError) {
+      console.error("Error verifying reCAPTCHA:", recaptchaError);
+      return res.status(500).json({ message: "reCAPTCHA verification error" });
+    }
+  } else if (recaptchaEnabled && !skipRecaptcha) {
+    // If not skipped and no token provided, it's a failure
+    return res.status(400).json({ message: "reCAPTCHA verification is required" });
+  }
 
       const user = await storage.getUserByUsername(username);
       console.log("👤 Found user:", user ? "yes ✓" : "no ✗");
@@ -358,20 +370,26 @@ export async function registerRoutes(httpServer: Server, app: Express): Promise<
           userId: user.id,
           username: user.username || username,
           role: (user as any).role || "student",
-          action: `User logged in`,
+          action: "User logged in",
           type: "login",
           ipAddress: req.ip || req.headers['x-forwarded-for'] as string || "unknown",
           userAgent: req.headers['user-agent'],
         });
       } catch (err) {
         console.error("Failed to log activity:", err);
-        // Don't fail the login if activity logging fails
+      }
+
+      // PERFORMANCE OPTIMIZATION: Truncate giant base64 images in common responses
+      const responseUser = { ...user };
+      if (responseUser.profileImageUrl && responseUser.profileImageUrl.length > 50000) {
+        console.log(`✂️ Login: Truncating oversized profile image for ${username} (${Math.round(responseUser.profileImageUrl.length/1024)}KB)`);
+        responseUser.profileImageUrl = responseUser.profileImageUrl.substring(0, 100) + "... (image too large)";
       }
 
       // Don't send password to client
-      const { password: _, ...userWithoutPassword } = user as any;
+      const { password: _, ...userWithoutPassword } = responseUser as any;
       console.log("✅ Login successful for:", username);
-      res.json({ user: userWithoutPassword });
+      res.json({ user: userWithoutPassword, message: "Login successful" });
     } catch (error) {
       console.error("Error during login:", error);
       res.status(500).json({ message: "Login failed - an unexpected error occurred" });
@@ -512,16 +530,23 @@ export async function registerRoutes(httpServer: Server, app: Express): Promise<
         // Verify reCAPTCHA token with Google only if not skipping
         if (!shouldSkip && recaptchaToken) {
           try {
+            // Add timeout for registration reCAPTCHA
+            const controller = new AbortController();
+            const timeoutId = setTimeout(() => controller.abort(), 8000);
+
             const recaptchaResponse = await fetch("https://www.google.com/recaptcha/api/siteverify", {
               method: "POST",
               headers: {
                 "Content-Type": "application/x-www-form-urlencoded",
               },
+              signal: controller.signal,
               body: new URLSearchParams({
                 secret: process.env.RECAPTCHA_SECRET_KEY || "6LeIxAcTAAAAAGG-vFI1TnRWxMZNFuojJ4WifJWe",
                 response: recaptchaToken,
               }).toString(),
             });
+
+            clearTimeout(timeoutId);
 
             const recaptchaData = await recaptchaResponse.json();
             console.log("reCAPTCHA verification response:", recaptchaData);
@@ -679,7 +704,19 @@ export async function registerRoutes(httpServer: Server, app: Express): Promise<
   app.get("/api/doctors", async (req, res) => {
     try {
       const doctors = await storage.getAllDoctors();
-      res.json(doctors);
+      
+      // PERFORMANCE OPTIMIZATION: Truncate giant base64 images in list view
+      const optimizedDoctors = doctors.map(doctor => {
+        if (doctor.profileImageUrl && doctor.profileImageUrl.length > 50000) {
+          return {
+            ...doctor,
+            profileImageUrl: doctor.profileImageUrl.substring(0, 100) + "... (large image)"
+          };
+        }
+        return doctor;
+      });
+      
+      res.json(optimizedDoctors);
     } catch (error) {
       console.error("Error fetching doctors:", error);
       res.status(500).json({ message: "Failed to fetch doctors" });
@@ -1415,6 +1452,70 @@ export async function registerRoutes(httpServer: Server, app: Express): Promise<
   // Catch-all for API routes to prevent fallback to client routing (which causes loops)
   app.all("/api/*", (req, res) => {
     res.status(404).json({ message: "API endpoint not found" });
+  });
+
+  // Profile Image Fetch (for full-size truncated images)
+  app.get("/api/profile-image/:type/:id", async (req, res) => {
+    try {
+      const { type, id } = req.params;
+      let profileImageUrl: string | null = null;
+
+      if (type === "user") {
+        const user = await storage.getUser(id);
+        profileImageUrl = user?.profileImageUrl || null;
+      } else if (type === "doctor") {
+        const doctor = await storage.getDoctor(parseInt(id));
+        profileImageUrl = doctor?.profileImageUrl || null;
+      }
+
+      if (!profileImageUrl) {
+        return res.status(404).json({ message: "Image not found" });
+      }
+
+      // If it's a base64 string, we might want to return it as a proper image response
+      // or just the string. For simplicity with the existing frontend, we'll send the string.
+      res.json({ profileImageUrl });
+    } catch (error) {
+      console.error("Error fetching profile image:", error);
+      res.status(500).json({ message: "Failed to fetch profile image" });
+    }
+  });
+
+  // Admin Email Diagnostic
+  app.post("/api/admin/debug-email", isAdmin, validateCsrfHeader, async (req, res) => {
+    try {
+      const { testEmail } = req.body;
+      const target = testEmail || "mohamednaga09@gmail.com";
+      
+      console.log(`🧪 [DEBUG EMAIL] Starting diagnostic test for: ${target}`);
+      
+      const result = await sendEmail({
+        to: target,
+        subject: "Campus Ratings Diagnostic Test",
+        text: "This is a diagnostic test to verify your email server configuration. If you received this, your email setup is WORKING CORRECTLY.",
+        html: "<h1>Email Diagnostic</h1><p>This is a diagnostic test to verify your email server configuration.</p><p>If you received this, your email setup is <b>WORKING CORRECTLY</b>.</p>"
+      });
+
+      if (result) {
+        res.json({ 
+          success: true, 
+          message: `✅ Diagnostic email sent to ${target}. Please check your inbox and SPAM folder.` 
+        });
+      } else {
+        res.status(500).json({ 
+          success: false, 
+          message: "❌ Email service failed to send the message. Check server logs for specific error details.",
+          troubleshooting: "Common issues: Invalid RESEND_API_KEY, Gmail SMTP block, or missing environment variables."
+        });
+      }
+    } catch (error: any) {
+      console.error("❌ [DEBUG EMAIL] Fatal error:", error);
+      res.status(500).json({ 
+        success: false, 
+        message: "Fatal error in diagnostic tool",
+        error: error.message
+      });
+    }
   });
 
   return httpServer;
