@@ -165,6 +165,26 @@ export async function registerRoutes(httpServer: Server, app: Express): Promise<
     }
   });
 
+  // Maintenance endpoint to delete test users (so they can re-register)
+  app.get("/api/admin/reset-user", async (req, res) => {
+    const email = req.query.email as string;
+    if (!email) return res.status(400).json({ message: "Email required" });
+
+    try {
+      const user = await storage.getUserByEmail(email);
+      if (!user) {
+        return res.status(404).json({ message: "User not found", email });
+      }
+
+      await storage.deleteUser(user.id);
+      console.log(`🧹 [Maintenance] User deleted: ${email} (${user.username})`);
+      res.json({ success: true, message: `User ${email} has been deleted and can now re-register.`, details: user });
+    } catch (error: any) {
+      console.error(`❌ [Maintenance] Failed to reset user ${email}:`, error);
+      res.status(500).json({ success: false, error: error.message });
+    }
+  });
+
   // Auth routes - public endpoint to check if user is logged in
   app.get("/api/auth/user", async (req: any, res) => {
     try {
