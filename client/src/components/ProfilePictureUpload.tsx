@@ -209,7 +209,9 @@ export function ProfilePictureUpload({
               }}
             >
               <AvatarImage 
-                src={user.profileImageUrl?.includes("...") ? `/api/profile-image/user/${user.id}` : user.profileImageUrl ?? undefined} 
+                src={user.profileImageUrl?.includes("...") 
+                  ? `/api/profile-image/user/${user.id}?t=${new Date().getTime()}` 
+                  : user.profileImageUrl ?? undefined} 
                 alt={user.firstName ?? "User"}
                 className="w-full h-full object-cover" 
               />
@@ -243,7 +245,9 @@ export function ProfilePictureUpload({
           <div className="flex items-center justify-center h-full w-full p-4">
             {user.profileImageUrl ? (
               <img 
-                src={user.profileImageUrl?.includes("...") ? `/api/profile-image/user/${user.id}` : user.profileImageUrl ?? ""}
+                src={user.profileImageUrl?.includes("...") 
+                  ? `/api/profile-image/user/${user.id}?t=${new Date().getTime()}` 
+                  : user.profileImageUrl ?? ""}
                 alt={`${user.firstName ?? "User"}'s profile picture`}
                 className="max-w-full max-h-[80vh] rounded-lg object-contain"
               />

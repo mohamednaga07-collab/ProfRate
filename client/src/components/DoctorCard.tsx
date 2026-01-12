@@ -68,7 +68,9 @@ export function DoctorCard({ doctor, onCompareToggle, isComparing }: DoctorCardP
         <div className="flex items-start gap-4">
           <Avatar className="h-16 w-16 shrink-0">
             <AvatarImage 
-              src={doctor.profileImageUrl?.includes("...") ? `/api/profile-image/doctor/${doctor.id}` : doctor.profileImageUrl ?? undefined} 
+              src={doctor.profileImageUrl?.includes("...") 
+                ? `/api/profile-image/doctor/${doctor.id}?t=${new Date().getTime()}` 
+                : doctor.profileImageUrl ?? undefined} 
               alt={doctor.name} 
             />
             <AvatarFallback className="text-lg font-semibold bg-primary/10 text-primary">
