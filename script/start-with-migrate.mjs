@@ -1,34 +1,39 @@
 #!/usr/bin/env node
-// Auto-migrate script that runs before starting the server
-import { exec } from 'child_process';
+import { spawn } from 'child_process';
 import { promisify } from 'util';
 
-const execAsync = promisify(exec);
+// 🚀 Start the server IMMEDIATELY so Render sees an open port
+console.log('🚀 Starting server process...');
+const server = spawn('node', ['dist/index.cjs'], {
+  stdio: 'inherit',
+  env: { ...process.env, NODE_ENV: 'production' }
+});
 
-async function migrate() {
-  console.log('🔄 Running database migrations...');
-  
+// 🔄 Run migrations in the background
+async function runMigrations() {
   if (!process.env.DATABASE_URL) {
-    console.log('⚠️  No DATABASE_URL found, skipping migrations (using SQLite)');
+    console.log('⚠️  No DATABASE_URL - skipping migrations');
     return;
   }
 
-  try {
-    const { stdout, stderr } = await execAsync('npx drizzle-kit push --force');
-    if (stdout) console.log(stdout);
-    if (stderr) console.error(stderr);
-    console.log('✅ Database migrations completed');
-  } catch (error) {
-    console.error('❌ Migration failed:', error);
-    console.log('⚠️  Continuing anyway - tables might already exist');
-  }
+  console.log('🔄 Triggering background database migrations...');
+  const migrate = spawn('npx', ['drizzle-kit', 'push', '--force'], {
+    stdio: 'inherit'
+  });
+
+  migrate.on('close', (code) => {
+    if (code === 0) {
+      console.log('✅ Database schema verified/updated');
+    } else {
+      console.error(`⚠️  Migration finished with code ${code}`);
+    }
+  });
 }
 
-migrate().then(() => {
-  // Start the actual server
-  console.log('🚀 Starting server...');
-  import('../dist/index.cjs');
-}).catch((err) => {
-  console.error('Fatal error:', err);
-  process.exit(1);
+// Run migrations while server is starting
+runMigrations();
+
+server.on('close', (code) => {
+  process.exit(code);
 });
+
