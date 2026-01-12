@@ -8,7 +8,11 @@ import { useState, useEffect, useCallback, useMemo } from "react";
 import { useTranslation } from "react-i18next";
 import { motion, AnimatePresence } from "framer-motion";
 
-export default function Landing() {
+interface LandingProps {
+  defaultTab?: "login" | "register";
+}
+
+export default function Landing({ defaultTab = "login" }: LandingProps) {
   const { t } = useTranslation();
   const [lastInteraction, setLastInteraction] = useState<number>(0);
   const [isDragging, setIsDragging] = useState(false);
@@ -108,7 +112,7 @@ export default function Landing() {
 
       <main>
         {/* Hero Section with Infinite Continuous Strip Carousel */}
-        <section className="relative h-[450px] lg:h-[650px] w-full overflow-hidden bg-slate-900" dir="ltr">
+        <section className="relative h-[380px] sm:h-[450px] lg:h-[650px] w-full overflow-hidden bg-slate-900" dir="ltr">
           <motion.div
             className="flex h-full will-change-transform"
             style={{
@@ -408,7 +412,7 @@ export default function Landing() {
             >
               <Card className="bg-card shadow-2xl border-border/50 backdrop-blur-xl transition-all duration-300">
                 <CardContent className="p-6">
-                  <AuthForm />
+                  <AuthForm defaultTab={defaultTab} />
                 </CardContent>
               </Card>
             </motion.div>

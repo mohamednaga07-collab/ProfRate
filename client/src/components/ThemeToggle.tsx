@@ -18,16 +18,17 @@ export function ThemeToggle() {
 
   const toggleTheme = () => {
     const newTheme = theme === "light" ? "dark" : "light";
-    setTheme(newTheme);
     localStorage.setItem("theme", newTheme);
     
-    // Use View Transitions API for ultra-smooth 120fps theme switching
+    // Use View Transitions API for ultra-smooth theme switching
     if ('startViewTransition' in document && typeof (document as any).startViewTransition === 'function') {
       (document as any).startViewTransition(() => {
+        setTheme(newTheme);
         document.documentElement.classList.toggle("dark", newTheme === "dark");
       });
     } else {
       // Fallback for browsers without View Transitions API
+      setTheme(newTheme);
       document.documentElement.classList.toggle("dark", newTheme === "dark");
     }
   };

@@ -9,7 +9,7 @@
   },
   "roles": {
     "student": "طالب",
-    "teacher": "معلم",
+    "teacher": "أستاذ",
     "admin": "مسؤول"
   },
   "nav": {
@@ -193,22 +193,25 @@
     "passReqUpper": "أحرف كبيرة",
     "passReqNumber": "أرقام",
     "enterEmailForReset": "أدخل بريدك الإلكتروني وسنرسل لك رابطاً لإعادة تعيين كلمة المرور.",
-    "enterEmailForUsername": "أدخل بريدك الإلكتروني وسنرسل لك اسم المستخدم الخاص بك."
-  },
-  "verify": {
-    "title": "تحقق من البريد الإلكتروني",
-    "verifying": "جاري التحقق من بريدك...",
-    "success": "تم بنجاح!",
-    "failed": "فشل التحقق",
-    "wait": "يرجى الانتظار...",
-    "redirecting": "جاري تحويلك لصفحة الدخول...",
-    "loginCta": "اذهب للدخول الآن",
-    "registerCta": "سجل مرة أخرى",
-    "tryLoginCta": "جرب الدخول",
-    "successMsg": "تم التحقق من البريد بنجاح!",
-    "failedMsg": "فشل التحقق",
-    "errorMsg": "فشل في التحقق من البريد",
-    "noToken": "لا يوجد رمز تحقق متاح"
+    "enterEmailForUsername": "أدخل بريدك الإلكتروني وسنرسل لك اسم المستخدم الخاص بك.",
+    "verify": {
+      "title": "التحقق من البريد الإلكتروني",
+      "verifying": "جاري التحقق من بريدك...",
+      "success": "تم بنجاح!",
+      "failed": "فشل التحقق",
+      "wait": "يرجى الانتظار...",
+      "redirecting": "جاري تحويلك لصفحة الدخول...",
+      "loginCta": "اذهب للدخول الآن",
+      "registerCta": "إنشاء حساب جديد",
+      "tryLoginCta": "تسجيل الدخول",
+      "noToken": "رمز التحقق مطلوب",
+      "invalidToken": "رمز التحقق غير صالح أو منتهي الصلاحية",
+      "successMsg": "تم التحقق من بريدك الإلكتروني بنجاح!",
+      "failedMsg": "فشل التحقق من البريد الإلكتروني. يرجى محاولة التسجيل مرة أخرى.",
+      "errorMsg": "حدث خطأ أثناء الاتصال بالخادم. يرجى المحاولة لاحقاً."
+    },
+    "tryLoginCta": "تسجيل الدخول",
+    "registerCta": "إنشاء حساب جديد"
   },
   "doctors": {
     "title": "الأساتذة",
@@ -224,6 +227,7 @@
     "cancel": "إلغاء",
     "save": "حفظ",
     "saving": "جاري الحفظ...",
+    "doctorAbbr": "د.",
     "savingProgress": "جاري حفظ التقدم...",
     "delete": "حذف",
     "edit": "تعديل",
@@ -244,6 +248,26 @@
       "sidebarTitle": "الشريط الجانبي",
       "sidebarDescription": "يعرض الشريط الجانبي على الهاتف.",
       "toggleSidebar": "تبديل الشريط الجانبي"
+    }
+  },
+  "doctorProfile": {
+    "doctorPrefix": "د.",
+    "notFound": {
+      "title": "لم يتم العثور على بيانات التاجر"
+    },
+    "factors": {
+      "teachingQuality": "جودة التدريس",
+      "availability": "التوفر",
+      "communication": "التواصل",
+      "knowledge": "المعرفة",
+      "fairness": "الإنصاف"
+    },
+    "factorsShort": {
+      "teaching": "التدريس",
+      "availability": "التوفر",
+      "communication": "التواصل",
+      "knowledge": "المعرفة",
+      "fairness": "الإنصاف"
     }
   },
   "home": {
@@ -300,19 +324,42 @@
       "Law": "الحقوق",
       "Arts": "الآداب",
       "Science": "العلوم",
-      "Science": "العلوم",
       "Business": "التجارة",
       "Veterinary Medicine": "الطب البيطري",
       "Physics": "الفيزياء",
+      "physics": "الفيزياء",
+      "Biology": "الأحياء",
+      "biology": "الأحياء",
       "Mathematics": "الرياضيات",
+      "mathematics": "الرياضيات",
       "Chemistry": "الكيمياء",
-      "Lecturer": "محاضر",
+      "chemistry": "الكيمياء",
+      "Professor": "أستاذ",
       "Associate Professor": "أستاذ مشارك",
-      "Professor": "أستاذ"
+      "Lecturer": "محاضر"
+    },
+    "factors": {
+      "teaching": "ت",
+      "availability": "ت",
+      "communication": "ت",
+      "knowledge": "م",
+      "fairness": "إ"
+    },
+    "professors": {
+      "names": {
+        "Michael Chen": "مايكل تشين",
+        "Sarah Johnson": "سارة جونسون",
+        "Smith": "سميث",
+        "Johnson": "جونز",
+        "Williams": "ويليامز",
+        "Brown": "براون",
+        "Jones": "جونز",
+        "Emily Williams": "إيميلي ويليامز"
+      }
     },
     "topRated": {
       "title": "أفضل الأساتذة تقييماً",
-      "subtitle": "الأعلى تقييماً من قبل الطلاب",
+      "subtitle": "الأعلى تقييماً من قبل مجتمع الطلاب",
       "viewAll": "عرض الكل"
     },
     "enhance": {
@@ -599,10 +646,17 @@
     },
     "activity": {
       "title": "النشاط الأخير",
-      "empty": "لا يوجد نشاط أخير",
+      "empty": "لا يوجد نشاط مسجل بعد.",
       "byUser": "بواسطة {{username}} ({{role}})",
-      "topRated": "الأعلى تقييماً",
-      "reviewsCount": "{{count}} مراجعة"
+      "topRated": "الأساتذة الأعلى تقييماً",
+      "actions": {
+        "user_logged_in": "سجل المستخدم دخوله",
+        "user_registered": "مستخدم جديد مسجل",
+        "review_submitted": "تم تقديم مراجعة جديدة",
+        "doctor_added": "تم إضافة أستاذ جديد",
+        "profile_updated": "تم تحديث الملف الشخصي",
+        "role_updated": "تم تحديث الصلاحيات"
+      }
     },
     "tabs": {
       "users": "المستخدمون",
@@ -621,19 +675,6 @@
         "role": "الدور",
         "joined": "تاريخ الانضمام",
         "actions": "الإجراءات",
-        "editRoleDesc": "إدارة صلاحيات وصول المستخدمين"
-      },
-      "titles": {
-        "users": "إدارة المستخدمين",
-        "reviews": "إدارة المراجعات",
-        "doctors": "إدارة الأساتذة",
-        "settings": "إعدادات النظام",
-        "analytics": "تحليلات لوحة التحكم"
-      },
-      "table": {
-        "name": "الاسم",
-        "email": "البريد الإلكتروني",
-        "role": "الدور",
         "status": "الحالة",
         "user": "المستخدم",
         "doctor": "الأستاذ",
@@ -641,7 +682,24 @@
         "comment": "التعليق",
         "department": "القسم",
         "title": "اللقب",
-        "specialty": "التخصص"
+        "specialty": "التخصص",
+        "editRoleDesc": "إدارة صلاحيات وصول المستخدمين"
+      },
+      "editRoleDesc": "إدارة صلاحيات وصول المستخدمين",
+      "titles": {
+        "users": "إدارة المستخدمين",
+        "reviews": "إدارة المراجعات",
+        "doctors": "إدارة الأساتذة",
+        "settings": "إعدادات النظام",
+        "analytics": "تحليلات لوحة التحكم"
+      },
+      "export": {
+        "username": "اسم المستخدم",
+        "email": "البريد الإلكتروني",
+        "role": "الدور",
+        "firstName": "الاسم الأول",
+        "lastName": "اسم العائلة",
+        "joined": "تاريخ الانضمام"
       },
       "edit": {
         "title": "تعديل دور المستخدم",
@@ -654,6 +712,10 @@
         "joined": "انضم منذ",
         "actions": "الإجراءات",
         "roleAssignment": "تعيين الدور"
+      },
+      "delete": {
+        "button": "حذف نهائي",
+        "confirm": "هل أنت متأكد أنك تريد حذف هذا المستخدم؟"
       }
     },
     "components": {
@@ -661,10 +723,6 @@
         "noPicture": "لا توجد صورة شخصية",
         "clickToUpload": "اضغط لرفع صورة جديدة",
         "title": "رفع صورة شخصية"
-      },
-      "delete": {
-        "button": "حذف المستخدم",
-        "confirm": "هل تريد حذف المستخدم {{username}}؟"
       }
     },
     "common": {
@@ -673,7 +731,7 @@
       "confirmDeleteRemoveData": "وإزالة بياناتهم من خوادمنا."
     },
     "doctors": {
-      "title": "إدارة الأساتذة",
+      "title": "عرض وإدارة ملفات الأساتذة",
       "subtitle": "عرض وإدارة ملفات الأساتذة",
       "add": {
         "title": "إضافة أستاذ جديد",
@@ -691,6 +749,7 @@
         }
       },
       "table": {
+        "image": "الصورة",
         "name": "الاسم",
         "department": "القسم",
         "title": "اللقب",
@@ -698,7 +757,12 @@
         "actions": "الإجراءات"
       },
       "delete": {
+        "title": "حذف الأستاذ",
+        "description": "هل أنت متأكد أنك تريد حذف الأستاذ {{name}}؟ لا يمكن التراجع عن هذا الإجراء وسيتم إزالة جميع التقييمات والمراجعات المرتبطة به.",
         "confirm": "هل تريد حذف الأستاذ {{name}}؟"
+      },
+      "actions": {
+        "viewCard": "عرض البطاقة"
       }
     },
     "reviews": {

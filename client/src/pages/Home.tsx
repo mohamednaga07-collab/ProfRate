@@ -94,7 +94,7 @@ export default function Home() {
       <Header />
 
       {/* Hero Section with Infinite Continuous Strip Carousel */}
-      <section className="relative h-[300px] lg:h-[450px] overflow-hidden bg-slate-900 -mt-0" dir="ltr">
+      <section className="relative h-[280px] sm:h-[350px] lg:h-[450px] overflow-hidden bg-slate-900 -mt-0" dir="ltr">
         <motion.div
           className="flex h-full will-change-transform"
           style={{
@@ -222,7 +222,7 @@ export default function Home() {
 
       <main className="container mx-auto px-4 py-12">
         <section className="mb-12">
-          <div className="grid md:grid-cols-2 xl:grid-cols-4 gap-4">
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
             {/* Premium Action Cards - Perfectly Aligned Vertical Layout */}
             {[
               {

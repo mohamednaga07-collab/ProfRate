@@ -164,9 +164,12 @@ export default function Compare() {
                         </AvatarFallback>
                       </Avatar>
                       <div>
-                        <CardTitle className="leading-tight text-xl pt-1">Dr. {normalizeName(d.name)}</CardTitle>
+                        <CardTitle className="leading-tight text-xl pt-1">
+                          {t("doctorProfile.doctorPrefix", "د.")} {t(`home.professors.names.${normalizeName(d.name)}`, { defaultValue: normalizeName(d.name) })}
+                        </CardTitle>
                         <div className="text-sm text-muted-foreground mt-1">
-                          {d.title ? `${d.title} • ` : ""}{d.department}
+                          {d.title ? `${t(`home.departments.${d.title.trim()}`, { defaultValue: d.title })} • ` : ""}
+                          {t(`home.departments.${d.department.trim()}`, { defaultValue: t(`home.departments.${d.department.trim().toLowerCase()}`, { defaultValue: d.department }) })}
                         </div>
                       </div>
                     </div>
@@ -238,11 +241,11 @@ export default function Compare() {
                           <Avatar className="h-6 w-6">
                             <AvatarImage src={doc.profileImageUrl ?? undefined} />
                             <AvatarFallback className="text-[10px]">
-                              {doc.name.replace(/^Dr\.?\s+/i, "").substring(0, 2).toUpperCase()}
-                            </AvatarFallback>
-                          </Avatar>
-                          <span>Dr. {doc.name.replace(/^Dr\.?\s+/i, "")}</span>
-                        </div>
+                            {normalizeName(doc.name).substring(0, 2).toUpperCase()}
+                          </AvatarFallback>
+                        </Avatar>
+                        <span>{t("doctorProfile.doctorPrefix", "د.")} {t(`home.professors.names.${normalizeName(doc.name)}`, { defaultValue: normalizeName(doc.name) })}</span>
+                      </div>
                       </SelectItem>
                     ))}
                   </SelectContent>
@@ -267,9 +270,9 @@ export default function Compare() {
                   {comparison.factorWinners.map((f) => {
                     const winnerLabel =
                       f.winner === "a"
-                        ? `Dr. ${normalizeName(comparison.a.name)}`
+                        ? `${t("doctorProfile.doctorPrefix", "د.")} ${t(`home.professors.names.${normalizeName(comparison.a.name)}`, { defaultValue: normalizeName(comparison.a.name) })}`
                         : f.winner === "b"
-                          ? `Dr. ${normalizeName(comparison.b.name)}`
+                          ? `${t("doctorProfile.doctorPrefix", "د.")} ${t(`home.professors.names.${normalizeName(comparison.b.name)}`, { defaultValue: normalizeName(comparison.b.name) })}`
                           : f.winner === "tie"
                             ? t("compare.tie")
                             : t("compare.notAvailable");
@@ -293,9 +296,9 @@ export default function Compare() {
                     <div className="text-sm text-muted-foreground">{t("compare.overallWinner")}</div>
                     <div className="text-lg font-semibold">
                       {comparison.overallWinner === "a"
-                        ? `Dr. ${normalizeName(comparison.a.name)}`
+                        ? `${t("doctorProfile.doctorPrefix", "د.")} ${t(`home.professors.names.${normalizeName(comparison.a.name)}`, { defaultValue: normalizeName(comparison.a.name) })}`
                         : comparison.overallWinner === "b"
-                          ? `Dr. ${normalizeName(comparison.b.name)}`
+                          ? `${t("doctorProfile.doctorPrefix", "د.")} ${t(`home.professors.names.${normalizeName(comparison.b.name)}`, { defaultValue: normalizeName(comparison.b.name) })}`
                           : comparison.overallWinner === "tie"
                             ? t("compare.tie")
                             : t("compare.notAvailable")}
@@ -329,9 +332,9 @@ export default function Compare() {
                         <Award className="h-5 w-5 text-amber-500" />
                         <p className="text-sm font-semibold text-foreground">
                           {comparison.overallWinner === "a"
-                            ? `Dr. ${normalizeName(comparison.a.name)}`
+                            ? `${t("doctorProfile.doctorPrefix", "د.")} ${t(`home.professors.names.${normalizeName(comparison.a.name)}`, { defaultValue: normalizeName(comparison.a.name) })}`
                             : comparison.overallWinner === "b"
-                              ? `Dr. ${normalizeName(comparison.b.name)}`
+                              ? `${t("doctorProfile.doctorPrefix", "د.")} ${t(`home.professors.names.${normalizeName(comparison.b.name)}`, { defaultValue: normalizeName(comparison.b.name) })}`
                               : t("compare.tie")}
                         </p>
                       </div>

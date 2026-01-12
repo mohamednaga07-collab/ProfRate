@@ -12,7 +12,7 @@ import ReCAPTCHA from "react-google-recaptcha";
 import { apiRequest } from "@/lib/queryClient";
 
 export default function ForgotUsername() {
-  const { t } = useTranslation();
+  const { t, i18n } = useTranslation();
   const [email, setEmail] = useState("");
   const [isLoading, setIsLoading] = useState(false);
   const [submitted, setSubmitted] = useState(false);
@@ -230,6 +230,7 @@ export default function ForgotUsername() {
                             sitekey={recaptchaSiteKey}
                             onChange={handleRecaptchaChange}
                             theme={isDarkMode ? "dark" : "light"}
+                            hl={i18n.language}
                           />
                         </div>
                       )

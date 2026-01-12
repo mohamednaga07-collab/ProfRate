@@ -24,22 +24,40 @@ html {
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
   scroll-behavior: smooth;
+  color-scheme: light dark;
 }
 
 body {
   overflow-x: hidden;
+  -webkit-tap-highlight-color: transparent;
+}
+
+/* Base mobile padding adjustments */
+:root {
+  --container-padding: 1rem;
+}
+
+@media (min-width: 640px) {
+  :root {
+    --container-padding: 1.5rem;
+  }
+}
+
+.container {
+  padding-left: var(--container-padding) !important;
+  padding-right: var(--container-padding) !important;
 }
 
 /* Smooth transitions for main layout elements */
 body, header, footer, nav, aside, main, section, .card, [role="dialog"], [role="menu"], [role="tabpanel"] {
-  transition: background-color 300ms ease-in-out, border-color 300ms ease-in-out, color 300ms ease-in-out;
+  transition: background-color 150ms ease-in-out, border-color 150ms ease-in-out, color 150ms ease-in-out;
 }
 
 button,
 input,
 textarea,
 select {
-  @apply transition-all duration-300 ease-out;
+  @apply transition-all duration-150 ease-out;
 }
 
 /* RTL Support for Arabic */
@@ -151,7 +169,7 @@ html[dir="rtl"] body {
   /* Tab animations */
   [role="tab"],
   [role="tabpanel"] {
-    @apply transition-all duration-300;
+    @apply transition-all duration-150;
   }
 
   /* Smooth icon animations */
@@ -162,6 +180,38 @@ html[dir="rtl"] body {
   /* Professional hover effects */
   a:not([class*="button"]) {
     @apply transition-colors duration-200;
+  }
+
+  /* Responsive Table Wrapper */
+  .table-responsive {
+    @apply w-full overflow-x-auto;
+    -webkit-overflow-scrolling: touch;
+  }
+
+  /* Mobile-first sticky header adjustment */
+  .sticky-header-offset {
+    scroll-margin-top: 5rem;
+  }
+}
+
+/* Tablet (iPad) specific adjustments */
+@media (min-width: 768px) and (max-width: 1024px) {
+  .tablet-grid-cols-2 {
+    grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
+  }
+  .tablet-grid-cols-3 {
+    grid-template-columns: repeat(3, minmax(0, 1fr)) !important;
+  }
+}
+
+/* Small mobile specific adjustments */
+@media (max-width: 640px) {
+  .mobile-text-sm {
+    font-size: 0.875rem;
+  }
+  .mobile-px-2 {
+    padding-left: 0.5rem;
+    padding-right: 0.5rem;
   }
 }
 
@@ -457,22 +507,25 @@ html[dir="rtl"] body {
 /* ============ reCAPTCHA Styling ============ */
 
 /* Main wrapper styling */
+/* Main wrapper styling */
 .recaptcha-wrapper {
-  display: flex;
-  justify-content: center;
-  align-items: center;
-  padding: 0.75rem;
+  display: flex !important;
+  justify-content: center !important;
+  align-items: center !important;
+  padding: 0 !important;
   border-radius: 0.5rem;
-  background-color: hsl(var(--card) / 1);
-  border: 1px solid hsl(var(--card-border) / 1);
+  background-color: transparent;
+  border: none;
   transition: all 0.4s cubic-bezier(0.34, 1.56, 0.64, 1);
-  min-height: 0;
-  overflow: visible;
+  min-height: 78px;
+  width: 100% !important;
+  max-width: 304px !important;
+  margin: 1.25rem auto !important;
+  overflow: visible !important;
   position: relative;
   animation: recaptchaFadeIn 0.5s cubic-bezier(0.34, 1.56, 0.64, 1) forwards;
-  will-change: transform;
+  will-change: transform, opacity;
   transform: translateZ(0);
-  backface-visibility: hidden;
 }
 
 @keyframes recaptchaFadeIn {
@@ -480,7 +533,6 @@ html[dir="rtl"] body {
     opacity: 0.85;
     transform: scale(0.98) translateY(-2px);
   }
-
   to {
     opacity: 1;
     transform: scale(1) translateY(0);
@@ -488,22 +540,7 @@ html[dir="rtl"] body {
 }
 
 .recaptcha-wrapper:hover {
-  border-color: hsl(var(--ring) / 1);
-  background-color: hsl(var(--card) / 0.8);
   transform: translateY(-1px);
-  box-shadow: 0 4px 12px hsl(0 0% 0% / 0.08);
-  transition: all 0.3s cubic-bezier(0.34, 1.56, 0.64, 1);
-}
-
-/* Dark mode wrapper */
-.dark .recaptcha-wrapper {
-  background-color: hsl(var(--card) / 1);
-  border-color: hsl(var(--card-border) / 1);
-}
-
-.dark .recaptcha-wrapper:hover {
-  border-color: hsl(var(--ring) / 0.8);
-  background-color: hsl(var(--card) / 0.9);
 }
 
 /* reCAPTCHA container */
@@ -515,7 +552,6 @@ html[dir="rtl"] body {
   align-items: center !important;
   width: 100% !important;
   position: relative !important;
-  z-index: 1 !important;
 }
 
 /* reCAPTCHA iframe - display at full size without cropping */
@@ -523,10 +559,30 @@ html[dir="rtl"] body {
 .g-recaptcha iframe,
 .g_recaptcha iframe,
 .recaptcha iframe {
-  max-width: 100% !important;
-  min-width: 100% !important;
+  margin: 0 auto !important;
   display: block !important;
-  position: relative !important;
+}
+
+/* Robust scaling for mobile devices */
+@media (max-width: 400px) {
+  .recaptcha-wrapper {
+    transform: scale(0.95);
+    transform-origin: center center;
+  }
+}
+
+@media (max-width: 360px) {
+  .recaptcha-wrapper {
+    transform: scale(0.88);
+    transform-origin: center center;
+  }
+}
+
+@media (max-width: 320px) {
+  .recaptcha-wrapper {
+    transform: scale(0.8);
+    transform-origin: center center;
+  }
 }
 
 /* Smooth transitions for theme changes */

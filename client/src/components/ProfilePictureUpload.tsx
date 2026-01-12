@@ -209,7 +209,7 @@ export function ProfilePictureUpload({
               }}
             >
               <AvatarImage 
-                src={user.profileImageUrl} 
+                src={user.profileImageUrl?.includes("...") ? `/api/profile-image/user/${user.id}` : user.profileImageUrl ?? undefined} 
                 alt={user.firstName ?? "User"}
                 className="w-full h-full object-cover" 
               />

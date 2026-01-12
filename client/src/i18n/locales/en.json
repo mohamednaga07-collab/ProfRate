@@ -9,8 +9,8 @@
   },
   "roles": {
     "student": "Student",
-    "teacher": "Teacher",
-    "admin": "Admin"
+    "teacher": "Professor",
+    "admin": "Administrator"
   },
   "nav": {
     "home": "Home",
@@ -180,22 +180,25 @@
     "sending": "Sending...",
     "resetting": "Resetting...",
     "enterEmailForReset": "Enter your email address and we'll send you a link to reset your password.",
-    "enterEmailForUsername": "Enter your email address and we'll send you your username."
-  },
-  "verify": {
-    "title": "Email Verification",
-    "verifying": "Verifying your email...",
-    "success": "Success!",
-    "failed": "Verification Failed",
-    "wait": "Please wait...",
-    "redirecting": "Redirecting to login page...",
-    "loginCta": "Go to Login Now",
-    "registerCta": "Register Again",
-    "tryLoginCta": "Try Login",
-    "successMsg": "Email verified successfully!",
-    "failedMsg": "Verification failed",
-    "errorMsg": "Failed to verify email",
-    "noToken": "No verification token provided"
+    "enterEmailForUsername": "Enter your email address and we'll send you your username.",
+    "verify": {
+      "title": "Email Verification",
+      "verifying": "Verifying your email...",
+      "success": "Success!",
+      "failed": "Verification Failed",
+      "wait": "Please wait...",
+      "redirecting": "Redirecting you to login...",
+      "loginCta": "Go to Login",
+      "registerCta": "Create New Account",
+      "tryLoginCta": "Login",
+      "noToken": "Verification token required",
+      "invalidToken": "Invalid or expired verification token",
+      "successMsg": "Email verified successfully!",
+      "failedMsg": "Email verification failed. Please try registering again.",
+      "errorMsg": "An error occurred while connecting to the server. Please try again later."
+    },
+    "tryLoginCta": "Login",
+    "registerCta": "Create New Account"
   },
   "doctors": {
     "title": "Professors",
@@ -211,6 +214,7 @@
     "cancel": "Cancel",
     "save": "Save",
     "saving": "Saving...",
+    "doctorAbbr": "DR",
     "savingProgress": "Saving progress...",
     "delete": "Delete",
     "edit": "Edit",
@@ -231,6 +235,26 @@
       "sidebarTitle": "Sidebar",
       "sidebarDescription": "Displays the mobile sidebar.",
       "toggleSidebar": "Toggle Sidebar"
+    }
+  },
+  "doctorProfile": {
+    "doctorPrefix": "Dr.",
+    "notFound": {
+      "title": "Professor data not found"
+    },
+    "factors": {
+      "teachingQuality": "Teaching Quality",
+      "availability": "Availability",
+      "communication": "Communication",
+      "knowledge": "Knowledge",
+      "fairness": "Fairness"
+    },
+    "factorsShort": {
+      "teaching": "Teaching",
+      "availability": "Availability",
+      "communication": "Communication",
+      "knowledge": "Knowledge",
+      "fairness": "Fairness"
     }
   },
   "home": {
@@ -287,20 +311,39 @@
       "Law": "Law",
       "Arts": "Arts",
       "Science": "Science",
-      "Science": "Science",
       "Business": "Business",
       "Veterinary Medicine": "Veterinary Medicine",
       "Physics": "Physics",
+      "Biology": "Biology",
       "Mathematics": "Mathematics",
       "Chemistry": "Chemistry",
-      "Lecturer": "Lecturer",
+      "Professor": "Professor",
       "Associate Professor": "Associate Professor",
-      "Professor": "Professor"
+      "Lecturer": "Lecturer"
+    },
+    "factors": {
+      "teaching": "T",
+      "availability": "A",
+      "communication": "C",
+      "knowledge": "K",
+      "fairness": "F"
+    },
+    "professors": {
+      "names": {
+        "Michael Chen": "Michael Chen",
+        "Sarah Johnson": "Sarah Johnson",
+        "Smith": "Smith",
+        "Johnson": "Johnson",
+        "Williams": "Williams",
+        "Brown": "Brown",
+        "Jones": "Jones",
+        "Emily Williams": "Emily Williams"
+      }
     },
     "topRated": {
       "title": "Top Rated Professors",
-      "subtitle": "Highest rated by students",
-      "viewAll": "View All"
+      "subtitle": "Highest rated educators by the student community",
+      "viewAll": "View all"
     },
     "enhance": {
       "compareLabel": "Compare",
@@ -600,19 +643,6 @@
         "role": "Role",
         "joined": "Joined",
         "actions": "Actions",
-        "editRoleDesc": "Manage user access permissions"
-      },
-      "titles": {
-        "users": "Manage Users",
-        "reviews": "Manage Reviews",
-        "doctors": "Manage Doctors",
-        "settings": "System Settings",
-        "analytics": "Dashboard Analytics"
-      },
-      "table": {
-        "name": "Name",
-        "email": "Email",
-        "role": "Role",
         "status": "Status",
         "user": "User",
         "doctor": "Doctor",
@@ -621,6 +651,22 @@
         "department": "Department",
         "title": "Title",
         "specialty": "Specialty"
+      },
+      "editRoleDesc": "Manage user access permissions",
+      "titles": {
+        "users": "Manage Users",
+        "reviews": "Manage Reviews",
+        "doctors": "Manage Doctors",
+        "settings": "System Settings",
+        "analytics": "Dashboard Analytics"
+      },
+      "export": {
+        "username": "Username",
+        "email": "Email",
+        "role": "Role",
+        "firstName": "First Name",
+        "lastName": "Last Name",
+        "joined": "Joined"
       },
       "edit": {
         "title": "Edit User Role",
@@ -633,6 +679,10 @@
         "joined": "Joined",
         "actions": "Actions",
         "roleAssignment": "Role Assignment"
+      },
+      "delete": {
+        "button": "Permanently Delete",
+        "confirm": "Are you sure you want to delete this user?"
       }
     },
     "components": {
@@ -640,10 +690,6 @@
         "noPicture": "No profile picture",
         "clickToUpload": "Click to upload a new profile picture",
         "title": "Profile picture upload"
-      },
-      "delete": {
-        "button": "Delete User",
-        "confirm": "Delete user {{username}}?"
       }
     },
     "common": {
@@ -670,6 +716,7 @@
         }
       },
       "table": {
+        "image": "Image",
         "name": "Name",
         "department": "Department",
         "title": "Title",
@@ -677,7 +724,12 @@
         "actions": "Actions"
       },
       "delete": {
+        "title": "Delete Professor",
+        "description": "Are you sure you want to delete Professor {{name}}? This action cannot be undone and will remove all associated ratings and reviews.",
         "confirm": "Delete professor {{name}}?"
+      },
+      "actions": {
+        "viewCard": "View Card"
       }
     },
     "reviews": {

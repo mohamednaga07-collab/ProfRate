@@ -25,6 +25,11 @@ export function AuthForm({ onSuccess, defaultTab = "login" }: AuthFormProps) {
   const { toast } = useToast();
   const [isLoading, setIsLoading] = useState(false);
   const [activeTab, setActiveTab] = useState(defaultTab);
+
+  // Sync activeTab with defaultTab prop when it changes (e.g. navigation /login <-> /register)
+  useEffect(() => {
+    setActiveTab(defaultTab);
+  }, [defaultTab]);
   const [registrationSuccess, setRegistrationSuccess] = useState(false);
   const [isDarkMode, setIsDarkMode] = useState(false);
   const [isSessionVerified, setIsSessionVerified] = useState(false);
@@ -303,13 +308,17 @@ export function AuthForm({ onSuccess, defaultTab = "login" }: AuthFormProps) {
 
 
 
-    if (!isAdminLogin && recaptchaEnabled && !loginRecaptchaToken && !isSessionVerified) {
-      console.log("⚠️ Showing reCAPTCHA required toast");
+    // Verify reCAPTCHA - only if enabled, not an admin, NO valid session, and no fresh token
+    const isActuallyVerified = isSessionVerified || !!loginRecaptchaToken;
+    
+    if (!isAdminLogin && recaptchaEnabled && !isActuallyVerified) {
+      console.log("⚠️ Showing reCAPTCHA required toast - isSessionVerified:", isSessionVerified, "hasToken:", !!loginRecaptchaToken);
       toast({
         title: t("auth.errors.recaptchaRequiredTitle"),
         description: t("auth.errors.recaptchaRequiredDescription"),
         variant: "destructive",
       });
+      setIsLoading(false); // Make sure to stop loading
       return;
     }
 
@@ -770,6 +779,7 @@ export function AuthForm({ onSuccess, defaultTab = "login" }: AuthFormProps) {
                           sitekey={recaptchaSiteKey}
                           onChange={handleLoginRecaptchaChange}
                           theme={isDarkMode ? "dark" : "light"}
+                          hl={i18n.language}
                         />
                       </motion.div>
                     )

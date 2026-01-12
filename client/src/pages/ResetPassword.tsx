@@ -12,7 +12,7 @@ import ReCAPTCHA from "react-google-recaptcha";
 import { apiRequest } from "@/lib/queryClient";
 
 export default function ResetPassword() {
-  const { t } = useTranslation();
+  const { t, i18n } = useTranslation();
   const [location] = useLocation();
   const [token, setToken] = useState("");
   const [newPassword, setNewPassword] = useState("");
@@ -333,6 +333,7 @@ export default function ResetPassword() {
                             sitekey={recaptchaSiteKey}
                             onChange={handleRecaptchaChange}
                             theme={isDarkMode ? "dark" : "light"}
+                            hl={i18n.language}
                           />
                         </div>
                       )}

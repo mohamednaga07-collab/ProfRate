@@ -309,7 +309,7 @@ export default function DoctorListing() {
               <SelectItem value="all">{t("listing.filters.allDepartments")}</SelectItem>
               {departments.map((dept) => (
                 <SelectItem key={dept} value={dept}>
-                  {dept}
+                  {t(`home.departments.${dept}`, { defaultValue: dept })}
                 </SelectItem>
               ))}
             </SelectContent>

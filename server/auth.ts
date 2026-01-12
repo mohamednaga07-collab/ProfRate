@@ -7,11 +7,15 @@ import { type Request, type Response, type NextFunction } from "express";
 // Rate limiting - Prevent brute force and DoS attacks
 export const loginLimiter = rateLimit({
   windowMs: 15 * 60 * 1000, // 15 minutes
-  max: 5, // Max 5 attempts per window
-  message: "Too many login attempts, please try again later",
-  standardHeaders: true, // Return rate limit info in RateLimit-* headers
-  skip: (req) => process.env.NODE_ENV === "development", // Skip in development
-  // Don't use custom keyGenerator - use defaults which handle IPv6
+  max: 10, // Max 10 attempts per window (relaxed from 5 for better UX)
+  message: "Too many login attempts for this account, please try again later",
+  standardHeaders: true,
+  skip: (req) => process.env.NODE_ENV === "development",
+  keyGenerator: (req) => {
+    // Limit based on the username being attempted, not the IP
+    // This allows multiple users behind a NAT (e.g., a campus) to login simultaneously
+    return String(req.body.username || req.ip).toLowerCase();
+  },
 });
 
 export const registerLimiter = rateLimit({

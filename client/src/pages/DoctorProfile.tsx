@@ -209,14 +209,14 @@ export default function DoctorProfile() {
                       <div className="flex flex-wrap items-start justify-between gap-4">
                         <div>
                           <h1 className="text-2xl font-bold" data-testid="text-doctor-name">
-                            {t("doctorProfile.doctorPrefix")} {doctor.name.replace(/^Dr\.?\s+/i, "")}
+                            {t("doctorProfile.doctorPrefix")} {t(`home.professors.names.${doctor.name.replace(/^Dr\.?\s+/i, "")}`, { defaultValue: doctor.name.replace(/^Dr\.?\s+/i, "") })}
                           </h1>
                           <p className="text-muted-foreground">
                             {t(`home.departments.${doctor.department}`, { defaultValue: doctor.department })}
                           </p>
                           {doctor.title && (
                             <Badge variant="secondary" className="mt-2">
-                              {doctor.title}
+                              {t(`home.departments.${doctor.title}`, { defaultValue: doctor.title })}
                             </Badge>
                           )}
                         </div>

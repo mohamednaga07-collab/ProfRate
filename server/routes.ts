@@ -8,6 +8,9 @@ import { randomUUID } from "crypto";
 import crypto from "crypto";
 import { sendEmail, generateForgotPasswordEmailHtml, generateForgotUsernameEmailHtml, generateVerificationEmailHtml } from "./email";
 import os from "os";
+
+// Guard to prevent simultaneous duplicate registration requests
+const pendingRegistrations = new Set<string>();
 // Extend Express session to include userId
 declare module "express-session" {
   interface SessionData {
@@ -156,8 +159,15 @@ export async function registerRoutes(httpServer: Server, app: Express): Promise<
         console.log("📋 Checking user session:", req.session.userId);
         const user = await storage.getUser(req.session.userId);
         if (user) {
+          // PERFORMANCE OPTIMIZATION: Truncate giant base64 images in auth user object
+          const responseUser = { ...user };
+          if (responseUser.profileImageUrl && responseUser.profileImageUrl.length > 50000) {
+            console.log(`✂️ AuthCheck: Truncating oversized profile image for ${user.username} (${Math.round(responseUser.profileImageUrl.length/1024)}KB)`);
+            responseUser.profileImageUrl = responseUser.profileImageUrl.substring(0, 100) + "... (image too large)";
+          }
+
           // Don't send password to client
-          const { password, ...userWithoutPassword } = user as any;
+          const { password, ...userWithoutPassword } = responseUser as any;
           console.log("✅ User authenticated:", user.username);
           return res.json(userWithoutPassword);
         }
@@ -483,9 +493,33 @@ export async function registerRoutes(httpServer: Server, app: Express): Promise<
     console.log("Request body:", JSON.stringify(req.body, null, 2));
     console.log("🚀".repeat(30) + "\n");
     
+    const { username: rawUsername, email } = req.body;
+    const username = rawUsername ? rawUsername.trim() : "";
+
+    // SERVER-SIDE DUPLICATE GUARD
+    const registrationKey = `${username.toLowerCase()}:${email?.toLowerCase()}`;
+    if (pendingRegistrations.has(registrationKey)) {
+      console.warn(`🛑 Duplicate registration attempt blocked for: ${registrationKey}`);
+      return res.status(429).json({ message: "Registration is already in progress. Please wait a moment." });
+    }
+    
+    // Track this attempt to block simultaneous ones
+    pendingRegistrations.add(registrationKey);
+    console.log(`🔒 Guard active for: ${registrationKey}`);
+    
+    // Ensure the key is removed even if the request fails or times out
+    const cleanup = () => {
+      if (pendingRegistrations.has(registrationKey)) {
+        pendingRegistrations.delete(registrationKey);
+        console.log(`🔓 Guard released for: ${registrationKey}`);
+      }
+    };
+
+    // Auto-cleanup after 30 seconds as a fallback
+    const timeoutId = setTimeout(cleanup, 30000);
+
     try {
-      const { username: rawUsername, password, email, firstName, lastName, role, recaptchaToken, skipRecaptcha } = req.body;
-      const username = rawUsername ? rawUsername.trim() : "";
+      const { password, firstName, lastName, role, recaptchaToken, skipRecaptcha } = req.body;
       
       console.log(`📝 Processing registration for:`, { email, username, role });
 
@@ -647,7 +681,14 @@ export async function registerRoutes(httpServer: Server, app: Express): Promise<
         user: userWithoutPassword,
         message: "Registration successful. Please check your email to verify your account."
       });
+      
+      // Request successful, release the guard
+      clearTimeout(timeoutId);
+      cleanup();
     } catch (error) {
+      // Request failed, release the guard
+      clearTimeout(timeoutId);
+      cleanup();
       console.error("Error during registration:", error);
       res.status(500).json({ message: "Registration failed" });
     }
@@ -1008,14 +1049,17 @@ export async function registerRoutes(httpServer: Server, app: Express): Promise<
       console.log(`[verify-email] Received verification request with token: ${token ? token.substring(0, 8) + '...' : 'NONE'}`);
       
       if (!token) {
-        return res.status(400).json({ message: "Verification token is required" });
+        return res.status(400).json({ message: "auth.verify.noToken" });
       }
 
       const user = await storage.getUserByVerificationToken(token as string);
       console.log(`[verify-email] Found user: ${user ? user.username : "NOT FOUND"}`);
       
       if (!user) {
-        return res.status(400).json({ message: "Invalid or expired verification token" });
+        console.log(`[verify-email] ❌ Invalid token provided: ${token?.substring(0, 8)}...`);
+        return res.status(400).json({ 
+          message: "auth.verify.invalidToken"
+        });
       }
 
       // Verify the user's email
@@ -1023,12 +1067,12 @@ export async function registerRoutes(httpServer: Server, app: Express): Promise<
       console.log(`[verify-email] ✅ Email verified for user: ${user.username}`);
 
       res.status(200).json({ 
-        message: "Email verified successfully! You can now log in.",
+        message: "auth.verify.successMsg",
         username: user.username
       });
     } catch (error: any) {
       console.error("Error verifying email:", error);
-      res.status(500).json({ message: `Failed to verify email: ${error.message}` });
+      res.status(500).json({ message: "auth.verify.errorMsg" });
     }
   });
 
@@ -1072,8 +1116,14 @@ export async function registerRoutes(httpServer: Server, app: Express): Promise<
   app.get("/api/admin/users", isAdmin, async (req, res) => {
     try {
       const users = await storage.getAllUsers();
-      // Remove passwords from response
-      const safeUsers = users.map(({ password, resetToken, resetTokenExpiry, ...user }) => user);
+      // Remove passwords from response and truncate giant images
+      const safeUsers = users.map(({ password, resetToken, resetTokenExpiry, ...user }) => {
+        const optimizedUser = { ...user };
+        if (optimizedUser.profileImageUrl && optimizedUser.profileImageUrl.length > 50000) {
+          optimizedUser.profileImageUrl = optimizedUser.profileImageUrl.substring(0, 100) + "... (large image)";
+        }
+        return optimizedUser;
+      });
       res.json(safeUsers);
     } catch (error) {
       console.error("Error fetching users:", error);
@@ -1234,7 +1284,19 @@ export async function registerRoutes(httpServer: Server, app: Express): Promise<
   app.get("/api/admin/doctors", isAdmin, async (req, res) => {
     try {
       const doctors = await storage.getAllDoctors();
-      res.json(doctors);
+      
+      // PERFORMANCE OPTIMIZATION: Truncate giant base64 images in admin list view
+      const optimizedDoctors = doctors.map(doctor => {
+        if (doctor.profileImageUrl && doctor.profileImageUrl.length > 50000) {
+          return {
+            ...doctor,
+            profileImageUrl: doctor.profileImageUrl.substring(0, 100) + "... (large image)"
+          };
+        }
+        return doctor;
+      });
+      
+      res.json(optimizedDoctors);
     } catch (error) {
       console.error("Error fetching doctors:", error);
       res.status(500).json({ message: "Failed to fetch doctors" });
@@ -1468,13 +1530,25 @@ export async function registerRoutes(httpServer: Server, app: Express): Promise<
         profileImageUrl = doctor?.profileImageUrl || null;
       }
 
-      if (!profileImageUrl) {
+      if (!profileImageUrl || !profileImageUrl.startsWith("data:image/")) {
+        console.log(`🖼️ [ProfileImage] No valid image for ${type} ${id}`);
         return res.status(404).json({ message: "Image not found" });
       }
 
-      // If it's a base64 string, we might want to return it as a proper image response
-      // or just the string. For simplicity with the existing frontend, we'll send the string.
-      res.json({ profileImageUrl });
+      console.log(`🖼️ [ProfileImage] Serving binary image for ${type} ${id} (${Math.round(profileImageUrl.length/1024)}KB)`);
+      
+      try {
+        const [meta, data] = profileImageUrl.split(",");
+        const contentType = meta.split(";")[0].split(":")[1];
+        const buffer = Buffer.from(data, "base64");
+        
+        res.setHeader("Content-Type", contentType);
+        res.setHeader("Cache-Control", "public, max-age=86400"); // Cache for 24 hours
+        res.send(buffer);
+      } catch (parseError) {
+        console.error("Error parsing base64 image:", parseError);
+        res.status(500).json({ message: "Failed to process image" });
+      }
     } catch (error) {
       console.error("Error fetching profile image:", error);
       res.status(500).json({ message: "Failed to fetch profile image" });

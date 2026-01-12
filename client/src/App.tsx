@@ -144,6 +144,24 @@ function Router() {
           )}
         </Route>
         
+        <Route path="/register">
+          {() => (
+            <AnimatedPageWrapper>
+              {isAuthenticated ? (
+                user?.role === "admin" ? (
+                  <AdminDashboard />
+                ) : user?.role === "teacher" ? (
+                  <TeacherDashboard />
+                ) : (
+                  <Home />
+                )
+              ) : (
+                <Landing defaultTab="register" />
+              )}
+            </AnimatedPageWrapper>
+          )}
+        </Route>
+        
         {/* Root Route - Handles logic for different roles and auth state */}
         <Route path="/">
           {() => (

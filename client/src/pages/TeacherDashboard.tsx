@@ -173,7 +173,7 @@ export default function TeacherDashboard() {
       <Header />
       
       {/* Hero Section with Infinite Continuous Strip Carousel */}
-      <section className="relative h-[300px] lg:h-[450px] overflow-hidden bg-slate-900" dir="ltr">
+      <section className="relative h-[280px] sm:h-[350px] lg:h-[450px] overflow-hidden bg-slate-900" dir="ltr">
         <motion.div
           className="flex h-full will-change-transform"
           style={{
@@ -341,11 +341,11 @@ export default function TeacherDashboard() {
                     <CardContent className="pt-6">
                       <div className="flex items-center justify-between">
                         <div>
-                          <p className="text-sm font-medium text-muted-foreground mb-1">{t("teacherDashboard.stats.overallRating", { defaultValue: "Overall Rating" })}</p>
+                          <p className="text-sm font-medium text-muted-foreground mb-1">{t("teacherDashboard.stats.overallRating")}</p>
                           <p className="text-3xl font-bold text-blue-600 dark:text-blue-400">
                             {teacherReviews[0].ratings?.overallRating.toFixed(1)}
                           </p>
-                          <p className="text-xs text-muted-foreground mt-1">{t("teacherDashboard.stats.overallRatingLabel", { defaultValue: "out of 5.0" })}</p>
+                          <p className="text-xs text-muted-foreground mt-1">{t("teacherDashboard.stats.overallRatingLabel")}</p>
                         </div>
                         <div className="h-12 w-12 rounded-full bg-blue-500/20 flex items-center justify-center">
                           <Award className="h-6 w-6 text-blue-600 dark:text-blue-400" />
@@ -358,11 +358,11 @@ export default function TeacherDashboard() {
                     <CardContent className="pt-6">
                       <div className="flex items-center justify-between">
                         <div>
-                          <p className="text-sm font-medium text-muted-foreground mb-1">{t("teacherDashboard.stats.totalReviews", { defaultValue: "Total Reviews" })}</p>
+                          <p className="text-sm font-medium text-muted-foreground mb-1">{t("teacherDashboard.stats.totalReviews")}</p>
                           <p className="text-3xl font-bold text-green-600 dark:text-green-400">
                             {teacherReviews[0].ratings?.totalReviews ?? 0}
                           </p>
-                          <p className="text-xs text-muted-foreground mt-1">{t("teacherDashboard.stats.totalReviewsLabel", { defaultValue: "student feedback" })}</p>
+                          <p className="text-xs text-muted-foreground mt-1">{t("teacherDashboard.stats.totalReviewsLabel")}</p>
                         </div>
                         <div className="h-12 w-12 rounded-full bg-green-500/20 flex items-center justify-center">
                           <MessageSquare className="h-6 w-6 text-green-600 dark:text-green-400" />
@@ -375,7 +375,7 @@ export default function TeacherDashboard() {
                     <CardContent className="pt-6">
                       <div className="flex items-center justify-between">
                         <div>
-                          <p className="text-sm font-medium text-muted-foreground mb-1">{t("teacherDashboard.stats.topStrength", { defaultValue: "Strongest Factor" })}</p>
+                          <p className="text-sm font-medium text-muted-foreground mb-1">{t("teacherDashboard.stats.topStrength")}</p>
                           <p className="text-3xl font-bold text-purple-600 dark:text-purple-400">
                             {Math.max(
                               teacherReviews[0].ratings?.avgTeachingQuality ?? 0,
@@ -383,7 +383,7 @@ export default function TeacherDashboard() {
                               teacherReviews[0].ratings?.avgCommunication ?? 0
                             ).toFixed(1)}
                           </p>
-                          <p className="text-xs text-muted-foreground mt-1">{t("teacherDashboard.stats.topStrengthLabel", { defaultValue: "top performance" })}</p>
+                          <p className="text-xs text-muted-foreground mt-1">{t("teacherDashboard.stats.topStrengthLabel")}</p>
                         </div>
                         <div className="h-12 w-12 rounded-full bg-purple-500/20 flex items-center justify-center">
                           <Target className="h-6 w-6 text-purple-600 dark:text-purple-400" />
@@ -396,11 +396,11 @@ export default function TeacherDashboard() {
                     <CardContent className="pt-6">
                       <div className="flex items-center justify-between">
                         <div>
-                          <p className="text-sm font-medium text-muted-foreground mb-1">{t("teacherDashboard.stats.engagement", { defaultValue: "Engagement Score" })}</p>
+                          <p className="text-sm font-medium text-muted-foreground mb-1">{t("teacherDashboard.stats.engagement")}</p>
                           <p className="text-3xl font-bold text-orange-600 dark:text-orange-400">
                             {((teacherReviews[0].ratings?.avgAvailability ?? 0) * 20).toFixed(0)}%
                           </p>
-                          <p className="text-xs text-muted-foreground mt-1">{t("teacherDashboard.stats.engagementLabel", { defaultValue: "student engagement" })}</p>
+                          <p className="text-xs text-muted-foreground mt-1">{t("teacherDashboard.stats.engagementLabel")}</p>
                         </div>
                         <div className="h-12 w-12 rounded-full bg-orange-500/20 flex items-center justify-center">
                           <TrendingUp className="h-6 w-6 text-orange-600 dark:text-orange-400" />
@@ -475,10 +475,10 @@ export default function TeacherDashboard() {
                     <CardHeader>
                       <CardTitle className="flex items-center gap-2">
                         <Target className="h-5 w-5" />
-                        {t("teacherDashboard.radar.title", { defaultValue: "Performance Breakdown" })}
+                        {t("teacherDashboard.radar.title")}
                       </CardTitle>
                       <CardDescription>
-                        {t("teacherDashboard.radar.description", { defaultValue: "Visual representation of your teaching metrics" })}
+                        {t("teacherDashboard.radar.description")}
                       </CardDescription>
                     </CardHeader>
                     <CardContent>
@@ -582,9 +582,11 @@ export default function TeacherDashboard() {
                             <BookOpen className="h-8 w-8 text-primary" />
                           </div>
                           <div>
-                            <CardTitle className="text-2xl">{doctor.name}</CardTitle>
+                            <CardTitle className="text-2xl">
+                              {t("doctorProfile.doctorPrefix", "د.")} {t(`home.professors.names.${doctor.name.replace(/^Dr\.?\s+/i, "").trim()}`, { defaultValue: doctor.name.replace(/^Dr\.?\s+/i, "").trim() })}
+                            </CardTitle>
                             <CardDescription className="text-base mt-1">
-                              {doctor.title} • {doctor.department}
+                              {t(`home.departments.${doctor.title?.trim()}`, { defaultValue: doctor.title })} • {t(`home.departments.${doctor.department.trim()}`, { defaultValue: t(`home.departments.${doctor.department.trim().toLowerCase()}`, { defaultValue: doctor.department }) })}
                             </CardDescription>
                             <div className="flex items-center gap-2 mt-2">
                               <MessageSquare className="h-4 w-4 text-muted-foreground" />
@@ -605,7 +607,7 @@ export default function TeacherDashboard() {
                       </div>
                     </CardHeader>
                     <CardContent className="space-y-6">
-                      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-4">
+                      <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-4">
                         <div className="p-4 rounded-lg bg-blue-500/10 border border-blue-200 dark:border-blue-800">
                           <div className="text-sm font-medium text-muted-foreground mb-2">
                             {t("doctorProfile.factors.teachingQuality")}

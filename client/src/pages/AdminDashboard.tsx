@@ -8,6 +8,8 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Badge } from "@/components/ui/badge";
+import { StarRating } from "@/components/StarRating";
+import { DoctorCard } from "@/components/DoctorCard";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger, DialogFooter } from "@/components/ui/dialog";
@@ -82,6 +84,23 @@ interface Doctor {
   createdAt: string;
 }
 
+interface DoctorRating {
+  id: number;
+  doctorId: number;
+  totalReviews: number;
+  overallRating: number;
+  avgTeachingQuality: number;
+  avgAvailability: number;
+  avgCommunication: number;
+  avgKnowledge: number;
+  avgFairness: number;
+  updatedAt: string;
+}
+
+interface DoctorWithRatings extends Doctor {
+  ratings: DoctorRating | null;
+}
+
 interface Review {
   id: number;
   doctorId: number;
@@ -106,6 +125,16 @@ interface Stats {
   pendingReports: number;
 }
 
+const maskEmail = (email: string) => {
+  if (!email || !email.includes("@")) return email;
+  const [localPart, domain] = email.split("@");
+  if (localPart.length <= 3) {
+    return `${localPart[0]}***@${domain}`;
+  }
+  const maskedLocal = localPart.substring(0, 2) + "*".repeat(localPart.length - 3) + localPart.substring(localPart.length - 1);
+  return `${maskedLocal}@${domain}`;
+};
+
 export default function AdminDashboard() {
   const { t } = useTranslation();
   const { toast } = useToast();
@@ -116,7 +145,13 @@ export default function AdminDashboard() {
   
   // Delete confirmation state
   const [userToDelete, setUserToDelete] = useState<any>(null);
+  const [doctorToDelete, setDoctorToDelete] = useState<any>(null);
   const [deleteConfirmOpen, setDeleteConfirmOpen] = useState(false);
+  const [doctorDeleteConfirmOpen, setDoctorDeleteConfirmOpen] = useState(false);
+  
+  // Doctor Card Popup state
+  const [viewingDoctorId, setViewingDoctorId] = useState<number | null>(null);
+  const [doctorCardOpen, setDoctorCardOpen] = useState(false);
   const [newDoctor, setNewDoctor] = useState({ name: "", department: "", title: "", bio: "" });
   const [editRole, setEditRole] = useState<string>("student");
   const roleEditorRef = useRef<HTMLDivElement>(null);
@@ -141,7 +176,7 @@ export default function AdminDashboard() {
   }, [editingUser]);
 
   // Determine if any modal is open for background blur effect
-  const isAnyModalOpen = showSettings || isEditUserOpen || deleteConfirmOpen;
+  const isAnyModalOpen = showSettings || isEditUserOpen || deleteConfirmOpen || doctorDeleteConfirmOpen || doctorCardOpen;
 
   // Fetch admin stats
   const { data: stats } = useQuery<Stats>({
@@ -156,6 +191,12 @@ export default function AdminDashboard() {
   // Fetch doctors
   const { data: doctors, refetch: refetchDoctors } = useQuery<Doctor[]>({
     queryKey: ["/api/admin/doctors"],
+  });
+
+  // Fetch specific doctor with ratings for popup
+  const { data: fullDoctorData, isLoading: isLoadingDoctorDetail } = useQuery<DoctorWithRatings>({
+    queryKey: ["/api/doctors", viewingDoctorId],
+    enabled: !!viewingDoctorId && doctorCardOpen,
   });
 
   // Fetch reviews
@@ -200,8 +241,22 @@ export default function AdminDashboard() {
     } else {
       // CSV export for users
       const csvUsers = [
-        ['Username', 'Email', 'Role', 'First Name', 'Last Name', 'Created At'],
-        ...(users || []).map(u => [u.username, u.email || '', u.role, u.firstName || '', u.lastName || '', new Date(u.createdAt).toLocaleString()])
+        [
+          t("admin.users.export.username"),
+          t("admin.users.export.email"),
+          t("admin.users.export.role"),
+          t("admin.users.export.firstName"),
+          t("admin.users.export.lastName"),
+          t("admin.users.export.joined")
+        ],
+        ...(users || []).map(u => [
+          u.username,
+          maskEmail(u.email || ''),
+          u.role,
+          u.firstName || '',
+          u.lastName || '',
+          new Date(u.createdAt).toLocaleString()
+        ])
       ].map(row => row.join(',')).join('\n');
 
       const blob = new Blob([csvUsers], { type: 'text/csv' });
@@ -507,8 +562,10 @@ export default function AdminDashboard() {
                               <ActivityIcon className="h-5 w-5" />
                             </div>
                             <div className="flex-1">
-                              <p className="text-sm font-medium">{activity.action}</p>
-                              <p className="text-xs text-muted-foreground">{t("admin.activity.byUser", { username: activity.username, role: activity.role })}</p>
+                              <p className="text-sm font-medium">
+                                {t(`admin.activity.actions.${activity.action.toLowerCase().replace(/\s+/g, "_")}`, { defaultValue: activity.action })}
+                              </p>
+                              <p className="text-xs text-muted-foreground">{t("admin.activity.byUser", { username: activity.username, role: t(`roles.${activity.role}`) })}</p>
                             </div>
                             <span className="text-xs text-muted-foreground">{new Date(activity.timestamp).toLocaleString()}</span>
                           </motion.div>
@@ -538,18 +595,22 @@ export default function AdminDashboard() {
               <CardContent>
                 <div className="space-y-4">
                   {[
-                    { name: "Dr. Sarah Johnson", rating: 4.9, reviews: 45 },
-                    { name: "Dr. Michael Chen", rating: 4.8, reviews: 38 },
-                    { name: "Dr. Emily Williams", rating: 4.7, reviews: 32 },
-                  ].map((doctor, index) => (
+                    { name: "Sarah Johnson", rating: 4.9, reviews: 45 },
+                    { name: "Michael Chen", rating: 4.8, reviews: 38 },
+                    { name: "Emily Williams", rating: 4.7, reviews: 32 },
+                  ].map((doc, index) => (
                     <div key={index} className="flex items-center justify-between p-3 rounded-lg bg-muted/30">
                       <div>
-                        <p className="text-sm font-medium">{doctor.name}</p>
-                        <p className="text-xs text-muted-foreground">{t("admin.activity.reviewsCount", { count: doctor.reviews })}</p>
+                        <p className="text-sm font-bold">
+                          {t("doctorProfile.doctorPrefix", "د.")} {t(`home.professors.names.${doc.name.trim()}`, { defaultValue: doc.name.trim() })}
+                        </p>
+                        <p className="text-xs text-muted-foreground">
+                          {doc.reviews} {t("teacherDashboard.reviewsCount")}
+                        </p>
                       </div>
-                      <div className="flex items-center gap-1">
-                        <Star className="h-4 w-4 fill-yellow-500 text-yellow-500" />
-                        <span className="text-sm font-bold">{doctor.rating}</span>
+                      <div className="text-right">
+                        <p className="text-sm font-bold text-blue-600 dark:text-blue-400">{doc.rating}</p>
+                        <StarRating rating={doc.rating} size="sm" />
                       </div>
                     </div>
                   ))}
@@ -588,12 +649,12 @@ export default function AdminDashboard() {
                     </div>
                     <div className="flex gap-2">
                       <div className="relative">
-                        <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                        <Search className="absolute start-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
                         <Input
                           placeholder={t("admin.users.searchPlaceholder")}
                           value={searchQuery}
                           onChange={(e) => setSearchQuery(e.target.value)}
-                          className="pl-10 w-64"
+                          className="ps-10 w-64"
                         />
                       </div>
                       <Select value={filterRole} onValueChange={setFilterRole}>
@@ -620,7 +681,7 @@ export default function AdminDashboard() {
                       </div>
                       <div className="px-6 pb-6 relative">
                         {/* Avatar overlapping the banner */}
-                        <div className="absolute -top-12 left-6">
+                        <div className="absolute -top-12 start-6">
                           <Avatar className="h-24 w-24 border-4 border-background shadow-lg">
                             <AvatarImage src={editingUser?.profileImageUrl} alt={editingUser?.username} />
                             <AvatarFallback className="text-2xl font-bold bg-primary/10 text-primary">
@@ -629,7 +690,7 @@ export default function AdminDashboard() {
                           </Avatar>
                         </div>
 
-                        <div className="ml-28 -mt-4 space-y-1">
+                        <div className="ms-28 -mt-4 space-y-1">
                           <div className="flex items-center gap-2">
                             <h2 className="text-2xl font-bold">{editingUser?.firstName ? `${editingUser.firstName} ${editingUser.lastName}` : editingUser?.username}</h2>
                             <Badge variant={editingUser?.role === "admin" ? "destructive" : editingUser?.role === "teacher" ? "default" : "secondary"}>
@@ -650,7 +711,7 @@ export default function AdminDashboard() {
                                   <Mail className="h-4 w-4 text-blue-600 dark:text-blue-400" />
                                 </div>
                                 <div className="overflow-hidden flex-1">
-                                  <p className="text-sm font-medium truncate" title={editingUser?.email}>{editingUser?.email}</p>
+                                  <p className="text-sm font-medium truncate" title={editingUser?.email}>{maskEmail(editingUser?.email)}</p>
                                   <div className="flex items-center gap-1 mt-0.5">
                                     {editingUser?.emailVerified ?
                                       <span className="text-[10px] bg-green-100 dark:bg-green-900/30 text-green-600 dark:text-green-400 px-1.5 py-0.5 rounded-full flex items-center gap-0.5 w-fit"><CheckCircle className="h-3 w-3" /> {t("admin.users.edit.verified")}</span>
@@ -722,7 +783,8 @@ export default function AdminDashboard() {
                     </DialogContent>
                   </Dialog>
                   <ScrollArea className="h-[500px]">
-                    <Table>
+                    <div className="table-responsive">
+                      <Table>
                       <TableHeader>
                         <TableRow>
                           <TableHead>{t("admin.users.table.username")}</TableHead>
@@ -730,7 +792,7 @@ export default function AdminDashboard() {
                           <TableHead>{t("admin.users.table.name")}</TableHead>
                           <TableHead>{t("admin.users.table.role")}</TableHead>
                           <TableHead>{t("admin.users.table.joined")}</TableHead>
-                          <TableHead className="text-right">{t("admin.users.table.actions")}</TableHead>
+                          <TableHead className="text-end">{t("admin.users.table.actions")}</TableHead>
                         </TableRow>
                       </TableHeader>
                       <TableBody>
@@ -745,7 +807,7 @@ export default function AdminDashboard() {
                           .map((user) => (
                             <TableRow key={user.id}>
                               <TableCell className="font-medium">{user.username}</TableCell>
-                              <TableCell>{user.email}</TableCell>
+                              <TableCell>{maskEmail(user.email)}</TableCell>
                               <TableCell>{user.firstName && user.lastName ? `${user.firstName} ${user.lastName}` : "—"}</TableCell>
                               <TableCell>
                                 <Badge variant={user.role === "admin" ? "destructive" : user.role === "teacher" ? "default" : "secondary"}>
@@ -845,14 +907,15 @@ export default function AdminDashboard() {
                 </CardHeader>
                 <CardContent>
                   <ScrollArea className="h-[500px]">
-                    <Table>
+                    <div className="table-responsive">
+                      <Table>
                       <TableHeader>
                         <TableRow>
                           <TableHead className="w-[80px]">{t("admin.doctors.table.image")}</TableHead>
                           <TableHead>{t("admin.doctors.table.name")}</TableHead>
                           <TableHead>{t("admin.doctors.table.department")}</TableHead>
                           <TableHead>{t("admin.doctors.table.title")}</TableHead>
-                          <TableHead className="text-right">{t("admin.doctors.table.actions")}</TableHead>
+                          <TableHead className="text-end">{t("admin.doctors.table.actions")}</TableHead>
                         </TableRow>
                       </TableHeader>
                       <TableBody>
@@ -861,24 +924,43 @@ export default function AdminDashboard() {
                             <TableCell>
                               <Avatar>
                                 <AvatarImage src={doctor.profileImageUrl} alt={doctor.name} />
-                                <AvatarFallback>{doctor.name.substring(0, 2).toUpperCase()}</AvatarFallback>
+                                <AvatarFallback>
+                                  {doctor.name.toLowerCase().includes("dr.") ? (t("common.doctorAbbr", "DR")) : doctor.name.substring(0, 2).toUpperCase()}
+                                </AvatarFallback>
                               </Avatar>
                             </TableCell>
-                            <TableCell className="font-medium">{doctor.name}</TableCell>
-                            <TableCell>{doctor.department}</TableCell>
-                            <TableCell>{doctor.title || "—"}</TableCell>
-                            <TableCell className="text-right">
-                              <Button
-                                variant="destructive"
-                                size="sm"
-                                onClick={() => {
-                                  if (confirm(t("admin.doctors.delete.confirm", { name: doctor.name }))) {
-                                    deleteDoctor.mutate(doctor.id);
-                                  }
-                                }}
-                              >
-                                <Trash2 className="h-4 w-4" />
-                              </Button>
+                            <TableCell className="font-medium">
+                              {t("doctorProfile.doctorPrefix", "د.")} {t(`home.professors.names.${doctor.name.replace(/^Dr\.?\s+/i, "").trim()}`, { defaultValue: doctor.name.replace(/^Dr\.?\s+/i, "").trim() })}
+                            </TableCell>
+                            <TableCell>
+                              {t(`home.departments.${doctor.department.trim()}`, { defaultValue: t(`home.departments.${doctor.department.trim().toLowerCase()}`, { defaultValue: doctor.department }) })}
+                            </TableCell>
+                            <TableCell>
+                              {t(`home.departments.${doctor.title?.trim()}`, { defaultValue: doctor.title })}
+                            </TableCell>
+                            <TableCell className="text-end">
+                              <div className="flex gap-2 justify-end">
+                                <Button
+                                  variant="outline"
+                                  size="sm"
+                                  onClick={() => {
+                                    setViewingDoctorId(doctor.id);
+                                    setDoctorCardOpen(true);
+                                  }}
+                                >
+                                  <Eye className="h-4 w-4" />
+                                </Button>
+                                <Button
+                                  variant="destructive"
+                                  size="sm"
+                                  onClick={() => {
+                                    setDoctorToDelete(doctor);
+                                    setDoctorDeleteConfirmOpen(true);
+                                  }}
+                                >
+                                  <Trash2 className="h-4 w-4" />
+                                </Button>
+                              </div>
                             </TableCell>
                           </TableRow>
                         ))}
@@ -1046,6 +1128,51 @@ export default function AdminDashboard() {
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
+
+      {/* Delete Doctor Confirmation Dialog */}
+      <AlertDialog open={doctorDeleteConfirmOpen} onOpenChange={setDoctorDeleteConfirmOpen}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>{t("admin.doctors.delete.title")}</AlertDialogTitle>
+            <AlertDialogDescription>
+              {t("admin.doctors.delete.description", { name: doctorToDelete?.name })}
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>{t("common.cancel")}</AlertDialogCancel>
+            <AlertDialogAction
+              className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+              onClick={() => {
+                if (doctorToDelete) {
+                  deleteDoctor.mutate(doctorToDelete.id);
+                  setDoctorToDelete(null);
+                }
+              }}
+            >
+              {t("common.delete")}
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+
+      {/* Professor Card Popup - Glassy Effect */}
+      <Dialog open={doctorCardOpen} onOpenChange={setDoctorCardOpen}>
+        <DialogContent className="sm:max-w-[500px] p-0 overflow-hidden border-0 shadow-2xl bg-background/60 backdrop-blur-xl">
+          <div className="p-1">
+            {isLoadingDoctorDetail ? (
+              <div className="h-[400px] flex items-center justify-center">
+                <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
+              </div>
+            ) : fullDoctorData ? (
+              <DoctorCard doctor={fullDoctorData} />
+            ) : (
+              <div className="h-[200px] flex items-center justify-center text-muted-foreground p-6 text-center">
+                {t("doctorProfile.notFound.title", "Professor data not found")}
+              </div>
+            )}
+          </div>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }

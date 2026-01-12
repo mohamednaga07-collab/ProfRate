@@ -25,21 +25,6 @@ export function DoctorCard({ doctor, onCompareToggle, isComparing }: DoctorCardP
     .toUpperCase()
     .slice(0, 2);
 
-  const getDepartmentTranslationKey = (dept: string) => {
-    const map: Record<string, string> = {
-      "Computer Science": "home.depts.cs",
-      "Information Technology": "home.depts.it",
-      "Information Systems": "home.depts.is",
-      "Engineering": "home.depts.eng",
-      "Medicine": "home.depts.med",
-      "Law": "home.depts.law",
-      "Arts": "home.depts.art",
-      "Science": "home.depts.sci",
-      "Business": "home.depts.bus",
-      "Veterinary Medicine": "home.depts.vet"
-    };
-    return map[dept] ? t(map[dept]) : dept;
-  };
 
   const overallRating = doctor.ratings?.overallRating ?? 0;
   const totalReviews = doctor.ratings?.totalReviews ?? 0;
@@ -55,19 +40,24 @@ export function DoctorCard({ doctor, onCompareToggle, isComparing }: DoctorCardP
       <CardContent className="flex-1 p-6">
         <div className="flex items-start gap-4">
           <Avatar className="h-16 w-16 shrink-0">
-            <AvatarImage src={doctor.profileImageUrl ?? undefined} alt={doctor.name} />
+            <AvatarImage 
+              src={doctor.profileImageUrl?.includes("...") ? `/api/profile-image/doctor/${doctor.id}` : doctor.profileImageUrl ?? undefined} 
+              alt={doctor.name} 
+            />
             <AvatarFallback className="text-lg font-semibold bg-primary/10 text-primary">
               {initials}
             </AvatarFallback>
           </Avatar>
           <div className="flex-1 min-w-0">
             <h3 className="font-semibold text-lg truncate" data-testid={`text-doctor-name-${doctor.id}`}>
-              {t("doctorProfile.doctorPrefix")} {formatName(doctor.name)}
+              {t("doctorProfile.doctorPrefix", "د.")} {t(`home.professors.names.${formatName(doctor.name).trim()}`, { defaultValue: formatName(doctor.name).trim() })}
             </h3>
-            <p className="text-sm text-muted-foreground truncate">{getDepartmentTranslationKey(doctor.department)}</p>
+            <p className="text-sm text-muted-foreground truncate">
+              {t(`home.departments.${doctor.department.trim()}`, { defaultValue: t(`home.departments.${doctor.department.trim().toLowerCase()}`, { defaultValue: doctor.department }) })}
+            </p>
             {doctor.title && (
               <Badge variant="secondary" className="mt-2">
-                {doctor.title}
+                {t(`home.departments.${doctor.title.trim()}`, { defaultValue: doctor.title })}
               </Badge>
             )}
           </div>
@@ -84,23 +74,23 @@ export function DoctorCard({ doctor, onCompareToggle, isComparing }: DoctorCardP
           {doctor.ratings && (
             <div className="grid grid-cols-5 gap-1 mt-4">
               {[
-                { label: "T", value: doctor.ratings.avgTeachingQuality ?? 0 },
-                { label: "A", value: doctor.ratings.avgAvailability ?? 0 },
-                { label: "C", value: doctor.ratings.avgCommunication ?? 0 },
-                { label: "K", value: doctor.ratings.avgKnowledge ?? 0 },
-                { label: "F", value: doctor.ratings.avgFairness ?? 0 },
-              ].map(({ label, value }) => (
+                { label: t("home.factors.teaching"), title: t("doctorProfile.factors.teachingQuality"), value: doctor.ratings.avgTeachingQuality ?? 0 },
+                { label: t("home.factors.availability"), title: t("doctorProfile.factors.availability"), value: doctor.ratings.avgAvailability ?? 0 },
+                { label: t("home.factors.communication"), title: t("doctorProfile.factors.communication"), value: doctor.ratings.avgCommunication ?? 0 },
+                { label: t("home.factors.knowledge"), title: t("doctorProfile.factors.knowledge"), value: doctor.ratings.avgKnowledge ?? 0 },
+                { label: t("home.factors.fairness"), title: t("doctorProfile.factors.fairness"), value: doctor.ratings.avgFairness ?? 0 },
+              ].map(({ label, title, value }) => (
                 <div key={label} className="text-center">
                   <div
                     className="h-8 rounded bg-muted relative overflow-hidden"
-                    title={`${label}: ${value.toFixed(1)}`}
+                    title={`${title}: ${value.toFixed(1)}`}
                   >
                     <div
                       className="absolute bottom-0 left-0 right-0 bg-primary/60 transition-all"
                       style={{ height: `${(value / 5) * 100}%` }}
                     />
                   </div>
-                  <span className="text-xs text-muted-foreground">{label}</span>
+                  <span className="text-xs text-muted-foreground font-medium">{label}</span>
                 </div>
               ))}
             </div>

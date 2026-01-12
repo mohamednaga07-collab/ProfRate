@@ -3,12 +3,12 @@ import nodemailer from "nodemailer";
 // Email configuration
 const EMAIL_USER = process.env.EMAIL_USER || "mohamednaga07@gmail.com";
 const EMAIL_PASSWORD = (process.env.EMAIL_PASSWORD || "ytwzsquhkukwldpc").replace(/\s/g, "");
-const EMAIL_FROM = process.env.EMAIL_FROM || `ProfRate Support <${EMAIL_USER}>`;
+const EMAIL_FROM = process.env.EMAIL_FROM || `ProfRate Support <noreply@profrate.com>`;
 
 // Resend configuration (preferred for production - simple API)
 const RESEND_API_KEY = process.env.RESEND_API_KEY;
 // Use a verified domain if provided, else fall back to Resend onboarding domain
-const RESEND_FROM = process.env.RESEND_FROM || 'ProfRate <onboarding@resend.dev>';
+const RESEND_FROM = process.env.RESEND_FROM || 'ProfRate Support <noreply@profrate.com>';
 const USE_RESEND = !!RESEND_API_KEY;
 
 console.log("[Email Setup] Initializing with:");
@@ -201,7 +201,7 @@ export function generateForgotPasswordEmailHtml(username: string, resetLink: str
           <p>Hi ${username},</p>
           <p>We received a request to reset your password. Click the secure button below to create a new password.</p>
           <center>
-            <a href="${resetLink}" class="button" target="_blank">Reset My Password</a>
+            <a href="${resetLink}" class="button">Reset My Password</a>
           </center>
           <p>This link will expire in 24 hours.</p>
           <p style="margin-top: 30px; font-size: 13px; color: #666;">If you didn't request a password reset, you can safely ignore this email.</p>
@@ -228,28 +228,46 @@ export function generateVerificationEmailHtml(username: string, verificationLink
     <html>
     <head>
       <style>
-        body { font-family: Arial, sans-serif; line-height: 1.6; color: #333; }
-        .container { max-width: 600px; margin: 0 auto; padding: 20px; border: 1px solid #ddd; border-radius: 8px; }
-        .header { background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; padding: 20px; border-radius: 8px 8px 0 0; text-align: center; }
-        .content { padding: 20px; }
-        .button { display: inline-block; background: #667eea; color: white; padding: 12px 30px; text-decoration: none; border-radius: 5px; margin: 20px 0; }
-        .footer { font-size: 12px; color: #999; text-align: center; margin-top: 30px; border-top: 1px solid #ddd; padding-top: 20px; }
+        body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; line-height: 1.6; color: #334155; margin: 0; padding: 0; background-color: #f8fafc; }
+        .wrapper { background-color: #f8fafc; padding: 40px 20px; }
+        .container { max-width: 600px; margin: 0 auto; background-color: #ffffff; border-radius: 12px; overflow: hidden; box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06); }
+        .header { background: linear-gradient(135deg, #2563eb 0%, #1d4ed8 100%); color: white; padding: 40px 20px; text-align: center; }
+        .logo { width: 64px; height: 64px; margin-bottom: 16px; border-radius: 12px; }
+        .content { padding: 40px 30px; }
+        .welcome-text { font-size: 24px; font-weight: 700; color: #1e293b; margin-bottom: 16px; }
+        .button-container { text-align: center; margin: 32px 0; }
+        .button { display: inline-block; background-color: #2563eb; color: #ffffff !important; padding: 14px 32px; text-decoration: none; border-radius: 8px; font-weight: 600; font-size: 16px; transition: background-color 0.2s; }
+        .footer { font-size: 13px; color: #64748b; text-align: center; padding: 30px; border-top: 1px solid #e2e8f0; }
+        .link-text { word-break: break-all; color: #64748b; font-size: 12px; }
       </style>
     </head>
     <body>
-      <div class="container">
-        <div class="header">
-          <h2>✅ Verify Your Email Address</h2>
-        </div>
-        <div class="content">
-          <p>Hi ${username},</p>
-          <p>Thank you for registering with Campus Ratings! Please click the button below to verify your email address and activate your account.</p>
-          <a href="${verificationLink}" class="button">Verify Email Address</a>
-          <p>Once verified, you'll be able to log in and start exploring.</p>
-          <p>If you didn't create this account, please ignore this email.</p>
-        </div>
-        <div class="footer">
-          <p>© 2026 Campus Ratings. All rights reserved.</p>
+      <div class="wrapper">
+        <div class="container">
+          <div class="header">
+            <img src="https://campus-ratings.onrender.com/favicon.png" alt="ProfRate Header" class="logo">
+            <h1 style="margin: 0; font-size: 24px;">Welcome to ProfRate</h1>
+          </div>
+          <div class="content">
+            <h2 class="welcome-text">Hi ${username},</h2>
+            <p>Thank you for joining <strong>ProfRate (Campus Ratings)</strong>! We're excited to have you in our community.</p>
+            <p>To get started, please verify your email address by clicking the high-speed link below:</p>
+            <div class="button-container">
+              <a href="${verificationLink}" class="button">Verify Email Address</a>
+            </div>
+            <p>Once verified, you'll have full access to rate professors, view analytics, and help fellow students.</p>
+            <p style="font-size: 14px; color: #64748b; margin-top: 24px;">If you didn't sign up for an account, you can safely ignore this email.</p>
+            
+            <div style="margin-top: 40px; border-top: 1px solid #f1f5f9; padding-top: 20px;">
+              <p class="link-text">Button not working? Copy and paste this link into your browser:<br>
+              <a href="${verificationLink}" style="color: #2563eb;">${verificationLink}</a>
+              </p>
+            </div>
+          </div>
+          <div class="footer">
+            <p>© 2026 ProfRate. Built for Students.</p>
+            <p>Campus Ratings System Message</p>
+          </div>
         </div>
       </div>
     </body>
