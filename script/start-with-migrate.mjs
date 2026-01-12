@@ -20,8 +20,8 @@ async function runMigrations() {
       console.log(`📡 Migration attempt ${attempts + 1}/${maxAttempts}...`);
       
       // Use yes | to pipe 'y' to any prompts
-      // Use --schema to be explicit
-      execSync('yes | npx drizzle-kit push --schema=shared/schema.ts --force', {
+      // Use --schema and --dialect to be explicit for the latest drizzle-kit
+      execSync('yes | npx drizzle-kit push --dialect=postgresql --schema=shared/schema.ts --force', {
         stdio: 'inherit',
         env: { ...process.env, NODE_ENV: 'production' }
       });
