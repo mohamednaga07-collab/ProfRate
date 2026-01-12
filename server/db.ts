@@ -20,7 +20,7 @@ if (!process.env.DATABASE_URL) {
   pool = new Pool({ 
     connectionString: process.env.DATABASE_URL,
     ssl: useSsl ? { rejectUnauthorized: false } : undefined,
-    connectionTimeoutMillis: 5000, // Fail fast if connectivity is wrong
+    connectionTimeoutMillis: 10000, // Increased to 10s for slower cold starts
   });
   
   // Test connection immediately to catch errors early

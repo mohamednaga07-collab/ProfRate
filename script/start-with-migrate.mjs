@@ -1,37 +1,32 @@
 #!/usr/bin/env node
-import { spawn } from 'child_process';
-import { promisify } from 'util';
+import { spawn, execSync } from 'child_process';
 
-// 🚀 Start the server IMMEDIATELY so Render sees an open port
+// 🚀 Start the server IMMEDIATELY
 console.log('🚀 Starting server process...');
 const server = spawn('node', ['dist/index.cjs'], {
   stdio: 'inherit',
   env: { ...process.env, NODE_ENV: 'production' }
 });
 
-// 🔄 Run migrations in the background
 async function runMigrations() {
-  if (!process.env.DATABASE_URL) {
-    console.log('⚠️  No DATABASE_URL - skipping migrations');
-    return;
+  if (!process.env.DATABASE_URL) return;
+
+  console.log('🔄 Checking database schema...');
+  try {
+    // We use yes | to answer any "Is this a rename?" questions automatically
+    // This is safer for automated deployments where we want the schema to match exactly
+    execSync('yes | npx drizzle-kit push --force', {
+      stdio: 'inherit',
+      env: { ...process.env, NODE_ENV: 'production' }
+    });
+    console.log('✅ Database schema is up to date');
+  } catch (error) {
+    console.error('⚠️  Migration check finished with warning/error. (Continuing anyway)');
   }
-
-  console.log('🔄 Triggering background database migrations...');
-  const migrate = spawn('npx', ['drizzle-kit', 'push', '--force'], {
-    stdio: 'inherit'
-  });
-
-  migrate.on('close', (code) => {
-    if (code === 0) {
-      console.log('✅ Database schema verified/updated');
-    } else {
-      console.error(`⚠️  Migration finished with code ${code}`);
-    }
-  });
 }
 
-// Run migrations while server is starting
-runMigrations();
+// Run migrations in background so server can bind port
+setTimeout(runMigrations, 2000);
 
 server.on('close', (code) => {
   process.exit(code);
