@@ -13,16 +13,8 @@ import {
 import { createInsertSchema } from "drizzle-zod";
 import { z } from "zod";
 
-// Session storage table for Antigravity Auth
-export const sessions = pgTable(
-  "sessions",
-  {
-    sid: varchar("sid").primaryKey(),
-    sess: jsonb("sess").notNull(),
-    expire: timestamp("expire").notNull(),
-  },
-  (table) => [index("IDX_session_expire").on(table.expire)],
-);
+// Session storage is managed manually in server/antigravityAuth.ts to handle production build constraints
+
 
 // User roles enum
 export const userRoles = ["student", "teacher", "admin"] as const;
