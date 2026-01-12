@@ -15,7 +15,9 @@ const pendingRegistrations = new Set<string>();
 declare module "express-session" {
   interface SessionData {
     userId?: string;
+    userRole?: string;
     csrfInit?: boolean;
+    recaptchaVerified?: boolean;
   }
 }
 
@@ -259,7 +261,6 @@ export async function registerRoutes(httpServer: Server, app: Express): Promise<
 
       if (recaptchaEnabled) {
         const skipRecaptcha = req.body.skipRecaptcha === true;
-        console.log("🔐 reCAPTCHA check - enabled:", recaptchaEnabled, "skipRecaptcha:", skipRecaptcha, "token:", recaptchaToken ? "present" : "missing");
         
         if (!skipRecaptcha && !recaptchaToken) {
           console.log("❌ reCAPTCHA verification required - no token and not skipping");
@@ -269,9 +270,8 @@ export async function registerRoutes(httpServer: Server, app: Express): Promise<
         if (!skipRecaptcha && recaptchaToken) {
           console.log("✅ Verifying reCAPTCHA token with Google");
           try {
-            // Add timeout to reCAPTCHA verification to prevent login hanging
             const controller = new AbortController();
-            const timeoutId = setTimeout(() => controller.abort(), 8000); // 8 second timeout
+            const timeoutId = setTimeout(() => controller.abort(), 8000);
 
             const recaptchaResponse = await fetch("https://www.google.com/recaptcha/api/siteverify", {
               method: "POST",
@@ -298,20 +298,17 @@ export async function registerRoutes(httpServer: Server, app: Express): Promise<
               console.warn("⚠️  Suspicious activity detected from IP:", req.ip);
               return res.status(400).json({ message: "Suspicious activity detected. Please try again." });
             }
-      } else {
-        console.log("✅ Skipping reCAPTCHA verification (session verified)");
+            
+            req.session.recaptchaVerified = true;
+          } catch (recaptchaError) {
+            console.error("Error verifying reCAPTCHA:", recaptchaError);
+            return res.status(500).json({ message: "reCAPTCHA verification error" });
+          }
+        } else if (skipRecaptcha) {
+          console.log("✅ Skipping reCAPTCHA verification (session verified)");
+          req.session.recaptchaVerified = true;
+        }
       }
-
-      // Clear validation errors on success
-      req.session.recaptchaVerified = true;
-    } catch (recaptchaError) {
-      console.error("Error verifying reCAPTCHA:", recaptchaError);
-      return res.status(500).json({ message: "reCAPTCHA verification error" });
-    }
-  } else if (recaptchaEnabled && !skipRecaptcha) {
-    // If not skipped and no token provided, it's a failure
-    return res.status(400).json({ message: "reCAPTCHA verification is required" });
-  }
 
       const user = await storage.getUserByUsername(username);
       console.log("👤 Found user:", user ? "yes ✓" : "no ✗");

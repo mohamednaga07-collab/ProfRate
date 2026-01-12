@@ -179,7 +179,7 @@ export function isValidUsername(username: string): boolean {
  * Sanitize HTML to prevent XSS attacks
  */
 export function sanitizeInput(input: string): string {
-  return sanitize-html(input, {
+  return sanitizeHtml(input, {
     allowedTags: [], // No HTML tags allowed
     allowedAttributes: {},
   });

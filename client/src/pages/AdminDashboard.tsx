@@ -840,7 +840,8 @@ export default function AdminDashboard() {
                           ))}
                       </TableBody>
                     </Table>
-                  </ScrollArea>
+                  </div>
+                </ScrollArea>
                 </CardContent>
               </Card>
             </TabsContent>
@@ -966,7 +967,8 @@ export default function AdminDashboard() {
                         ))}
                       </TableBody>
                     </Table>
-                  </ScrollArea>
+                  </div>
+                </ScrollArea>
                 </CardContent>
               </Card>
             </TabsContent>
@@ -1164,7 +1166,7 @@ export default function AdminDashboard() {
                 <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
               </div>
             ) : fullDoctorData ? (
-              <DoctorCard doctor={fullDoctorData} />
+              <DoctorCard doctor={fullDoctorData as any} />
             ) : (
               <div className="h-[200px] flex items-center justify-center text-muted-foreground p-6 text-center">
                 {t("doctorProfile.notFound.title", "Professor data not found")}
@@ -1176,3 +1178,4 @@ export default function AdminDashboard() {
     </div>
   );
 }
+

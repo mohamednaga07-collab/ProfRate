@@ -116,7 +116,7 @@ export async function setupAuth(app: Express) {
   app.use(passport.initialize());
   app.use(passport.session());
 
-  const config = await getOidcConfig();
+  const config = (await getOidcConfig()) as client.Configuration | null;
   
   if (!config) {
     // Auth disabled in development without REPL_ID
@@ -232,7 +232,7 @@ export const isAuthenticated: RequestHandler = async (req, res, next) => {
   }
 
   try {
-    const config = await getOidcConfig();
+    const config = (await getOidcConfig()) as client.Configuration | null;
     if (!config) {
       return res.status(401).json({ message: "Unauthorized" });
     }
