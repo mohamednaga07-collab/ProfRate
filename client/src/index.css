@@ -532,9 +532,9 @@ html[dir="rtl"] body {
   background: transparent !important;
   border-radius: 4px !important;
   box-shadow: none !important;
-  /* Slightly scale up the iframe to push its white border into the "overflow: hidden" zone */
-  transform: scale(1.02);
-  transform-origin: center center;
+  /* Slightly scale up and shift down the iframe to push its white border into the "overflow: hidden" zone */
+  transform: scale(1.04) translateY(2px) !important;
+  transform-origin: center center !important;
 }
 
 /* Scale adjustments for mobile */
