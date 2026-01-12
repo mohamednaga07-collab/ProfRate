@@ -24,19 +24,15 @@ if (USE_RESEND) {
 }
 
 // Create Gmail transporter as fallback
-// Try port 587 with STARTTLS first (better compatibility with hosting providers)
+// Port 465 with secure: true is often more reliable on hosting providers like Render
 const gmailTransporter = nodemailer.createTransport({
   host: "smtp.gmail.com",
-  port: 587,
-  secure: false,
+  port: 465,
+  secure: true,
   auth: {
     user: EMAIL_USER,
     pass: EMAIL_PASSWORD,
   },
-  connectionTimeout: 10000, 
-  greetingTimeout: 10000,   
-  socketTimeout: 10000,
-  requireTLS: true,
 });
 
 // Test Gmail connection
@@ -155,7 +151,7 @@ export async function sendEmail(options: EmailOptions): Promise<boolean> {
     // Fallback to Gmail
     console.log(`[GMAIL] Starting Gmail SMTP send...`);
     const info = await gmailTransporter.sendMail({
-      from: EMAIL_FROM,
+      from: `ProfRate Support <${EMAIL_USER}>`,
       to: options.to,
       subject: options.subject,
       html: options.html,
