@@ -400,6 +400,7 @@ export default function DoctorListing() {
                         <button
                           onClick={() => handleCompareToggle(id)}
                           className="ml-1 hover:text-destructive"
+                          aria-label={t("listing.compare.remove", { defaultValue: "Remove" })}
                         >
                           <X className="h-3 w-3" />
                         </button>

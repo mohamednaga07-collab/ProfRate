@@ -8,12 +8,39 @@ import { Link } from "wouter";
 import { motion } from "framer-motion";
 import type { DoctorWithRatings } from "@shared/schema";
 import { useTranslation } from "react-i18next";
+import { useRef, useEffect } from "react";
+import styles from "./DoctorCard.module.css";
 
 interface DoctorCardProps {
   doctor: DoctorWithRatings;
   onCompareToggle?: (doctorId: number) => void;
   isComparing?: boolean;
 }
+
+const RatingColumn = ({ label, title, value }: { label: string; title: string; value: number }) => {
+  const barRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    if (barRef.current) {
+      barRef.current.style.setProperty("--bar-height", `${(value / 5) * 100}%`);
+    }
+  }, [value]);
+
+  return (
+    <div className="text-center">
+      <div
+        className="h-8 rounded bg-muted relative overflow-hidden"
+        title={`${title}: ${value.toFixed(1)}`}
+      >
+        <div
+          ref={barRef}
+          className={`absolute bottom-0 left-0 right-0 bg-primary/60 transition-all ${styles.barFill}`}
+        />
+      </div>
+      <span className="text-xs text-muted-foreground font-medium">{label}</span>
+    </div>
+  );
+};
 
 export function DoctorCard({ doctor, onCompareToggle, isComparing }: DoctorCardProps) {
   const { t } = useTranslation();
@@ -80,18 +107,12 @@ export function DoctorCard({ doctor, onCompareToggle, isComparing }: DoctorCardP
                 { label: t("home.factors.knowledge"), title: t("doctorProfile.factors.knowledge"), value: doctor.ratings.avgKnowledge ?? 0 },
                 { label: t("home.factors.fairness"), title: t("doctorProfile.factors.fairness"), value: doctor.ratings.avgFairness ?? 0 },
               ].map(({ label, title, value }) => (
-                <div key={label} className="text-center">
-                  <div
-                    className="h-8 rounded bg-muted relative overflow-hidden"
-                    title={`${title}: ${value.toFixed(1)}`}
-                  >
-                    <div
-                      className="absolute bottom-0 left-0 right-0 bg-primary/60 transition-all"
-                      style={{ height: `${(value / 5) * 100}%` }}
-                    />
-                  </div>
-                  <span className="text-xs text-muted-foreground font-medium">{label}</span>
-                </div>
+                <RatingColumn 
+                  key={label} 
+                  label={label} 
+                  title={title} 
+                  value={value} 
+                />
               ))}
             </div>
           )}

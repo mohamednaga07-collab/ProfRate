@@ -11,6 +11,7 @@ import { AlertCircle, TrendingUp, Award, Users, MessageSquare, BookOpen, Target,
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { useTranslation } from "react-i18next";
 import { motion, AnimatePresence } from "framer-motion";
+import styles from "./TeacherDashboard.module.css";
 
 interface Doctor {
   id: number;
@@ -47,16 +48,7 @@ export default function TeacherDashboard() {
   const [, navigate] = useLocation();
   const { t } = useTranslation();
   // Hero images carousel - 4K Premium Resolution
-  const heroImages = [
-    "https://images.unsplash.com/photo-1460518451285-97b6aa326961?w=3840&h=2160&fit=crop&q=95&auto=format",
-    "https://images.unsplash.com/photo-1484417894907-623942c8ee29?w=3840&h=2160&fit=crop&q=95&auto=format",
-    "https://images.unsplash.com/photo-1523580846011-d3a5bc25702b?w=3840&h=2160&fit=crop&q=95&auto=format",
-    "https://images.unsplash.com/photo-1524995997946-a1c2e315a42f?w=3840&h=2160&fit=crop&q=95&auto=format",
-    "https://images.unsplash.com/photo-1503676382389-4809596d5290?w=3840&h=2160&fit=crop&q=95&auto=format",
-    "https://images.unsplash.com/photo-1503428593586-e225b39bddfe?w=3840&h=2160&fit=crop&q=95&auto=format",
-    "https://images.unsplash.com/photo-1516383607781-913a19294fd1?w=3840&h=2160&fit=crop&q=95&auto=format",
-    "https://images.unsplash.com/photo-1519389950473-47ba0277781c?w=3840&h=2160&fit=crop&q=95&auto=format",
-  ];
+  const heroImages = [0, 1, 2, 3, 4, 5, 6, 7];
 
   // Extended images for seamless infinite loop [Last, ...Images, First]
   const extendedImages = useMemo(() => [
@@ -221,24 +213,10 @@ export default function TeacherDashboard() {
             return (
               <div 
                 key={`${index}-${src}`}
-                className="relative h-full overflow-hidden"
-                style={{ 
-                  width: `${100 / extendedImages.length}%`,
-                  visibility: isVisible ? "visible" : "hidden"
-                }}
+                className={`relative h-full overflow-hidden ${isVisible ? styles.slideVisible : styles.slideHidden} ${styles.slideItem}`}
               >
                 <div
-                  className="absolute inset-0 transition-all duration-1000 ease-out will-change-transform"
-                  style={{
-                    backgroundImage: `url(${src})`,
-                    backgroundSize: "cover",
-                    backgroundPosition: "center",
-                    backgroundRepeat: "no-repeat",
-                    backgroundColor: "#0f172a",
-                    opacity: isActive ? 1 : 0.4,
-                    filter: isActive ? "blur(0px)" : "blur(20px)",
-                    transform: isActive ? "scale(1)" : "scale(1.1)",
-                  }}
+                  className={`absolute inset-0 transition-all duration-1000 ease-out will-change-transform ${styles.slideImage} ${styles[`heroImage${src}`]} ${isActive ? styles.slideImageActive : styles.slideImageInactive}`}
                 />
               </div>
             );

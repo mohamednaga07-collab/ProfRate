@@ -7,10 +7,13 @@ import { GraduationCap, Star, BarChart3, Shield, Users, ChevronRight, CheckCircl
 import { useState, useEffect, useCallback, useMemo } from "react";
 import { useTranslation } from "react-i18next";
 import { motion, AnimatePresence } from "framer-motion";
+import styles from "./Landing.module.css";
 
 interface LandingProps {
   defaultTab?: "login" | "register";
 }
+
+
 
 export default function Landing({ defaultTab = "login" }: LandingProps) {
   const { t } = useTranslation();
@@ -159,24 +162,10 @@ export default function Landing({ defaultTab = "login" }: LandingProps) {
               return (
                 <div 
                   key={`${index}-${src}`}
-                  className="relative h-full overflow-hidden"
-                  style={{ 
-                    width: `${100 / extendedImages.length}%`,
-                    visibility: isVisible ? "visible" : "hidden"
-                  }}
+                  className={`relative h-full overflow-hidden ${styles.carouselItem} ${isVisible ? styles.visible : styles.hidden}`}
                 >
                   <div
-                    className="absolute inset-0 transition-all duration-1000 ease-out will-change-transform"
-                    style={{
-                      backgroundImage: `url(${src})`,
-                      backgroundSize: "cover",
-                      backgroundPosition: "center",
-                      backgroundRepeat: "no-repeat",
-                      backgroundColor: "#0f172a",
-                      opacity: isActive ? 1 : 0.4,
-                      filter: isActive ? "blur(0px)" : "blur(20px)",
-                      transform: isActive ? "scale(1)" : "scale(1.1)",
-                    }}
+                    className={`absolute inset-0 transition-all duration-1000 ease-out will-change-transform ${styles.carouselImage} ${styles[`image${heroImages.indexOf(src) + 1}`]} ${isActive ? styles.active : styles.inactive}`}
                   />
                 </div>
               );

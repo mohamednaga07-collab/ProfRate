@@ -1,0 +1,3 @@
+.barFill {
+  height: var(--bar-height, 0%);
+}

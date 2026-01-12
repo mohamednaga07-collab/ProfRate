@@ -12,6 +12,8 @@ import { useTranslation } from "react-i18next";
 import { motion, AnimatePresence } from "framer-motion";
 import { useState, useEffect, useMemo, memo, useCallback } from "react";
 
+import styles from "./Home.module.css";
+
 export default function Home() {
   const { t } = useTranslation();
   const { user } = useAuth();
@@ -139,27 +141,17 @@ export default function Home() {
             const isActive = index === currentIndex;
             const isVisible = Math.abs(index - currentIndex) <= 1;
 
+            const originalIndex = heroImages.indexOf(src);
+            const imageClass = originalIndex >= 0 ? styles[`heroImage${originalIndex + 1}`] : '';
+
             return (
               <div 
                 key={`${index}-${src}`}
-                className="relative h-full overflow-hidden"
-                style={{ 
-                  width: `${100 / extendedImages.length}%`,
-                  visibility: isVisible ? "visible" : "hidden"
-                }}
+                className={`relative h-full overflow-hidden flex-1 ${isVisible ? styles.heroSlideVisible : styles.heroSlide}`}
+
               >
                 <div
-                  className="absolute inset-0 transition-all duration-1000 ease-out will-change-transform"
-                  style={{
-                    backgroundImage: `url(${src})`,
-                    backgroundSize: "cover",
-                    backgroundPosition: "center",
-                    backgroundRepeat: "no-repeat",
-                    backgroundColor: "#0f172a",
-                    opacity: isActive ? 1 : 0.4,
-                    filter: isActive ? "blur(0px)" : "blur(20px)",
-                    transform: isActive ? "scale(1)" : "scale(1.1)",
-                  }}
+                  className={`absolute inset-0 transition-all duration-1000 ease-out will-change-transform ${styles.heroBackground} ${imageClass} ${isActive ? styles.heroBackgroundActive : ''}`}
                 />
               </div>
             );

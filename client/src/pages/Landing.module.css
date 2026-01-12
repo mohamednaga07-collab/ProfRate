@@ -1,0 +1,30 @@
+.carouselImage {
+  background-size: cover;
+  background-position: center;
+  background-repeat: no-repeat;
+  background-color: #0f172a;
+}
+
+.active {
+  opacity: 1;
+  filter: blur(0px);
+  transform: scale(1);
+}
+
+.inactive {
+  opacity: 0.4;
+  filter: blur(20px);
+  transform: scale(1.1);
+}
+
+.carouselItem {
+  width: 10%;
+}
+
+.visible {
+  visibility: visible;
+}
+
+.hidden {
+  visibility: hidden;
+}

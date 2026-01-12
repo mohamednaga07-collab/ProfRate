@@ -185,7 +185,7 @@ html[dir="rtl"] body {
   /* Responsive Table Wrapper */
   .table-responsive {
     @apply w-full overflow-x-auto;
-    -webkit-overflow-scrolling: touch;
+
   }
 
   /* Mobile-first sticky header adjustment */
