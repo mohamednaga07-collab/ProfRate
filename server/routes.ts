@@ -147,6 +147,23 @@ export async function registerRoutes(httpServer: Server, app: Express): Promise<
       res.status(500).json({ percent: 0, status: "critical" });
     }
   });
+ 
+  // Diagnostic endpoint for testing emails (internal use)
+  app.get("/api/admin/debug-email", async (req, res) => {
+    const testEmail = (req.query.to as string) || "mohamednaga07@gmail.com";
+    console.log(`[DEBUG] Attempting test email to: ${testEmail}`);
+    try {
+      const result = await sendEmail({
+        to: testEmail,
+        subject: "ProfRate Email Diagnosis",
+        html: "<h1>Test Email</h1><p>If you see this, your email configuration is working.</p>",
+        text: "Test Email - Configuration verified."
+      });
+      res.json({ success: true, message: "Email triggered, check server logs for full response", sentTo: testEmail });
+    } catch (error: any) {
+      res.status(500).json({ success: false, error: error.message });
+    }
+  });
 
   // Auth routes - public endpoint to check if user is logged in
   app.get("/api/auth/user", async (req: any, res) => {
