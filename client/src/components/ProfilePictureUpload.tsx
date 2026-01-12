@@ -191,10 +191,10 @@ export function ProfilePictureUpload({
         )}
 
         {/* Image layer with smooth crossfade animation */}
-        <AnimatePresence mode="sync" initial={false}>
+        <AnimatePresence mode="sync">
           {user.profileImageUrl && (
             <motion.div
-              key={user.profileImageUrl} // Use actual image URL as key - only animates when URL changes
+              key={user.profileImageUrl.includes("...") ? `fallback-${user.id}-${user.updatedAt}` : user.profileImageUrl}
               initial={{ opacity: 0 }}
               animate={{ opacity: 1 }}
               exit={{ opacity: 0 }}
@@ -210,7 +210,7 @@ export function ProfilePictureUpload({
             >
               <AvatarImage 
                 src={user.profileImageUrl?.includes("...") 
-                  ? `/api/profile-image/user/${user.id}?t=${new Date().getTime()}` 
+                  ? `/api/profile-image/user/${user.id}?v=${user.updatedAt ? new Date(user.updatedAt).getTime() : '1'}` 
                   : user.profileImageUrl ?? undefined} 
                 alt={user.firstName ?? "User"}
                 className="w-full h-full object-cover" 
@@ -246,7 +246,7 @@ export function ProfilePictureUpload({
             {user.profileImageUrl ? (
               <img 
                 src={user.profileImageUrl?.includes("...") 
-                  ? `/api/profile-image/user/${user.id}?t=${new Date().getTime()}` 
+                  ? `/api/profile-image/user/${user.id}?v=${user.updatedAt ? new Date(user.updatedAt).getTime() : '1'}` 
                   : user.profileImageUrl ?? ""}
                 alt={`${user.firstName ?? "User"}'s profile picture`}
                 className="max-w-full max-h-[80vh] rounded-lg object-contain"

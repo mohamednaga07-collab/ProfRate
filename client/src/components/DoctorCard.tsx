@@ -69,7 +69,7 @@ export function DoctorCard({ doctor, onCompareToggle, isComparing }: DoctorCardP
           <Avatar className="h-16 w-16 shrink-0">
             <AvatarImage 
               src={doctor.profileImageUrl?.includes("...") 
-                ? `/api/profile-image/doctor/${doctor.id}?t=${new Date().getTime()}` 
+                ? `/api/profile-image/doctor/${doctor.id}?v=${doctor.updatedAt ? new Date(doctor.updatedAt).getTime() : '1'}` 
                 : doctor.profileImageUrl ?? undefined} 
               alt={doctor.name} 
             />
