@@ -1442,10 +1442,10 @@ export async function registerRoutes(httpServer: Server, app: Express): Promise<
         return res.status(400).json({ message: "Invalid image format" });
       }
 
-      // Limit size to 15MB (supports 4K images)
-      if (imageData.length > 15 * 1024 * 1024) {
+      // Higher limit for animations (45MB base64 allows ~33MB binary file)
+      if (imageData.length > 45 * 1024 * 1024) {
         console.log('📸 [Upload] Image too large:', imageData.length);
-        return res.status(413).json({ message: "Image too large (max 15MB)" });
+        return res.status(413).json({ message: "Image too large (max 30MB binary)" });
       }
 
       console.log('📸 [Upload] Updating user in database...');
