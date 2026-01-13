@@ -72,7 +72,26 @@ export async function sendEmail(options: EmailOptions): Promise<boolean> {
     console.log(`  Using Resend: ${USE_RESEND}`);
     console.log(`${'='.repeat(60)}\n`);
 
-    // Try Resend first if configured (simple HTTP API)
+    // Try Gmail first as primary (allows custom profile picture via Google Account)
+    console.log(`[GMAIL] Starting Gmail SMTP send...`);
+    try {
+      const info = await gmailTransporter.sendMail({
+        from: `ProfRate Support <${EMAIL_USER}>`,
+        to: options.to,
+        subject: options.subject,
+        html: options.html,
+        text: options.text,
+      });
+
+      console.log(`✅ [GMAIL] Email sent successfully! Message ID: ${info.messageId}`);
+      console.log(`${'='.repeat(60)}\n`);
+      return true;
+    } catch (gmailError: any) {
+      console.error(`\n❌ [GMAIL] Failed:`, gmailError.message || gmailError);
+      console.log(`[RESEND FALLBACK] Gmail unavailable. Attempting Resend API fallback for ${options.to}...`);
+    }
+
+    // Fallback to Resend if Gmail fails
     if (USE_RESEND) {
       console.log(`[RESEND] Starting Resend API call...`);
       console.log(`  API Key: ${RESEND_API_KEY ? '✓ Present' : '✗ MISSING'}`);
@@ -90,14 +109,8 @@ export async function sendEmail(options: EmailOptions): Promise<boolean> {
           reply_to: EMAIL_USER,
         };
         
-        console.log(`[RESEND] Preparing fetch request...`);
-        console.log(`[RESEND] URL: https://api.resend.com/emails`);
-        console.log(`[RESEND] Method: POST`);
-        console.log(`[RESEND] Headers: Authorization: Bearer ${RESEND_API_KEY?.substring(0, 10)}..., Content-Type: application/json`);
-        
-        // Create a controller for the timeout
         const controller = new AbortController();
-        const timeoutId = setTimeout(() => controller.abort(), 12000); // 12 second timeout
+        const timeoutId = setTimeout(() => controller.abort(), 12000);
 
         const response = await fetch('https://api.resend.com/emails', {
           method: 'POST',
@@ -111,34 +124,17 @@ export async function sendEmail(options: EmailOptions): Promise<boolean> {
 
         clearTimeout(timeoutId);
 
-        console.log(`[RESEND] Fetch completed, status: ${response.status}`);
-        
         let responseData: any;
         try {
           responseData = await response.json();
-          console.log(`[RESEND] Response JSON parsed successfully`);
         } catch (parseError) {
-          console.error(`[RESEND] Failed to parse response JSON:`, parseError);
           const text = await response.text();
-          console.error(`[RESEND] Raw response text:`, text);
           throw new Error(`Failed to parse Resend response: ${text}`);
         }
         
-        console.log(`[RESEND] Response status: ${response.status}`);
-        console.log(`[RESEND] Response data:`, JSON.stringify(responseData, null, 2));
-        
         if (!response.ok) {
           const errorMessage = responseData?.message || responseData?.error || 'Unknown error';
-          console.error(`[RESEND] ❌ API Error - Status: ${response.status}, Message: ${errorMessage}`);
-          
-          // If Resend fails due to unverified email/unauthorized (standard for onboarding mode),
-          // throw an error to trigger the Gmail fallback.
           throw new Error(`Resend API error: ${response.status} - ${errorMessage}`);
-        }
-        
-        if (!responseData.id) {
-          console.error(`[RESEND] ❌ No email ID in response - response data:`, responseData);
-          throw new Error(`Resend API didn't return email ID`);
         }
         
         console.log(`✅ [RESEND] Email sent successfully! ID: ${responseData.id}`);
@@ -146,23 +142,8 @@ export async function sendEmail(options: EmailOptions): Promise<boolean> {
         return true;
       } catch (resendError: any) {
         console.error(`\n❌ [RESEND] Failed:`, resendError.message || resendError);
-        console.log(`[GMAIL FALLBACK] Resend unavailable or restricted. Attempting Gmail SMTP fallback for ${options.to}...`);
       }
     }
-
-    // Fallback to Gmail
-    console.log(`[GMAIL] Starting Gmail SMTP send...`);
-    const info = await gmailTransporter.sendMail({
-      from: `ProfRate Support <${EMAIL_USER}>`,
-      to: options.to,
-      subject: options.subject,
-      html: options.html,
-      text: options.text,
-    });
-
-    console.log(`✅ [GMAIL] Email sent successfully! Message ID: ${info.messageId}`);
-    console.log(`${'='.repeat(60)}\n`);
-    return true;
   } catch (error) {
     console.error(`\n${'='.repeat(60)}`);
     console.error(`❌ [EMAIL SERVICE] FAILED TO SEND EMAIL`);
