@@ -15,6 +15,7 @@ interface DoctorCardProps {
   doctor: DoctorWithRatings;
   onCompareToggle?: (doctorId: number) => void;
   isComparing?: boolean;
+  readOnly?: boolean;
 }
 
 const RatingColumn = ({ label, title, value }: { label: string; title: string; value: number }) => {
@@ -42,7 +43,7 @@ const RatingColumn = ({ label, title, value }: { label: string; title: string; v
   );
 };
 
-export function DoctorCard({ doctor, onCompareToggle, isComparing }: DoctorCardProps) {
+export function DoctorCard({ doctor, onCompareToggle, isComparing, readOnly = false }: DoctorCardProps) {
   const { t } = useTranslation();
   const formatName = (name: string) => name.replace(/^Dr\.?\s+/i, "");
   const initials = doctor.name
@@ -122,13 +123,26 @@ export function DoctorCard({ doctor, onCompareToggle, isComparing }: DoctorCardP
       </CardContent>
 
       <CardFooter className="flex gap-2 p-6 pt-0">
-        <Button asChild variant="default" className="flex-1" data-testid={`button-view-doctor-${doctor.id}`}>
-          <Link href={`/doctors/${doctor.id}`}>
-            <Eye className="h-4 w-4 mr-2" />
-            {t("doctorCard.viewProfile")}
-          </Link>
+        <Button 
+          asChild={!readOnly} 
+          variant="default" 
+          className="flex-1" 
+          data-testid={`button-view-doctor-${doctor.id}`}
+          disabled={readOnly}
+        >
+          {readOnly ? (
+            <div className="flex items-center justify-center">
+              <Eye className="h-4 w-4 mr-2" />
+              {t("doctorCard.viewProfile")}
+            </div>
+          ) : (
+            <Link href={`/doctors/${doctor.id}`}>
+              <Eye className="h-4 w-4 mr-2" />
+              {t("doctorCard.viewProfile")}
+            </Link>
+          )}
         </Button>
-        {onCompareToggle && (
+        {onCompareToggle && !readOnly && (
           <Button
             variant={isComparing ? "secondary" : "outline"}
             size="icon"

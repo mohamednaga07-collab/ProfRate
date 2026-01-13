@@ -1,12 +1,10 @@
-import { Button } from "@/components/ui/button";
-import { Card, CardContent } from "@/components/ui/card";
-import { ThemeToggle } from "@/components/ThemeToggle";
-import { AuthForm } from "@/components/AuthForm";
-import { LanguageSwitcher } from "@/components/LanguageSwitcher";
-import { GraduationCap, Star, BarChart3, Shield, Users, ChevronRight, CheckCircle, MapPin } from "lucide-react";
+import { GraduationCap, Star, BarChart3, Shield, Users, ChevronRight, CheckCircle, MapPin, ArrowRight, TrendingUp, Target, MessageSquare, BookOpen, Sparkles } from "lucide-react";
 import { useState, useEffect, useCallback, useMemo } from "react";
 import { useTranslation } from "react-i18next";
 import { motion, AnimatePresence } from "framer-motion";
+import { useQuery } from "@tanstack/react-query";
+import { DoctorCard } from "@/components/DoctorCard";
+import type { DoctorWithRatings } from "@shared/schema";
 import styles from "./Landing.module.css";
 
 interface LandingProps {
@@ -19,6 +17,23 @@ export default function Landing({ defaultTab = "login" }: LandingProps) {
   const { t } = useTranslation();
   const [lastInteraction, setLastInteraction] = useState<number>(0);
   const [isDragging, setIsDragging] = useState(false);
+
+  const { data: doctors, isLoading: doctorsLoading } = useQuery<DoctorWithRatings[]>({
+    queryKey: ["/api/doctors"],
+  });
+
+  const { data: stats } = useQuery<{ totalDoctors: number; totalReviews: number }>({
+    queryKey: ["/api/stats"],
+  });
+
+  const topDoctors = useMemo(
+    () =>
+      doctors
+        ?.filter((d) => (d.ratings?.totalReviews ?? 0) > 0)
+        ?.sort((a, b) => (b.ratings?.overallRating ?? 0) - (a.ratings?.overallRating ?? 0))
+        ?.slice(0, 3),
+    [doctors]
+  );
 
   // Hero carousel images - 4K Premium Resolution
   const heroImages = [
@@ -136,6 +151,7 @@ export default function Landing({ defaultTab = "login" }: LandingProps) {
             }}
             onAnimationComplete={handleTransitionEnd}
             drag="x"
+            dragConstraints={{ left: 0, right: 0 }}
             dragElastic={1} 
             dragMomentum={false}
             onDragStart={() => setIsDragging(true)}
@@ -241,57 +257,89 @@ export default function Landing({ defaultTab = "login" }: LandingProps) {
           </div>
         </section>
 
-        <section id="features" className="py-20 px-4 bg-muted/30">
+        {/* Action Cards Section - Premium Layout */}
+        <section className="py-20 px-4">
           <div className="container mx-auto max-w-6xl">
-            <motion.div
-              initial={{ opacity: 0, y: 20 }}
-              whileInView={{ opacity: 1, y: 0 }}
-              transition={{ duration: 0.5 }}
-              viewport={{ once: true }}
-            >
-              <h2 className="text-3xl font-bold text-center mb-4">{t("landing.features.title")}</h2>
-              <p className="text-muted-foreground text-center max-w-2xl mx-auto mb-12">
-                {t("landing.features.subtitle")}
-              </p>
-            </motion.div>
+            <div className="flex flex-col md:flex-row items-end justify-between gap-4 mb-12 text-center md:text-left">
+               <div className="max-w-2xl">
+                 <h2 className="text-3xl sm:text-4xl font-bold mb-4">{t("home.actions.rateTitle", { defaultValue: "Everything you need to decide" })}</h2>
+                 <p className="text-muted-foreground text-lg">{t("home.actions.rateDesc", { defaultValue: "Powerful tools designed to help students share meaningful feedback and choose the best educators." })}</p>
+               </div>
+               <Button onClick={scrollToAuth} variant="ghost" className="gap-2 group text-primary font-semibold">
+                 {t("landing.learnMore")} 
+                 <ArrowRight className="h-4 w-4 group-hover:translate-x-1 transition-transform" />
+               </Button>
+            </div>
 
-            <div className="grid md:grid-cols-3 gap-6">
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
               {[
                 {
+                  title: t("home.actions.rateTitle", { defaultValue: "Rate a professor" }),
+                  desc: t("home.actions.rateDesc", { defaultValue: "Share your experience in under 60 seconds." }),
                   icon: Star,
-                  titleKey: "landing.features.cards.factors.title",
-                  descKey: "landing.features.cards.factors.description",
-                  color: "primary",
+                  color: "from-amber-500/15 to-amber-600/5",
+                  accentText: "text-amber-600 dark:text-amber-300",
+                  cta: t("home.actions.rateCta", { defaultValue: "Start rating" }),
                 },
                 {
+                  title: t("home.actions.compareTitle", { defaultValue: "Compare options" }),
+                  desc: t("home.actions.compareDesc", { defaultValue: "Stack educators side by side before you decide." }),
                   icon: BarChart3,
-                  titleKey: "landing.features.cards.comparison.title",
-                  descKey: "landing.features.cards.comparison.description",
-                  color: "primary",
+                  color: "from-sky-500/15 to-indigo-600/5",
+                  accentText: "text-sky-600 dark:text-sky-300",
+                  cta: t("home.actions.compareCta", { defaultValue: "Open compare" }),
                 },
                 {
-                  icon: Shield,
-                  titleKey: "landing.features.cards.anonymity.title",
-                  descKey: "landing.features.cards.anonymity.description",
-                  color: "primary",
+                  title: t("home.actions.shortlistTitle", { defaultValue: "Shortlist & follow" }),
+                  desc: t("home.actions.shortlistDesc", { defaultValue: "Save favorites and get notified when ratings change." }),
+                  icon: Target,
+                  color: "from-emerald-500/15 to-teal-600/5",
+                  accentText: "text-emerald-600 dark:text-emerald-300",
+                  cta: t("home.actions.shortlistCta", { defaultValue: "View shortlist" }),
+                },
+                {
+                  title: t("home.actions.feedbackTitle", { defaultValue: "Feedback insights" }),
+                  desc: t("home.actions.feedbackDesc", { defaultValue: "See themes from recent student feedback instantly." }),
+                  icon: MessageSquare,
+                  color: "from-purple-500/15 to-fuchsia-600/5",
+                  accentText: "text-purple-600 dark:text-purple-300",
+                  cta: t("home.actions.feedbackCta", { defaultValue: "Explore insights" }),
                 },
               ].map((item, index) => (
-                <motion.div
-                  key={index}
+                <motion.div 
+                  key={item.title}
                   initial={{ opacity: 0, y: 20 }}
                   whileInView={{ opacity: 1, y: 0 }}
-                  transition={{ duration: 0.5, delay: index * 0.1 }}
+                  transition={{ delay: index * 0.1 }}
                   viewport={{ once: true }}
                 >
-                  <Card className="border-0 bg-card backdrop-blur hover:shadow-lg transition-shadow">
-                    <CardContent className="pt-8 pb-8">
-                      <div className="h-12 w-12 rounded-lg bg-primary/10 flex items-center justify-center mb-4">
-                        <item.icon className="h-6 w-6 text-primary" />
+                  <Card 
+                    className={`h-full border border-border/50 bg-card/40 bg-gradient-to-br ${item.color} backdrop-blur-md shadow-sm hover:shadow-xl transition-all duration-500 flex flex-col group overflow-hidden cursor-pointer`}
+                    onClick={scrollToAuth}
+                  >
+                    <CardContent className="p-6 flex flex-col flex-1 gap-6 relative">
+                      <item.icon className={`absolute -right-4 -top-4 h-24 w-24 opacity-[0.03] group-hover:opacity-[0.07] group-hover:scale-110 transition-all duration-500 ${item.accentText}`} />
+                      
+                      <div className="space-y-4 relative z-10">
+                        <div>
+                          <p className="text-[10px] font-bold uppercase tracking-[0.2em] text-muted-foreground/60 mb-1 flex items-center gap-2">
+                            <span className={`h-1.5 w-1.5 rounded-full ${item.accentText.replace('text-', 'bg-')}`} />
+                            {t("home.actions.quick", { defaultValue: "Quick action" })}
+                          </p>
+                          <h3 className="text-xl font-bold text-foreground tracking-tight leading-tight">{item.title}</h3>
+                        </div>
+                        
+                        <p className="text-sm text-muted-foreground leading-relaxed min-h-[40px] line-clamp-2">
+                          {item.desc}
+                        </p>
                       </div>
-                      <h3 className="text-lg font-semibold mb-2">{t(item.titleKey)}</h3>
-                      <p className="text-muted-foreground">
-                        {t(item.descKey)}
-                      </p>
+
+                      <div className="mt-auto relative z-10">
+                        <Button className="w-full justify-between gap-2 bg-background/50 hover:bg-background/80 backdrop-blur border border-border/50 text-foreground group/btn shadow-sm hover:shadow-md transition-all duration-300 h-11 px-5">
+                            <span className="font-bold tracking-tight">{item.cta}</span>
+                            <ArrowRight className="h-4 w-4 transition-transform group-hover/btn:translate-x-1" />
+                        </Button>
+                      </div>
                     </CardContent>
                   </Card>
                 </motion.div>
@@ -300,60 +348,132 @@ export default function Landing({ defaultTab = "login" }: LandingProps) {
           </div>
         </section>
 
-        <section className="py-20 px-4">
+        {/* Stats Section with Animations */}
+        <section className="py-24 px-4 bg-slate-50 dark:bg-slate-900/50">
           <div className="container mx-auto max-w-6xl">
-            <motion.div
+            <motion.div 
               initial={{ opacity: 0, y: 20 }}
               whileInView={{ opacity: 1, y: 0 }}
-              transition={{ duration: 0.5 }}
               viewport={{ once: true }}
+              className="text-center mb-16"
             >
-              <h2 className="text-3xl font-bold text-center mb-4">{t("landing.roles.title")}</h2>
-              <p className="text-muted-foreground text-center max-w-2xl mx-auto mb-12">
-                {t("landing.roles.subtitle")}
-              </p>
+              <h2 className="text-3xl sm:text-4xl font-bold mb-4">{t("home.stats.title", { defaultValue: "Platform Overview" })}</h2>
+              <p className="text-muted-foreground text-lg max-w-2xl mx-auto">{t("home.stats.description", { defaultValue: "Get real-time insights into our growing rating ecosystem." })}</p>
             </motion.div>
 
-            <div className="grid md:grid-cols-3 gap-6">
+            <div className="grid sm:grid-cols-2 lg:grid-cols-4 gap-6">
               {[
                 {
                   icon: Users,
-                  role: "student",
-                  color: "primary",
+                  labelKey: "home.stats.totalProfessors",
+                  value: stats?.totalDoctors ?? doctors?.length ?? 0,
+                  color: "blue",
                 },
                 {
-                  icon: GraduationCap,
-                  role: "teacher",
-                  color: "primary",
+                  icon: Star,
+                  labelKey: "home.stats.totalReviews",
+                  value: stats?.totalReviews ?? 0,
+                  color: "green",
                 },
                 {
-                  icon: Shield,
-                  role: "admin",
-                  color: "primary",
+                  icon: TrendingUp,
+                  labelKey: "home.stats.avgRating",
+                  value: doctors && doctors.length > 0
+                    ? (
+                        doctors.reduce((acc, d) => acc + (d.ratings?.overallRating ?? 0), 0) /
+                        Math.max(1, doctors.filter((d) => (d.ratings?.totalReviews ?? 0) > 0).length)
+                      ).toFixed(1)
+                    : "0.0",
+                  color: "purple",
                 },
-              ].map((item, index) => (
-                <motion.div
+                {
+                  icon: BarChart3,
+                  labelKey: "home.stats.departments",
+                  value: doctors ? new Set(doctors.map((d) => d.department)).size : 0,
+                  color: "orange",
+                },
+              ].map((stat, index) => (
+                <motion.div 
                   key={index}
-                  initial={{ opacity: 0, scale: 0.95 }}
+                  initial={{ opacity: 0, scale: 0.9 }}
                   whileInView={{ opacity: 1, scale: 1 }}
-                  transition={{ duration: 0.5, delay: index * 0.1 }}
+                  transition={{ delay: index * 0.1 }}
                   viewport={{ once: true }}
-                  whileHover={{ y: -5 }}
                 >
-                  <Card className="backdrop-blur hover:shadow-lg transition-shadow">
-                    <CardContent className="pt-8 pb-8 text-center">
-                      <div className={`h-16 w-16 rounded-full bg-${item.color}/10 flex items-center justify-center mx-auto mb-4`}>
-                        <item.icon className={`h-8 w-8 text-${item.color}`} />
+                  <Card className={`bg-gradient-to-br from-${stat.color}-500/10 to-${stat.color}-600/5 border-${stat.color}-200/50 dark:border-${stat.color}-800/30 backdrop-blur shadow-sm hover:shadow-md transition-all`}>
+                    <CardContent className="pt-8 pb-8 text-center sm:text-left">
+                      <div className="flex flex-col sm:flex-row items-center gap-4">
+                        <div className={`h-14 w-14 rounded-2xl bg-${stat.color}-500/15 flex items-center justify-center shadow-inner`}>
+                          <stat.icon className={`h-7 w-7 text-${stat.color}-600 dark:text-${stat.color}-400`} />
+                        </div>
+                        <div>
+                          <p className="text-sm font-medium text-muted-foreground/80 mb-1">{t(stat.labelKey)}</p>
+                          <p className="text-3xl font-bold tracking-tight">
+                            {stat.value}
+                          </p>
+                        </div>
                       </div>
-                      <h3 className="text-lg font-semibold mb-2">{t(`roles.${item.role}`)}</h3>
-                      <p className="text-sm text-muted-foreground">
-                        {t(`landing.roles.cards.${item.role}`)}
-                      </p>
                     </CardContent>
                   </Card>
                 </motion.div>
               ))}
             </div>
+          </div>
+        </section>
+
+        {/* Top Rated Section */}
+        <section className="py-24 px-4 bg-background">
+          <div className="container mx-auto max-w-6xl">
+            <div className="flex flex-col sm:flex-row items-center justify-between gap-6 mb-12">
+              <div className="text-center sm:text-left">
+                <h2 className="text-3xl sm:text-4xl font-bold mb-3">{t("home.topRated.title")}</h2>
+                <p className="text-muted-foreground text-lg">{t("home.topRated.subtitle")}</p>
+              </div>
+              <Button onClick={scrollToAuth} size="lg" className="gap-2 bg-gradient-to-r from-indigo-500 to-purple-600 text-white hover:from-indigo-600 hover:to-purple-700 shadow-xl shadow-indigo-500/20 transition-all hover:scale-105 active:scale-95 font-bold">
+                {t("home.topRated.viewAll")}
+                <ArrowRight className="h-5 w-5" />
+              </Button>
+            </div>
+
+            {doctorsLoading ? (
+              <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-8">
+                {[1, 2, 3].map((i) => (
+                  <Card key={i} className="border-border/50">
+                    <CardContent className="p-8">
+                      <div className="flex items-start gap-5">
+                        <div className="h-20 w-20 rounded-2xl bg-muted animate-pulse" />
+                        <div className="flex-1 space-y-3 pt-2">
+                          <div className="h-6 w-40 bg-muted animate-pulse rounded-lg" />
+                          <div className="h-4 w-28 bg-muted animate-pulse rounded-lg" />
+                        </div>
+                      </div>
+                      <div className="h-24 w-full bg-muted animate-pulse rounded-2xl mt-8" />
+                    </CardContent>
+                  </Card>
+                ))}
+              </div>
+            ) : topDoctors && topDoctors.length > 0 ? (
+              <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-8">
+                {topDoctors.map((doctor, index) => (
+                  <motion.div 
+                    key={doctor.id} 
+                    initial={{ opacity: 0, y: 30 }}
+                    whileInView={{ opacity: 1, y: 0 }}
+                    transition={{ delay: index * 0.15 }}
+                    viewport={{ once: true }}
+                    className="cursor-pointer group" 
+                    onClick={scrollToAuth}
+                  >
+                    <DoctorCard doctor={doctor} readOnly />
+                  </motion.div>
+                ))}
+              </div>
+            ) : (
+              <div className="text-center py-20 bg-muted/10 rounded-3xl border-2 border-dashed border-border/50">
+                <Users className="h-16 w-16 text-muted-foreground/30 mx-auto mb-4" />
+                <p className="text-muted-foreground font-medium">{t("home.empty.description")}</p>
+              </div>
+            )}
           </div>
         </section>
 
