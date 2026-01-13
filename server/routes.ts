@@ -563,7 +563,8 @@ export async function registerRoutes(httpServer: Server, app: Express): Promise<
       const username = req.params.username;
       if (!username) return res.json({ isAdmin: false });
       
-      const user = await storage.getUserByUsername(username);
+      const sanitized = sanitizeUsername(username);
+      const user = await storage.getUserByUsername(sanitized);
       // Only return true if user exists AND is admin. 
       // Return false for students, teachers, and non-existent users to minimize enumeration risks.
       if (user && user.role === "admin") {
