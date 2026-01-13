@@ -36,23 +36,47 @@ function getUserId(req: any): string | null {
 
 async function seedSampleData() {
   try {
-    const existingDoctors = await storage.getAllDoctors();
-    if (existingDoctors.length > 0) return;
-
-    const sampleDoctors = [
-      { name: "Dr. Sarah Johnson", department: "Computer Science", title: "Associate Professor", bio: "Expert in machine learning and artificial intelligence with 15 years of teaching experience." },
-      { name: "Dr. Michael Chen", department: "Mathematics", title: "Professor", bio: "Specializes in applied mathematics and statistics. Known for clear explanations of complex topics." },
-      { name: "Dr. Emily Williams", department: "Physics", title: "Assistant Professor", bio: "Researcher in quantum mechanics with a passion for undergraduate education." },
-      { name: "Dr. James Anderson", department: "Computer Science", title: "Professor", bio: "Database systems and software engineering specialist. Industry experience at major tech companies." },
-      { name: "Dr. Lisa Martinez", department: "Biology", title: "Associate Professor", bio: "Molecular biology researcher focused on making science accessible to all students." },
-    ];
-
-    for (const doctor of sampleDoctors) {
-      await storage.createDoctor(doctor);
+    // 1. Seed Admin User if none exists
+    const users = await storage.getAllUsers();
+    const adminExists = users.some(u => u.username?.toLowerCase() === 'admin' || u.role === 'admin');
+    
+    if (!adminExists) {
+      console.log("🚀 Seeding default admin user...");
+      const adminId = randomUUID();
+      const defaultAdminPassword = "AdminPassword123!";
+      const hashedPassword = await hashPassword(defaultAdminPassword);
+      
+      await storage.createUser({
+        id: adminId,
+        username: "Admin",
+        password: hashedPassword,
+        email: "admin@profrate.app",
+        firstName: "System",
+        lastName: "Administrator",
+        role: "admin",
+        emailVerified: true
+      });
+      console.log("✅ Admin user created (User: Admin, Pass: AdminPassword123!)");
     }
-    console.log("✓ Seeded sample doctors");
+
+    // 2. Seed Doctors if table is empty
+    const existingDoctors = await storage.getAllDoctors();
+    if (existingDoctors.length === 0) {
+      const sampleDoctors = [
+        { name: "Dr. Sarah Johnson", department: "Computer Science", title: "Associate Professor", bio: "Expert in machine learning and artificial intelligence with 15 years of teaching experience." },
+        { name: "Dr. Michael Chen", department: "Mathematics", title: "Professor", bio: "Specializes in applied mathematics and statistics. Known for clear explanations of complex topics." },
+        { name: "Dr. Emily Williams", department: "Physics", title: "Assistant Professor", bio: "Researcher in quantum mechanics with a passion for undergraduate education." },
+        { name: "Dr. James Anderson", department: "Computer Science", title: "Professor", bio: "Database systems and software engineering specialist. Industry experience at major tech companies." },
+        { name: "Dr. Lisa Martinez", department: "Biology", title: "Associate Professor", bio: "Molecular biology researcher focused on making science accessible to all students." },
+      ];
+
+      for (const doctor of sampleDoctors) {
+        await storage.createDoctor(doctor);
+      }
+      console.log("✓ Seeded sample doctors");
+    }
   } catch (error) {
-    console.warn("⚠️  Could not seed data (database not connected). Run with a working DATABASE_URL.");
+    console.warn("⚠️  Seed error:", error);
   }
 }
 
@@ -325,9 +349,10 @@ export async function registerRoutes(httpServer: Server, app: Express): Promise<
             clearTimeout(timeoutId);
 
             const recaptchaData = await recaptchaResponse.json();
-            console.log("reCAPTCHA verification response:", recaptchaData);
+            console.log(`[reCAPTCHA] Verification response for ${sanitized}:`, recaptchaData);
 
             if (!recaptchaData.success) {
+              console.warn(`[reCAPTCHA] ❌ Verification failed for ${sanitized}. Error codes:`, recaptchaData['error-codes']);
               return res.status(400).json({ message: "reCAPTCHA verification failed. Please try again." });
             }
 
