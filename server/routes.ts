@@ -1065,7 +1065,7 @@ export async function registerRoutes(httpServer: Server, app: Express): Promise<
       // Robust Link Generation
       let baseUrl = process.env.APP_URL || process.env.RENDER_EXTERNAL_URL || "http://localhost:5173";
       baseUrl = baseUrl.replace(/\/$/, "");
-      const loginLink = `${baseUrl}/auth`;
+      const loginLink = `${baseUrl}/login`;
 
       // Send email with username
       console.log(`[forgot-username] Sending email to ${email}`);

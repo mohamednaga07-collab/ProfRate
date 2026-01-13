@@ -10,7 +10,7 @@ const RESEND_API_KEY = process.env.RESEND_API_KEY;
 // Use a verified domain if provided, else fall back to Resend onboarding domain
 // IMPORTANT: Resend requires a verified domain to send FROM your own domain.
 // If you haven't verified profrate.com, this will fail.
-const RESEND_FROM = process.env.RESEND_FROM || 'onboarding@resend.dev';
+const RESEND_FROM = process.env.RESEND_FROM || 'ProfRate <onboarding@resend.dev>';
 const USE_RESEND = !!RESEND_API_KEY;
 
 console.log("[Email Setup] Initializing with:");
@@ -194,7 +194,7 @@ function generateBaseEmailHtml({
   footerMessage?: string;
 }) {
   const logoUrl = "https://campus-ratings.onrender.com/favicon.png";
-  const supportAvatarUrl = "https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?w=100&h=100&fit=crop&q=80"; // A friendly support face
+  const supportAvatarUrl = logoUrl; // Use official logo as support avatar for branding consistency
   
   // CRITICAL: Prevent email clipping by skipping giant base64 images
   // Gmail clips at 102KB. A base64 image can easily exceed this.
@@ -209,7 +209,7 @@ function generateBaseEmailHtml({
          <img src="${safeProfileImage}" style="width: 50px; height: 50px; border-radius: 25px; object-fit: cover; border: 2px solid #e2e8f0; display: block;" alt="${username}">
        </td>`
     : `<td style="padding-right: 15px; width: 60px;">
-         <div style="width: 50px; height: 50px; border-radius: 25px; background: #e2e8f0; color: #64748b; text-align: center; line-height: 50px; font-weight: bold; font-size: 20px;">${username.charAt(0).toUpperCase()}</div>
+         <div style="width: 50px; height: 50px; border-radius: 25px; background: #3b82f6; color: #ffffff; text-align: center; line-height: 50px; font-weight: bold; font-size: 20px;">${username.charAt(0).toUpperCase()}</div>
        </td>`;
 
   return `
@@ -222,7 +222,7 @@ function generateBaseEmailHtml({
         .wrapper { background-color: #f8fafc; padding: 40px 20px; }
         .container { max-width: 550px; margin: 0 auto; background-color: #ffffff; border-radius: 20px; overflow: hidden; box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1); border: 1px solid #e2e8f0; }
         .header { background: linear-gradient(135deg, #1d4ed8 0%, #2563eb 100%); color: white; padding: 35px 20px; text-align: center; }
-        .logo { width: 50px; height: 50px; margin-bottom: 12px; border-radius: 10px; }
+        .logo { width: 50px; height: 50px; margin-bottom: 12px; border-radius: 10px; background: white; padding: 4px; }
         .content { padding: 35px 30px; }
         .welcome-text { font-size: 20px; font-weight: 700; color: #1e293b; margin: 0; }
         .message { font-size: 16px; color: #334155; margin-bottom: 24px; margin-top: 24px; line-height: 1.7; }
@@ -233,11 +233,11 @@ function generateBaseEmailHtml({
         .link-text { word-break: break-all; color: #cbd5e1; font-size: 10px; margin-top: 15px; }
       </style>
     </head>
-    <body>
+    <body style="margin: 0; padding: 0; background-color: #f8fafc; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;">
       <div class="wrapper" style="background-color: #f8fafc; padding: 30px 15px;">
         <div class="container" style="max-width: 550px; margin: 0 auto; background-color: #ffffff; border-radius: 20px; overflow: hidden; box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1); border: 1px solid #e1e8f0;">
           <div class="header" style="background: linear-gradient(135deg, #1e40af 0%, #2563eb 100%); color: white; padding: 40px 20px; text-align: center;">
-            <img src="${logoUrl}" alt="ProfRate Logo" class="logo" style="width: 50px; height: 50px; margin-bottom: 12px; border-radius: 10px;">
+            <img src="${logoUrl}" alt="ProfRate Logo" class="logo" style="width: 50px; height: 50px; margin-bottom: 12px; border-radius: 10px; background: white; padding: 3px;">
             <h1 style="margin: 0; font-size: 22px; font-weight: 800; letter-spacing: -0.5px; color: #ffffff;">${title}</h1>
           </div>
           <div class="content" style="padding: 35px 25px;">
@@ -265,20 +265,20 @@ function generateBaseEmailHtml({
             <table role="presentation" border="0" cellpadding="0" cellspacing="0" width="100%" style="margin-top: 30px; padding-top: 20px; border-top: 1px solid #f1f5f9;">
               <tr>
                 <td style="width: 45px;">
-                  <img src="${supportAvatarUrl}" style="width: 40px; height: 40px; border-radius: 20px; border: 1px solid #e2e8f0;" alt="ProfRate Support">
+                  <img src="${supportAvatarUrl}" style="width: 40px; height: 40px; border-radius: 8px; border: 1px solid #e2e8f0; background: #ffffff; padding: 2px;" alt="ProfRate Support">
                 </td>
                 <td style="padding-left: 12px;">
-                  <p style="margin: 0; font-size: 14px; font-weight: 600; color: #1e293b;">ProfRate Support Team</p>
-                  <p style="margin: 0; font-size: 12px; color: #64748b;">Helping students since 2024</p>
+                  <p style="margin: 0; font-size: 14px; font-weight: 700; color: #1e293b;">ProfRate Support</p>
+                  <p style="margin: 0; font-size: 12px; color: #64748b;">The official voice of Campus Ratings</p>
                 </td>
               </tr>
             </table>
 
             <p style="font-size: 13px; color: #94a3b8; margin-top: 25px; line-height: 1.5;">${footerMessage}</p>
           </div>
-          <div class="footer">
+          <div class="footer" style="font-size: 12px; color: #94a3b8; text-align: center; padding: 25px; background-color: #fcfcfc;">
             <p style="margin: 0;">© 2026 <strong>ProfRate</strong>. All rights reserved.</p>
-            ${buttonLink ? `<div class="link-text">Link not working? Copy & paste:<br>${buttonLink}</div>` : ""}
+            ${buttonLink ? `<div class="link-text" style="word-break: break-all; color: #cbd5e1; font-size: 10px; margin-top: 15px;">Link not working? Copy & paste:<br>${buttonLink}</div>` : ""}
           </div>
         </div>
       </div>
