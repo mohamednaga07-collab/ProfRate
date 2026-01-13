@@ -81,6 +81,9 @@ async function seedSampleData() {
 }
 
 export async function registerRoutes(httpServer: Server, app: Express): Promise<Server> {
+  // Seed sample data (Admin account, Doctors, etc.)
+  await seedSampleData();
+
   // Auth middleware
   await setupAuth(app);
 
