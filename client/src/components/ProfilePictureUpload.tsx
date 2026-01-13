@@ -40,6 +40,34 @@ export function ProfilePictureUpload({
 
   const userInitials = `${user.firstName?.[0] ?? ""}${user.lastName?.[0] ?? ""}`.toUpperCase() || "U";
 
+  const compressImage = (base64Str: string, maxWidth = 800, maxHeight = 800): Promise<string> => {
+    return new Promise((resolve) => {
+      const img = new Image();
+      img.src = base64Str;
+      img.onload = () => {
+        const canvas = document.createElement('canvas');
+        let width = img.width;
+        let height = img.height;
+        if (width > height) {
+          if (width > maxWidth) {
+            height *= maxWidth / width;
+            width = maxWidth;
+          }
+        } else {
+          if (height > maxHeight) {
+            width *= maxHeight / height;
+            height = maxHeight;
+          }
+        }
+        canvas.width = width;
+        canvas.height = height;
+        const ctx = canvas.getContext('2d');
+        ctx?.drawImage(img, 0, 0, width, height);
+        resolve(canvas.toDataURL('image/jpeg', 0.8));
+      };
+    });
+  };
+
   const handleUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (!file) return;
@@ -54,34 +82,36 @@ export function ProfilePictureUpload({
       return;
     }
 
-    // Check file size (15MB max - supports 4K images)
-    if (file.size > 15 * 1024 * 1024) {
+    // Support up to 20MB for optimization
+    if (file.size > 20 * 1024 * 1024) {
       toast({
         title: "File too large",
-        description: "Maximum size is 15MB",
+        description: "Maximum size is 20MB",
         variant: "destructive",
       });
       return;
     }
 
     setUploading(true);
-    console.log('🖼️ Starting profile picture upload...');
+    console.log(`🖼️ Starting upload for ${file.type}...`);
 
     try {
-      // Convert to base64
       const reader = new FileReader();
       
       reader.onload = async () => {
         try {
-          const imageData = reader.result as string;
-          console.log('🖼️ Image converted to base64, length:', imageData.length);
+          let imageData = reader.result as string;
+          
+          // Only compress static images. GIFs are kept raw to preserve animation.
+          if (file.type !== 'image/gif') {
+            console.log('🖼️ Optimizing static image...');
+            imageData = await compressImage(imageData);
+          } else {
+            console.log('🖼️ GIF detected: skipping compression.');
+          }
 
-          // Get CSRF token
           const csrfToken = await getCsrfToken();
-          console.log('🖼️ CSRF token obtained:', csrfToken ? 'yes' : 'no');
-
-          // Upload to server
-          console.log('🖼️ Sending upload request...');
+          
           const response = await fetch("/api/auth/upload-profile-picture", {
             method: "POST",
             headers: {
@@ -92,31 +122,22 @@ export function ProfilePictureUpload({
             body: JSON.stringify({ imageData }),
           });
 
-          console.log('🖼️ Response status:', response.status, response.statusText);
-
           if (!response.ok) {
             const error = await response.json();
-            console.error('🖼️ Upload error:', error);
             throw new Error(error.message || "Upload failed");
           }
 
-          const result = await response.json();
-          console.log('🖼️ Upload successful:', result);
-
-          // Invalidate and refetch user query to update profile picture everywhere
+          // Invalidate queries to reflect new image
           await queryClient.invalidateQueries({ queryKey: ["/api/auth/user"] });
+          queryClient.invalidateQueries({ queryKey: ["/api/doctors"] });
+          queryClient.invalidateQueries({ queryKey: ["/api/reviews"] });
           
           toast({
             title: "Success!",
             description: "Profile picture updated",
           });
 
-          // Callback for parent to refresh
-          if (onUploadComplete) {
-            onUploadComplete();
-          }
-
-          setUploading(false);
+          if (onUploadComplete) onUploadComplete();
 
         } catch (error: any) {
           console.error('🖼️ Upload error:', error);
@@ -125,21 +146,12 @@ export function ProfilePictureUpload({
             description: error.message,
             variant: "destructive",
           });
+        } finally {
           setUploading(false);
+          if (e.target) e.target.value = '';
         }
       };
 
-      reader.onerror = () => {
-        console.error('🖼️ FileReader error');
-        toast({
-          title: "Error",
-          description: "Failed to read file",
-          variant: "destructive",
-        });
-        setUploading(false);
-      };
-
-      console.log('🖼️ Reading file as data URL...');
       reader.readAsDataURL(file);
     } catch (error: any) {
       console.error('🖼️ Upload error:', error);
@@ -238,11 +250,11 @@ export function ProfilePictureUpload({
       {/* Full-size image viewer modal */}
       <Dialog open={showFullSize} onOpenChange={setShowFullSize}>
         <DialogContent className="max-w-[95vw] sm:max-w-4xl max-h-[95vh] p-0 border-0 bg-transparent shadow-none [&>button:not(.custom-close)]:hidden overflow-visible flex items-center justify-center">
-          <DialogClose className="custom-close absolute start-4 top-4 z-[110] rounded-full bg-black/60 p-2.5 text-white hover:bg-black/80 transition-all shadow-xl hover:scale-110">
-            <X className="h-6 w-6" />
-          </DialogClose>
-          
           <div className="relative flex items-center justify-center p-0 m-0 overflow-hidden rounded-xl shadow-[0_0_50px_rgba(0,0,0,0.5)]">
+            <DialogClose className="custom-close absolute start-3 top-3 z-[110] rounded-full bg-black/60 p-2 text-white hover:bg-black/80 transition-all shadow-xl hover:scale-110">
+              <X className="h-5 w-5" />
+            </DialogClose>
+            
             {user.profileImageUrl ? (
               <img 
                 src={user.profileImageUrl?.includes("...") 
