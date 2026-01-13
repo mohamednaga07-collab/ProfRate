@@ -326,16 +326,16 @@ export default function ResetPassword() {
                       </div>
 
                       {recaptchaEnabled && (
-                        <div className="flex justify-center">
-                          <ReCAPTCHA
-                            ref={recaptchaRef}
-                            key={isDarkMode ? "reset-pass-dark" : "reset-pass-light"}
-                            sitekey={recaptchaSiteKey}
-                            onChange={handleRecaptchaChange}
-                            theme={isDarkMode ? "dark" : "light"}
-                            hl={i18n.language}
-                          />
-                        </div>
+                      <div className="recaptcha-wrapper">
+                        <ReCAPTCHA
+                          ref={recaptchaRef}
+                          key={isDarkMode ? "reset-pass-dark" : "reset-pass-light"}
+                          sitekey={recaptchaSiteKey}
+                          onChange={handleRecaptchaChange}
+                          theme={isDarkMode ? "dark" : "light"}
+                          hl={i18n.language}
+                        />
+                      </div>
                       )}
 
                       <Button

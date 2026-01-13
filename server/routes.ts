@@ -684,7 +684,7 @@ export async function registerRoutes(httpServer: Server, app: Express): Promise<
       const verificationLink = `${appUrl}/verify-email?token=${verificationToken}`;
       console.log(`📧 [Registration] Full verification link: ${verificationLink}`);
       
-      const emailHtml = generateVerificationEmailHtml(username, verificationLink);
+      const emailHtml = generateVerificationEmailHtml(username, verificationLink, newUser.profileImageUrl);
       const emailText = `Hi ${username},\n\nThank you for registering! Please verify your email address: ${verificationLink}\n\nOnce verified, you'll be able to log in.`;
       
       // Send verification email asynchronously (non-blocking) so registration is instant
@@ -985,7 +985,7 @@ export async function registerRoutes(httpServer: Server, app: Express): Promise<
       const resetLink = `${baseUrl}/reset-password?token=${resetToken}`;
       console.log(`[FORGOT-PASSWORD] 🔗 Generated link: ${resetLink}`);
       
-      const emailHtml = generateForgotPasswordEmailHtml(user.username || "User", resetLink);
+      const emailHtml = generateForgotPasswordEmailHtml(user.username || "User", resetLink, user.profileImageUrl);
       const emailText = `Hi ${user.username || "User"},\n\nWe received a request to reset your password.\n\nReset your password: ${resetLink}\n\nThis link will expire in 24 hours. If you didn’t request this, you can ignore this email.`;
       
       // Use setImmediate to send email asynchronously (non-blocking) similar to registration
@@ -1064,7 +1064,7 @@ export async function registerRoutes(httpServer: Server, app: Express): Promise<
 
       // Send email with username
       console.log(`[forgot-username] Sending email to ${email}`);
-      const emailHtml = generateForgotUsernameEmailHtml(user.username || "Your Username");
+      const emailHtml = generateForgotUsernameEmailHtml(user.username || "Your Username", user.profileImageUrl);
       
       try {
         await sendEmail({

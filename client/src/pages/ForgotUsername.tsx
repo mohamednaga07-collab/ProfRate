@@ -223,7 +223,7 @@ export default function ForgotUsername() {
                           </motion.span>
                         </motion.div>
                       ) : (
-                        <div className="flex justify-center">
+                        <div className="recaptcha-wrapper">
                           <ReCAPTCHA
                             ref={recaptchaRef}
                             key={isDarkMode ? "forgot-username-dark" : "forgot-username-light"}

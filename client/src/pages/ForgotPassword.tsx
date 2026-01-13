@@ -224,7 +224,7 @@ export default function ForgotPassword() {
                           </motion.span>
                         </motion.div>
                       ) : (
-                        <div className="flex justify-center">
+                        <div className="recaptcha-wrapper">
                           <ReCAPTCHA
                             ref={recaptchaRef}
                             key={isDarkMode ? "forgot-pass-dark" : "forgot-pass-light"}

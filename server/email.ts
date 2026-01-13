@@ -175,29 +175,86 @@ export async function sendEmail(options: EmailOptions): Promise<boolean> {
   }
 }
 
-export function generateForgotPasswordEmailHtml(username: string, resetLink: string): string {
+// Unified Email Theme Helper
+function generateBaseEmailHtml({
+  title,
+  username,
+  profileImageUrl,
+  contentHtml,
+  buttonLink,
+  buttonText,
+  footerMessage = "If you didn't request this, you can safely ignore this email."
+}: {
+  title: string;
+  username: string;
+  profileImageUrl?: string | null;
+  contentHtml: string;
+  buttonLink?: string;
+  buttonText?: string;
+  footerMessage?: string;
+}) {
+  const logoUrl = "https://campus-ratings.onrender.com/favicon.png";
+  
+  // Use a simple table for the welcome section to ensure compatibility with all email clients
+  const profileImageCell = profileImageUrl 
+    ? `<td style="padding-right: 15px; width: 60px;">
+         <img src="${profileImageUrl}" style="width: 50px; height: 50px; border-radius: 25px; object-fit: cover; border: 2px solid #e2e8f0; display: block;" alt="${username}">
+       </td>`
+    : "";
+
   return `
     <!DOCTYPE html>
     <html>
     <head>
       <meta charset="utf-8">
       <style>
-        body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif; line-height: 1.5; color: #1a202c; margin: 0; padding: 0; }
-        .container { max-width: 500px; margin: 40px auto; padding: 32px; border: 1px solid #e2e8f0; border-radius: 12px; }
-        .button { display: inline-block; background-color: #3182ce; color: #ffffff !important; padding: 12px 24px; text-decoration: none; border-radius: 6px; font-weight: 600; margin: 24px 0; }
-        .footer { font-size: 13px; color: #718096; margin-top: 32px; border-top: 1px solid #edf2f7; padding-top: 24px; }
+        body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif; line-height: 1.6; color: #1e293b; margin: 0; padding: 0; background-color: #f8fafc; }
+        .wrapper { background-color: #f8fafc; padding: 40px 20px; }
+        .container { max-width: 550px; margin: 0 auto; background-color: #ffffff; border-radius: 16px; overflow: hidden; box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05); }
+        .header { background: linear-gradient(135deg, #2563eb 0%, #1d4ed8 100%); color: white; padding: 40px 20px; text-align: center; }
+        .logo { width: 56px; height: 56px; margin-bottom: 16px; border-radius: 12px; }
+        .content { padding: 40px 32px; }
+        .welcome-text { font-size: 22px; font-weight: 700; color: #1e293b; margin: 0; }
+        .message { font-size: 16px; color: #475569; margin-bottom: 24px; margin-top: 24px; }
+        .button-container { text-align: center; margin: 32px 0; }
+        .button { display: inline-block; background-color: #2563eb; color: #ffffff !important; padding: 14px 34px; text-decoration: none !important; border-radius: 10px; font-weight: 600; font-size: 16px; box-shadow: 0 4px 6px -1px rgba(37, 99, 235, 0.3); }
+        .footer { font-size: 13px; color: #64748b; text-align: center; padding: 30px; border-top: 1px solid #f1f5f9; background-color: #fcfcfc; }
+        .link-text { word-break: break-all; color: #94a3b8; font-size: 11px; margin-top: 16px; }
       </style>
     </head>
     <body>
-      <div class="container">
-        <h2 style="margin-top: 0; color: #2d3748;">Reset Your Password</h2>
-        <p>Hi ${username},</p>
-        <p>We received a request to reset your password for Campus Ratings. Click the button below to set a new password:</p>
-        <a href="${resetLink}" class="button">Reset Password</a>
-        <p style="font-size: 14px; color: #4a5568;">This link will expire in 24 hours. If you didn't request this, you can safely ignore this email.</p>
-        <div class="footer">
-          <p>© 2026 Campus Ratings</p>
-          <p style="font-size: 11px; color: #a0aec0; word-break: break-all;">Link: ${resetLink}</p>
+      <div class="wrapper">
+        <div class="container">
+          <div class="header">
+            <img src="${logoUrl}" alt="ProfRate Header" class="logo">
+            <h1 style="margin: 0; font-size: 24px;">${title}</h1>
+          </div>
+          <div class="content">
+            <table role="presentation" border="0" cellpadding="0" cellspacing="0">
+              <tr>
+                ${profileImageCell}
+                <td style="vertical-align: middle;">
+                  <h2 class="welcome-text">Hi ${username},</h2>
+                </td>
+              </tr>
+            </table>
+            
+            <div class="message">
+              ${contentHtml}
+            </div>
+            
+            ${buttonLink ? `
+            <div class="button-container">
+              <a href="${buttonLink}" class="button">${buttonText}</a>
+            </div>
+            ` : ""}
+            
+            <p style="font-size: 14px; color: #64748b; margin-top: 24px;">${footerMessage}</p>
+          </div>
+          <div class="footer">
+            <p style="margin: 0;">© 2026 <strong>ProfRate</strong>. Campus Ratings for Students.</p>
+            ${buttonLink ? `<div class="link-text">Button not working? Copy and paste this link:<br>${buttonLink}</div>` : ""}
+          </div>
         </div>
       </div>
     </body>
@@ -205,89 +262,36 @@ export function generateForgotPasswordEmailHtml(username: string, resetLink: str
   `;
 }
 
-export function generateVerificationEmailHtml(username: string, verificationLink: string): string {
-  return `
-    <!DOCTYPE html>
-    <html>
-    <head>
-      <style>
-        body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; line-height: 1.6; color: #334155; margin: 0; padding: 0; background-color: #f8fafc; }
-        .wrapper { background-color: #f8fafc; padding: 40px 20px; }
-        .container { max-width: 600px; margin: 0 auto; background-color: #ffffff; border-radius: 12px; overflow: hidden; box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06); }
-        .header { background: linear-gradient(135deg, #2563eb 0%, #1d4ed8 100%); color: white; padding: 40px 20px; text-align: center; }
-        .logo { width: 64px; height: 64px; margin-bottom: 16px; border-radius: 12px; }
-        .content { padding: 40px 30px; }
-        .welcome-text { font-size: 24px; font-weight: 700; color: #1e293b; margin-bottom: 16px; }
-        .button-container { text-align: center; margin: 32px 0; }
-        .button { display: inline-block; background-color: #2563eb; color: #ffffff !important; padding: 14px 32px; text-decoration: none; border-radius: 8px; font-weight: 600; font-size: 16px; transition: background-color 0.2s; }
-        .footer { font-size: 13px; color: #64748b; text-align: center; padding: 30px; border-top: 1px solid #e2e8f0; }
-        .link-text { word-break: break-all; color: #64748b; font-size: 12px; }
-      </style>
-    </head>
-    <body>
-      <div class="wrapper">
-        <div class="container">
-          <div class="header">
-            <img src="https://campus-ratings.onrender.com/favicon.png" alt="ProfRate Header" class="logo">
-            <h1 style="margin: 0; font-size: 24px;">Welcome to ProfRate</h1>
-          </div>
-          <div class="content">
-            <h2 class="welcome-text">Hi ${username},</h2>
-            <p>Thank you for joining <strong>ProfRate (Campus Ratings)</strong>! We're excited to have you in our community.</p>
-            <p>To get started, please verify your email address by clicking the high-speed link below:</p>
-            <div class="button-container">
-              <a href="${verificationLink}" class="button">Verify Email Address</a>
-            </div>
-            <p>Once verified, you'll have full access to rate professors, view analytics, and help fellow students.</p>
-            <p style="font-size: 14px; color: #64748b; margin-top: 24px;">If you didn't sign up for an account, you can safely ignore this email.</p>
-            
-            <div style="margin-top: 40px; border-top: 1px solid #f1f5f9; padding-top: 20px;">
-              <p class="link-text">Button not working? Copy and paste this link into your browser:<br>
-              <a href="${verificationLink}" style="color: #2563eb;">${verificationLink}</a>
-              </p>
-            </div>
-          </div>
-          <div class="footer">
-            <p>© 2026 ProfRate. Built for Students.</p>
-            <p>Campus Ratings System Message</p>
-          </div>
-        </div>
-      </div>
-    </body>
-    </html>
-  `;
+export function generateForgotPasswordEmailHtml(username: string, resetLink: string, profileImageUrl?: string | null): string {
+  return generateBaseEmailHtml({
+    title: "Reset Your Password",
+    username,
+    profileImageUrl,
+    contentHtml: `We received a request to reset your password for your <strong>Campus Ratings (ProfRate)</strong> account. Click the button below to set a new password:`,
+    buttonLink: resetLink,
+    buttonText: "Reset Password",
+    footerMessage: "This link will expire in 24 hours. If you didn't request a password reset, you can safely ignore this email."
+  });
 }
-export function generateForgotUsernameEmailHtml(username: string): string {
-  return `
-    <!DOCTYPE html>
-    <html>
-    <head>
-      <style>
-        body { font-family: Arial, sans-serif; line-height: 1.6; color: #333; }
-        .container { max-width: 600px; margin: 0 auto; padding: 20px; border: 1px solid #ddd; border-radius: 8px; }
-        .header { background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; padding: 20px; border-radius: 8px 8px 0 0; text-align: center; }
-        .content { padding: 20px; }
-        .username-box { background: #f5f5f5; padding: 15px; border-left: 4px solid #667eea; margin: 20px 0; font-family: monospace; font-size: 16px; }
-        .footer { font-size: 12px; color: #999; text-align: center; margin-top: 30px; border-top: 1px solid #ddd; padding-top: 20px; }
-      </style>
-    </head>
-    <body>
-      <div class="container">
-        <div class="header">
-          <h2>Your Username</h2>
-        </div>
-        <div class="content">
-          <p>Hi there,</p>
-          <p>Your username for Campus Ratings is:</p>
-          <div class="username-box">${username}</div>
-          <p>You can use this username to log in to your account.</p>
-          <p>If you didn't request this information, please ignore this email.</p>
-        </div>
-        <div class="footer">
-          <p>© 2026 Campus Ratings. All rights reserved.</p>
-        </div>
-      </div>
-    </body>
-    </html>
-  `;
+
+export function generateVerificationEmailHtml(username: string, verificationLink: string, profileImageUrl?: string | null): string {
+  return generateBaseEmailHtml({
+    title: "Welcome to ProfRate",
+    username,
+    profileImageUrl,
+    contentHtml: `Thank you for joining <strong>ProfRate (Campus Ratings)</strong>! We're excited to have you in our community. To get started, please verify your email address by clicking the high-speed link below:`,
+    buttonLink: verificationLink,
+    buttonText: "Verify Email Address",
+    footerMessage: "Once verified, you'll have full access to rate professors, view analytics, and help fellow students."
+  });
+}
+
+export function generateForgotUsernameEmailHtml(username: string, profileImageUrl?: string | null): string {
+  return generateBaseEmailHtml({
+    title: "Your Username",
+    username: "Account Holder",
+    profileImageUrl,
+    contentHtml: `We received a request for your username on Campus Ratings. Your username is: <br><br><span style="background: #f1f5f9; padding: 12px 20px; border-radius: 8px; font-family: monospace; font-size: 18px; color: #1e293b; border: 1px solid #e2e8f0; display: inline-block;">${username}</span><br><br>You can use this to sign in to your account.`,
+    footerMessage: "If you didn't request this information, please ignore this email."
+  });
 }
