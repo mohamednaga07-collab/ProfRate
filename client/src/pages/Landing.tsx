@@ -1,3 +1,8 @@
+import { Button } from "@/components/ui/button";
+import { Card, CardContent } from "@/components/ui/card";
+import { ThemeToggle } from "@/components/ThemeToggle";
+import { AuthForm } from "@/components/AuthForm";
+import { LanguageSwitcher } from "@/components/LanguageSwitcher";
 import { GraduationCap, Star, BarChart3, Shield, Users, ChevronRight, CheckCircle, MapPin, ArrowRight, TrendingUp, Target, MessageSquare, BookOpen, Sparkles } from "lucide-react";
 import { useState, useEffect, useCallback, useMemo } from "react";
 import { useTranslation } from "react-i18next";
