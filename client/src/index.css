@@ -533,7 +533,7 @@ html[dir="rtl"] body {
   border-radius: 4px !important;
   box-shadow: none !important;
   /* Scale up and adjust vertical position to perfectly clip all iframe borders */
-  transform: scale(1.05) translateY(0px) !important;
+  transform: scale(1.05) translateY(1.5px) !important;
   transform-origin: center center !important;
 }
 
