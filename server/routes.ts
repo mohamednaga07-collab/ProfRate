@@ -49,7 +49,7 @@ async function seedSampleData() {
     
     const accounts = [
       {
-        username: "Admin",
+        username: "admin",
         password: "AdminPassword123!",
         email: "admin@profrate.app",
         firstName: "System",
@@ -57,7 +57,7 @@ async function seedSampleData() {
         role: "admin"
       },
       {
-        username: "Student",
+        username: "student",
         password: "Student123!",
         email: "student@profrate.app",
         firstName: "Sample",
@@ -65,7 +65,7 @@ async function seedSampleData() {
         role: "student"
       },
       {
-        username: "Teacher",
+        username: "teacher",
         password: "Teacher123!",
         email: "teacher@profrate.app",
         firstName: "Sample",
@@ -109,7 +109,9 @@ async function seedSampleData() {
 
 export async function registerRoutes(httpServer: Server, app: Express): Promise<Server> {
   // Seed sample data (Admin account, Doctors, etc.)
+  console.log("🛠️ [Startup] Starting data seeding...");
   await seedSampleData();
+  console.log("✅ [Startup] Data seeding completed.");
 
   // Auth middleware
   await setupAuth(app);
