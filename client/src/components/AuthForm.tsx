@@ -392,7 +392,7 @@ export function AuthForm({ onSuccess, defaultTab = "login" }: AuthFormProps) {
         console.log("🔄 Redirecting to:", finalTarget);
         setTimeout(() => {
           window.location.assign(finalTarget);
-        }, 500); // Reduced delay for snappier experience
+        }, 1500); // Increased delay slightly to allow reading the role warning toast if applicable
       } else {
         throw new Error("Login failed - no user data returned");
       }
@@ -579,9 +579,9 @@ export function AuthForm({ onSuccess, defaultTab = "login" }: AuthFormProps) {
       initial={{ opacity: 0, y: 60, scale: 0.92 }}
       animate={{ opacity: 1, y: 0, scale: 1 }}
       transition={{
-        duration: 0.4,
-        ease: "easeOut",
-        staggerChildren: 0.05
+        duration: 1.2,
+        ease: [0.34, 1.56, 0.64, 1],
+        staggerChildren: 0.12
       }}
     >
       {registrationSuccess && (
@@ -613,7 +613,7 @@ export function AuthForm({ onSuccess, defaultTab = "login" }: AuthFormProps) {
         ref={authCardRef}
         initial={{ opacity: 0, y: 20, scale: 0.98 }}
         animate={{ opacity: 1, y: 0, scale: 1 }}
-        transition={{ duration: 0.4, ease: "easeOut", delay: 0.1 }}
+        transition={{ duration: 0.9, ease: [0.34, 1.56, 0.64, 1], delay: 0.15 }}
         className="w-full max-w-md mx-auto"
       >
         <Card className="w-full shadow-xl hover:shadow-2xl transition-shadow duration-300 border-border/50">
@@ -637,7 +637,13 @@ export function AuthForm({ onSuccess, defaultTab = "login" }: AuthFormProps) {
                   <GraduationCap className="h-6 w-6 text-white" />
                 </motion.div>
               </motion.div>
+              <motion.div
+                initial={{ opacity: 0, y: 10 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ duration: 0.6, delay: 0.65 }}
+              >
                 <CardTitle className="text-3xl text-center font-bold bg-gradient-to-r from-primary to-primary/80 bg-clip-text text-transparent">{t("auth.welcomeTitle")}</CardTitle>
+              </motion.div>
               <motion.div
                 initial={{ opacity: 0, y: 10 }}
                 animate={{ opacity: 1, y: 0 }}

@@ -1,27 +1,62 @@
-/* Cleaned up original styles for Landing Page */
-.heroImage {
+.carouselImage {
   background-size: cover;
   background-position: center;
   background-repeat: no-repeat;
-  transition: transform 0.5s ease-out;
+  background-color: #0f172a;
 }
 
-.heroImage:hover {
-  transform: scale(1.02);
+.active {
+  opacity: 1;
+  filter: blur(0px);
+  transform: scale(1);
 }
 
-.glassCard {
-  background: rgba(255, 255, 255, 0.05);
-  backdrop-filter: blur(12px);
-  -webkit-backdrop-filter: blur(12px);
-  border: 1px solid rgba(255, 255, 255, 0.1);
-  box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.37);
+.inactive {
+  opacity: 0.4;
+  filter: blur(20px);
+  transform: scale(1.1);
 }
 
-.featureIcon {
-  transition: transform 0.3s cubic-bezier(0.34, 1.56, 0.64, 1);
+.carouselItem {
+  flex: 1;
 }
 
-.featureCard:hover .featureIcon {
-  transform: scale(1.1) rotate(5deg);
+.visible {
+  visibility: visible;
+}
+
+.hidden {
+  visibility: hidden;
+}
+
+.image1 {
+  background-image: url("https://images.unsplash.com/photo-1460518451285-97b6aa326961?w=3840&h=2160&fit=crop&q=95&auto=format");
+}
+
+.image2 {
+  background-image: url("https://images.unsplash.com/photo-1484417894907-623942c8ee29?w=3840&h=2160&fit=crop&q=95&auto=format");
+}
+
+.image3 {
+  background-image: url("https://images.unsplash.com/photo-1523580846011-d3a5bc25702b?w=3840&h=2160&fit=crop&q=95&auto=format");
+}
+
+.image4 {
+  background-image: url("https://images.unsplash.com/photo-1524995997946-a1c2e315a42f?w=3840&h=2160&fit=crop&q=95&auto=format");
+}
+
+.image5 {
+  background-image: url("https://images.unsplash.com/photo-1503676382389-4809596d5290?w=3840&h=2160&fit=crop&q=95&auto=format");
+}
+
+.image6 {
+  background-image: url("https://images.unsplash.com/photo-1503428593586-e225b39bddfe?w=3840&h=2160&fit=crop&q=95&auto=format");
+}
+
+.image7 {
+  background-image: url("https://images.unsplash.com/photo-1516383607781-913a19294fd1?w=3840&h=2160&fit=crop&q=95&auto=format");
+}
+
+.image8 {
+  background-image: url("https://images.unsplash.com/photo-1519389950473-47ba0277781c?w=3840&h=2160&fit=crop&q=95&auto=format");
 }
