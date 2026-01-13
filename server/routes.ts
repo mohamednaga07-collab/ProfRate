@@ -347,13 +347,14 @@ export async function registerRoutes(httpServer: Server, app: Express): Promise<
         }
       }
 
-      const user = await storage.getUserByUsername(username);
+      const user = await storage.getUserByUsername(sanitized);
       console.log("👤 Found user:", user ? "yes ✓" : "no ✗");
       
+      const secureErrorMessage = "The username doesn't exist. Please check your username or password or create a new account";
+
       if (!user || !user.password) {
         console.log("❌ User not found");
-        // Reveal if username exists (User request)
-        return res.status(404).json({ message: "User not found" });
+        return res.status(404).json({ message: secureErrorMessage });
       }
 
       // Check if email is verified (skip for admin accounts - they're created by system)
@@ -382,8 +383,8 @@ export async function registerRoutes(httpServer: Server, app: Express): Promise<
         // Record failed login attempt for account lockout
         recordLoginAttempt(username, userIp, false);
         console.warn("⚠️  Invalid password attempt for user:", username, "from IP:", userIp);
-        // Don't reveal password is wrong (security best practice)
-        return res.status(401).json({ message: "Invalid username or password" });
+        // Unified secure message as requested
+        return res.status(401).json({ message: secureErrorMessage });
       }
 
       // Set session and save it

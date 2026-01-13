@@ -49,7 +49,7 @@ db.exec(`
   
   CREATE TABLE IF NOT EXISTS users (
     id TEXT PRIMARY KEY,
-    username TEXT UNIQUE,
+    username TEXT UNIQUE COLLATE NOCASE,
     password TEXT,
     email TEXT UNIQUE,
     firstName TEXT,
