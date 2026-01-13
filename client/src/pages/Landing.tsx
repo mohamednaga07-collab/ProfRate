@@ -243,17 +243,32 @@ export default function Landing({ defaultTab = "login" }: LandingProps) {
           </div>
         </section>
 
-        {/* Features Section */}
-        <section id="features" className="py-24 bg-slate-50 dark:bg-slate-900/50">
+        {/* Features Section - Modern Premium Grid */}
+        <section id="features" className="py-24 relative overflow-hidden">
+          <div className="absolute top-0 left-0 w-full h-full bg-slate-50/50 dark:bg-slate-950/20 -z-10" />
           <div className="container mx-auto px-4">
-            <div className="text-center max-w-3xl mx-auto mb-16">
-              <h2 className="text-3xl font-bold mb-4">{t("landing.features.title")}</h2>
-              <p className="text-muted-foreground text-lg">
+            <div className="text-center max-w-3xl mx-auto mb-20">
+              <motion.h2 
+                initial={{ opacity: 0, y: 20 }}
+                whileInView={{ opacity: 1, y: 0 }}
+                viewport={{ once: true }}
+                className="text-4xl font-bold mb-4 tracking-tight"
+              >
+                {t("landing.features.title")}
+              </motion.h2>
+              <div className="h-1.5 w-20 bg-primary mx-auto rounded-full mb-6" />
+              <motion.p 
+                initial={{ opacity: 0 }}
+                whileInView={{ opacity: 1 }}
+                viewport={{ once: true }}
+                transition={{ delay: 0.2 }}
+                className="text-muted-foreground text-xl"
+              >
                 {t("landing.features.subtitle")}
-              </p>
+              </motion.p>
             </div>
 
-            <div className="grid md:grid-cols-3 gap-8">
+            <div className="grid md:grid-cols-3 gap-10">
               {[
                 {
                   key: "factors",
@@ -273,22 +288,24 @@ export default function Landing({ defaultTab = "login" }: LandingProps) {
                   color: "text-emerald-500",
                   bg: "bg-emerald-500/10",
                 },
-              ].map((feature) => (
+              ].map((feature, idx) => (
                 <motion.div
                   key={feature.key}
-                  initial={{ opacity: 0, y: 20 }}
+                  initial={{ opacity: 0, y: 30 }}
                   whileInView={{ opacity: 1, y: 0 }}
                   viewport={{ once: true }}
+                  transition={{ delay: idx * 0.1 }}
                 >
-                  <Card className="h-full border-none shadow-lg bg-card/50 backdrop-blur-sm">
-                    <CardContent className="pt-8">
-                      <div className={`w-12 h-12 rounded-lg ${feature.bg} flex items-center justify-center mb-6`}>
-                        <feature.icon className={`h-6 w-6 ${feature.color}`} />
+                  <Card className={`${styles.featureCard} h-full border-none shadow-2xl relative overflow-hidden group`}>
+                    <CardContent className="pt-10 pb-8 px-8 flex flex-col items-center text-center">
+                      <div className={`${styles.iconWrapper} w-20 h-20 rounded-2xl ${feature.bg} flex items-center justify-center mb-8`}>
+                        <div className={styles.iconGlow} style={{ backgroundColor: feature.color }} />
+                        <feature.icon className={`h-10 w-10 ${feature.color}`} />
                       </div>
-                      <h3 className="text-xl font-bold mb-3">
+                      <h3 className="text-2xl font-bold mb-4 group-hover:text-primary transition-colors">
                         {t(`landing.features.cards.${feature.key}.title`)}
                       </h3>
-                      <p className="text-muted-foreground leading-relaxed">
+                      <p className="text-muted-foreground leading-relaxed text-lg">
                         {t(`landing.features.cards.${feature.key}.description`)}
                       </p>
                     </CardContent>
@@ -299,14 +316,16 @@ export default function Landing({ defaultTab = "login" }: LandingProps) {
           </div>
         </section>
 
-        {/* Roles Section */}
+        {/* Roles Section - Interactive Pro Experience */}
         <section className="py-24 bg-background">
           <div className="container mx-auto px-4">
-            <div className="text-center max-w-3xl mx-auto mb-16">
-              <h2 className="text-3xl font-bold mb-4">{t("landing.roles.title")}</h2>
-              <p className="text-muted-foreground text-lg">
-                {t("landing.roles.subtitle")}
-              </p>
+            <div className="flex flex-col lg:flex-row items-end justify-between mb-16 gap-6">
+              <div className="max-w-2xl">
+                <h2 className={`text-4xl font-bold mb-4 ${styles.gradientText}`}>{t("landing.roles.title")}</h2>
+                <p className="text-muted-foreground text-xl">
+                  {t("landing.roles.subtitle")}
+                </p>
+              </div>
             </div>
 
             <div className="grid md:grid-cols-3 gap-8">
@@ -314,37 +333,46 @@ export default function Landing({ defaultTab = "login" }: LandingProps) {
                 {
                   key: "student",
                   icon: Users,
-                  color: "bg-indigo-500",
+                  color: "from-blue-600 to-indigo-600",
+                  descriptionId: "landing.roles.cards.student"
                 },
                 {
                   key: "teacher",
                   icon: GraduationCap,
-                  color: "bg-purple-500",
+                  color: "from-purple-600 to-pink-600",
+                  descriptionId: "landing.roles.cards.teacher"
                 },
                 {
                   key: "admin",
                   icon: Shield,
-                  color: "bg-slate-700",
+                  color: "from-slate-700 to-slate-900",
+                  descriptionId: "landing.roles.cards.admin"
                 },
-              ].map((role) => (
+              ].map((role, idx) => (
                 <motion.div
                   key={role.key}
-                  initial={{ opacity: 0, scale: 0.95 }}
+                  initial={{ opacity: 0, scale: 0.9 }}
                   whileInView={{ opacity: 1, scale: 1 }}
                   viewport={{ once: true }}
+                  transition={{ delay: idx * 0.1, type: "spring", stiffness: 100 }}
                 >
-                  <Card className="h-full overflow-hidden border-border/50 text-center">
-                    <div className={`h-2 ${role.color}`} />
-                    <CardContent className="pt-8">
-                      <div className="inline-flex items-center justify-center w-16 h-16 rounded-full bg-muted mb-6">
-                        <role.icon className="h-8 w-8 text-primary" />
+                  <Card className={`${styles.roleCard} h-full border-border/40 hover:border-primary/50 transition-all`}>
+                    <div className={`h-1.5 bg-gradient-to-r ${role.color}`} />
+                    <CardContent className="pt-10 pb-8 px-8">
+                      <div className={`${styles.roleIconContainer} w-16 h-16 rounded-xl bg-muted flex items-center justify-center mb-8`}>
+                        <role.icon className="h-8 w-8" />
                       </div>
                       <h3 className="text-2xl font-bold mb-4">{t(`roles.${role.key}`)}</h3>
-                      <p className="text-muted-foreground mb-8">
-                        {t(`landing.roles.cards.${role.key}`)}
+                      <p className="text-muted-foreground mb-10 text-lg leading-snug min-h-[4.5rem]">
+                        {t(role.descriptionId)}
                       </p>
-                      <Button variant="outline" onClick={scrollToAuth} className="w-full">
+                      <Button 
+                        variant="ghost" 
+                        onClick={scrollToAuth} 
+                        className="w-full group hover:bg-primary hover:text-white border border-border/60"
+                      >
                         {t("landing.getStarted")}
+                        <ChevronRight className="h-4 w-4 ml-2 group-hover:translate-x-1 transition-transform" />
                       </Button>
                     </CardContent>
                   </Card>

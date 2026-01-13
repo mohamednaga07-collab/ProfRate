@@ -236,9 +236,11 @@ function generateBaseEmailHtml({
     <body style="margin: 0; padding: 0; background-color: #f8fafc; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;">
       <div class="wrapper" style="background-color: #f8fafc; padding: 30px 15px;">
         <div class="container" style="max-width: 550px; margin: 0 auto; background-color: #ffffff; border-radius: 20px; overflow: hidden; box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1); border: 1px solid #e1e8f0;">
-          <div class="header" style="background: linear-gradient(135deg, #1e40af 0%, #2563eb 100%); color: white; padding: 40px 20px; text-align: center;">
-            <img src="${logoUrl}" alt="ProfRate Logo" class="logo" style="width: 50px; height: 50px; margin-bottom: 12px; border-radius: 10px; background: white; padding: 3px;">
-            <h1 style="margin: 0; font-size: 22px; font-weight: 800; letter-spacing: -0.5px; color: #ffffff;">${title}</h1>
+          <div class="header" style="background: linear-gradient(135deg, #1e40af 0%, #3b82f6 100%); color: white; padding: 45px 20px; text-align: center; border-bottom: 4px solid #f1f5f9;">
+            <div style="background: white; width: 64px; height: 64px; margin: 0 auto 16px; border-radius: 16px; display: flex; align-items: center; justify-content: center; box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);">
+              <img src="${logoUrl}" alt="ProfRate Logo" style="width: 48px; height: 48px; display: block; margin: auto;">
+            </div>
+            <h1 style="margin: 0; font-size: 24px; font-weight: 800; letter-spacing: -0.5px; color: #ffffff; text-shadow: 0 2px 4px rgba(0,0,0,0.1);">${title}</h1>
           </div>
           <div class="content" style="padding: 35px 25px;">
             <table role="presentation" border="0" cellpadding="0" cellspacing="0" width="100%">
