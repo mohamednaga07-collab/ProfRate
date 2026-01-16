@@ -363,51 +363,71 @@ export class DatabaseStorage implements IStorage {
     doctorsGrowth: number;
     reviewsGrowth: number;
   }> {
-    const [userCount] = await db.select({ count: sql<number>`count(*)` }).from(users);
-    const [doctorCount] = await db.select({ count: sql<number>`count(*)` }).from(doctors);
-    const [reviewCount] = await db.select({ count: sql<number>`count(*)` }).from(reviews);
+    try {
+      const [userCount] = await db.select({ count: sql<number>`count(*)` }).from(users);
+      const [doctorCount] = await db.select({ count: sql<number>`count(*)` }).from(doctors);
+      const [reviewCount] = await db.select({ count: sql<number>`count(*)` }).from(reviews);
 
-    // Active users: unique users who have logged in within the last 30 days
-    // Using sql.raw or proper binding for INTERVAL as NOW() - INTERVAL is Postgres specific
-    const activeUserResult = await db.execute(sql`
-      SELECT COUNT(DISTINCT userId) as count 
-      FROM activity_logs 
-      WHERE type = 'login' 
-      AND timestamp > NOW() - INTERVAL '30 days'
-    `);
-    const activeUserCount = activeUserResult.rows[0]?.count || 0;
+      // Active users: unique users who have logged in within the last 30 days
+      const thirtyDaysAgo = new Date();
+      thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30);
 
-    // Previous counts (30 days ago) for growth calculation
-    const prevUserResult = await db.execute(sql`
-      SELECT COUNT(*) as count FROM users WHERE "createdAt" < NOW() - INTERVAL '30 days'
-    `);
-    const prevDoctorResult = await db.execute(sql`
-      SELECT COUNT(*) as count FROM doctors WHERE "createdAt" < NOW() - INTERVAL '30 days'
-    `);
-    const prevReviewResult = await db.execute(sql`
-      SELECT COUNT(*) as count FROM reviews WHERE "createdAt" < NOW() - INTERVAL '30 days'
-    `);
+      const activeUserResult = await db.select({ 
+        count: sql<number>`count(distinct ${activityLogs.userId})` 
+      })
+      .from(activityLogs)
+      .where(sql`${activityLogs.type} = 'login' AND ${activityLogs.timestamp} > ${thirtyDaysAgo}`);
+      
+      const activeUserCount = activeUserResult[0]?.count || 0;
 
-    const prevUserCount = prevUserResult.rows[0]?.count || 0;
-    const prevDoctorCount = prevDoctorResult.rows[0]?.count || 0;
-    const prevReviewCount = prevReviewResult.rows[0]?.count || 0;
+      // Previous counts for growth calculation
+      const prevUserResult = await db.select({ count: sql<number>`count(*)` })
+        .from(users)
+        .where(sql`${users.createdAt} < ${thirtyDaysAgo}`);
+      
+      const prevDoctorResult = await db.select({ count: sql<number>`count(*)` })
+        .from(doctors)
+        .where(sql`${doctors.createdAt} < ${thirtyDaysAgo}`);
+      
+      const prevReviewResult = await db.select({ count: sql<number>`count(*)` })
+        .from(reviews)
+        .where(sql`${reviews.createdAt} < ${thirtyDaysAgo}`);
 
-    const calculateGrowth = (current: any, previous: any) => {
-      const curr = Number(current);
-      const prev = Number(previous);
-      if (prev === 0) return curr > 0 ? 100 : 0;
-      return ((curr - prev) / prev) * 100;
-    };
+      const prevUserCount = prevUserResult[0]?.count || 0;
+      const prevDoctorCount = prevDoctorResult[0]?.count || 0;
+      const prevReviewCount = prevReviewResult[0]?.count || 0;
 
-    return {
-      totalUsers: Number(userCount?.count ?? 0),
-      totalDoctors: Number(doctorCount?.count ?? 0),
-      totalReviews: Number(reviewCount?.count ?? 0),
-      activeUsers: Number(activeUserCount),
-      usersGrowth: calculateGrowth(userCount?.count, prevUserCount),
-      doctorsGrowth: calculateGrowth(doctorCount?.count, prevDoctorCount),
-      reviewsGrowth: calculateGrowth(reviewCount?.count, prevReviewCount),
-    };
+      const calculateGrowth = (current: any, previous: any) => {
+        const curr = Number(current);
+        const prev = Number(previous);
+        if (isNaN(curr) || isNaN(prev)) return 0;
+        if (prev === 0) return curr > 0 ? 100 : 0;
+        return ((curr - prev) / prev) * 100;
+      };
+
+      console.log(`[STORAGE] Stats calculated: Users=${userCount.count}, Active=${activeUserCount}, Doctors=${doctorCount.count}, Reviews=${reviewCount.count}`);
+
+      return {
+        totalUsers: Number(userCount?.count ?? 0),
+        totalDoctors: Number(doctorCount?.count ?? 0),
+        totalReviews: Number(reviewCount?.count ?? 0),
+        activeUsers: Number(activeUserCount),
+        usersGrowth: calculateGrowth(userCount?.count, prevUserCount),
+        doctorsGrowth: calculateGrowth(doctorCount?.count, prevDoctorCount),
+        reviewsGrowth: calculateGrowth(reviewCount?.count, prevReviewCount),
+      };
+    } catch (error) {
+      console.error("❌ [STORAGE] Error fetching stats:", error);
+      return {
+        totalUsers: 0,
+        totalDoctors: 0,
+        totalReviews: 0,
+        activeUsers: 0,
+        usersGrowth: 0,
+        doctorsGrowth: 0,
+        reviewsGrowth: 0,
+      };
+    }
   }
 }
 
