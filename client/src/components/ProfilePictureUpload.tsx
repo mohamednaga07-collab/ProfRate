@@ -117,6 +117,17 @@ export function ProfilePictureUpload({
 
           const csrfToken = await getCsrfToken();
           
+          // Optimistic Update: Global Sync
+          // Updates Header/Sidebar and any other component observing the user
+          queryClient.setQueryData(["/api/auth/user"], (oldUser: any) => {
+             if (!oldUser) return oldUser;
+             return {
+               ...oldUser,
+               profileImageUrl: imageData,
+               updatedAt: new Date().toISOString()
+             };
+          });
+
           const response = await fetch("/api/auth/upload-profile-picture", {
             method: "POST",
             headers: {

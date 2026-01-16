@@ -135,6 +135,17 @@ export default function ProfileSettings() {
             imageData = await compressImage(imageData);
           }
 
+          // Optimistic Update: Update global user cache IMMEDIATELY
+          // This syncs Header, Sidebar, and Profile Page instantly
+          queryClient.setQueryData(["/api/auth/user"], (oldUser: any) => {
+            if (!oldUser) return oldUser;
+            return {
+              ...oldUser,
+              profileImageUrl: imageData, // Use base64 immediately
+              updatedAt: new Date().toISOString() // Force re-render of URLs checking timestamps
+            };
+          });
+
           await apiRequest("POST", "/api/auth/upload-profile-picture", {
             imageData,
           });
