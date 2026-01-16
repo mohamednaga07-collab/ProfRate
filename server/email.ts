@@ -1,15 +1,12 @@
 import nodemailer from "nodemailer";
 
 // Email configuration
-const EMAIL_USER = process.env.EMAIL_USER || "mohamednaga07@gmail.com";
-const EMAIL_PASSWORD = (process.env.EMAIL_PASSWORD || "ytwzsquhkukwldpc").replace(/\s/g, "");
-const EMAIL_FROM = process.env.EMAIL_FROM || `ProfRate Support <onboarding@resend.dev>`;
+const EMAIL_USER = process.env.EMAIL_USER;
+const EMAIL_PASSWORD = (process.env.EMAIL_PASSWORD || "").replace(/\s/g, "");
+const EMAIL_FROM = process.env.EMAIL_FROM || `ProfRate Support <${EMAIL_USER || 'noreply@campus-ratings.com'}>`;
 
-// Resend configuration (preferred for production - simple API)
+// Resend configuration (secondary fallback)
 const RESEND_API_KEY = process.env.RESEND_API_KEY;
-// Use a verified domain if provided, else fall back to Resend onboarding domain
-// IMPORTANT: Resend requires a verified domain to send FROM your own domain.
-// If you haven't verified profrate.com, this will fail.
 const RESEND_FROM = process.env.RESEND_FROM || 'ProfRate <onboarding@resend.dev>';
 const USE_RESEND = !!RESEND_API_KEY;
 
@@ -38,23 +35,20 @@ const gmailTransporter = nodemailer.createTransport({
   socketTimeout: 15000,
 });
 
-// Test Gmail connection
-gmailTransporter.verify((error, success) => {
-  if (error) {
-    console.error("⚠️  Gmail SMTP not available:", error.message);
-    if (!USE_RESEND) {
-      console.log("💡 Email setup required!");
-      console.log("   Quick setup with Resend (1 minute):");
-      console.log("   1. Go to: https://resend.com/signup");
-      console.log("   2. Sign in with GitHub (instant)");
-      console.log("   3. Create API key");
-      console.log("   4. Set RESEND_API_KEY in Render environment variables");
-      console.log("   5. Done! Emails will work immediately.");
+// Test Gmail connection if credentials are provided
+if (EMAIL_USER && EMAIL_PASSWORD) {
+  console.log(`[GMAIL] Testing connection for ${EMAIL_USER}...`);
+  gmailTransporter.verify((error, success) => {
+    if (error) {
+      console.error("⚠️  [GMAIL] SMTP Connection Error:", error.message);
+      console.log("👉 Tip: Verify your Google App Password and Ensure 2-Step Verification is ON.");
+    } else {
+      console.log("✅ [GMAIL] SMTP Server is ready to deliver messages");
     }
-  } else {
-    console.log("✅ Gmail SMTP available as fallback");
-  }
-});
+  });
+} else {
+  console.log("ℹ️  [GMAIL] Credentials not fully set - skipping SMTP verification");
+}
 
 interface EmailOptions {
   to: string;
@@ -72,23 +66,25 @@ export async function sendEmail(options: EmailOptions): Promise<boolean> {
     console.log(`  Using Resend: ${USE_RESEND}`);
     console.log(`${'='.repeat(60)}\n`);
 
-    // Try Gmail first as primary (allows custom profile picture via Google Account)
-    console.log(`[GMAIL] Starting Gmail SMTP send...`);
-    try {
-      const info = await gmailTransporter.sendMail({
-        from: `ProfRate Support <${EMAIL_USER}>`,
-        to: options.to,
-        subject: options.subject,
-        html: options.html,
-        text: options.text,
-      });
+    // Try Gmail first as primary if configured
+    if (EMAIL_USER && EMAIL_PASSWORD) {
+      console.log(`[GMAIL] Attempting SMTP delivery via ${EMAIL_USER}...`);
+      try {
+        const info = await gmailTransporter.sendMail({
+          from: EMAIL_FROM,
+          to: options.to,
+          subject: options.subject,
+          html: options.html,
+          text: options.text,
+        });
 
-      console.log(`✅ [GMAIL] Email sent successfully! Message ID: ${info.messageId}`);
-      console.log(`${'='.repeat(60)}\n`);
-      return true;
-    } catch (gmailError: any) {
-      console.error(`\n❌ [GMAIL] Failed:`, gmailError.message || gmailError);
-      console.log(`[RESEND FALLBACK] Gmail unavailable. Attempting Resend API fallback for ${options.to}...`);
+        console.log(`✅ [GMAIL] Success! Message ID: ${info.messageId}`);
+        return true;
+      } catch (gmailError: any) {
+        console.error(`❌ [GMAIL] Delivery Failed:`, gmailError.message || gmailError);
+      }
+    } else {
+      console.log(`ℹ️  [GMAIL] Skipped (No credentials)`);
     }
 
     // Fallback to Resend if Gmail fails

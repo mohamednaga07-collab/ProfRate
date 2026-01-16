@@ -193,7 +193,10 @@ export async function registerRoutes(httpServer: Server, app: Express): Promise<
  
   // Diagnostic endpoint for testing emails (internal use)
   app.get("/api/admin/debug-email", async (req, res) => {
-    const testEmail = (req.query.to as string) || "mohamednaga07@gmail.com";
+    const testEmail = (req.query.to as string);
+    if (!testEmail) {
+      return res.status(400).json({ success: false, message: "Recipient email parameter 'to' is required" });
+    }
     console.log(`[DEBUG] Attempting test email to: ${testEmail}`);
     try {
       const result = await sendEmail({
@@ -1834,7 +1837,11 @@ export async function registerRoutes(httpServer: Server, app: Express): Promise<
   app.post("/api/admin/debug-email", isAdmin, validateCsrfHeader, async (req, res) => {
     try {
       const { testEmail } = req.body;
-      const target = testEmail || "mohamednaga09@gmail.com";
+      const target = testEmail;
+      
+      if (!target) {
+        return res.status(400).json({ success: false, message: "testEmail is required in the request body" });
+      }
       
       console.log(`🧪 [DEBUG EMAIL] Starting diagnostic test for: ${target}`);
       
