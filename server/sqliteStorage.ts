@@ -393,6 +393,8 @@ export const sqliteStorage = {
       const fields: string[] = [];
       const values: any[] = [];
       
+      console.log(`[updateUser] Updating user ${id} with fields:`, Object.keys(updates));
+
       // Basic info
       if (updates.profileImageUrl !== undefined) {
         fields.push("profileImageUrl = ?");

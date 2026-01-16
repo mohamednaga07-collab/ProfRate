@@ -394,7 +394,7 @@ export async function registerRoutes(httpServer: Server, app: Express): Promise<
       const user = await storage.getUserByUsername(sanitized);
       console.log("👤 Found user:", user ? "yes ✓" : "no ✗");
       
-      const secureErrorMessage = "The username doesn't exist. Please check your username or password or create a new account";
+      const secureErrorMessage = "Invalid username or password. Please check your credentials or create a new account.";
 
       if (!user || !user.password) {
         console.log("❌ User not found");
