@@ -1033,7 +1033,7 @@ export async function registerRoutes(httpServer: Server, app: Express): Promise<
   // Forgot Password Route
   app.post("/api/auth/forgot-password", validateCsrfHeader, async (req: any, res) => {
     try {
-      const { email: rawEmail } = req.body;
+      const { email: rawEmail, recaptchaToken, skipRecaptcha } = req.body;
       const email = rawEmail ? rawEmail.trim() : "";
       console.log(`\n${'='.repeat(40)}`);
       console.log(`[FORGOT-PASSWORD] Initializing request for: '${email}'`);
@@ -1041,6 +1041,35 @@ export async function registerRoutes(httpServer: Server, app: Express): Promise<
       if (!email) {
         console.log(`[FORGOT-PASSWORD] ❌ Rejected: Email is missing`);
         return res.status(400).json({ message: "Email is required" });
+      }
+
+      // ReCAPTCHA Verification
+      const recaptchaEnabled = process.env.RECAPTCHA_ENABLED === "true";
+      if (recaptchaEnabled) {
+          if (skipRecaptcha && req.session.recaptchaVerified) {
+             console.log("[FORGOT-PASSWORD] ✅ Skipping reCAPTCHA (session verified)");
+          } else if (!recaptchaToken) {
+             console.log("[FORGOT-PASSWORD] ❌ Rejected: reCAPTCHA token missing");
+             return res.status(400).json({ message: "reCAPTCHA verification is required" });
+          } else {
+             try {
+                const recaptchaResponse = await fetch("https://www.google.com/recaptcha/api/siteverify", {
+                  method: "POST",
+                  headers: { "Content-Type": "application/x-www-form-urlencoded" },
+                  body: `secret=${process.env.RECAPTCHA_SECRET_KEY}&response=${recaptchaToken}`,
+                });
+                const recaptchaData = await recaptchaResponse.json();
+                if (!recaptchaData.success) {
+                  console.warn("[FORGOT-PASSWORD] ❌ reCAPTCHA verification failed:", recaptchaData["error-codes"]);
+                  return res.status(400).json({ message: "reCAPTCHA verification failed" });
+                }
+                req.session.recaptchaVerified = true;
+                req.session.save();
+             } catch (error) {
+                console.error("[FORGOT-PASSWORD] ❌ reCAPTCHA error:", error);
+                return res.status(500).json({ message: "reCAPTCHA verification error" });
+             }
+          }
       }
 
       const user = await storage.getUserByEmail(email);
@@ -1155,7 +1184,9 @@ export async function registerRoutes(httpServer: Server, app: Express): Promise<
 
       const hashedPassword = await hashPassword(newPassword);
       await storage.updateUserPassword(user.id, hashedPassword);
+      console.log(`[RESET-PASSWORD] Password hash updated for user ID ${user.id}: ${hashedPassword.substring(0, 15)}...`);
       await storage.clearResetToken(user.id);
+      console.log(`[RESET-PASSWORD] Reset token cleared for user ID ${user.id}`);
 
       res.status(200).json({ message: "Password has been reset successfully" });
     } catch (error: any) {
@@ -1167,12 +1198,41 @@ export async function registerRoutes(httpServer: Server, app: Express): Promise<
   // Forgot Username Route
   app.post("/api/auth/forgot-username", validateCsrfHeader, async (req: any, res) => {
     try {
-      const { email: rawEmail } = req.body;
+      const { email: rawEmail, recaptchaToken, skipRecaptcha } = req.body;
       const email = rawEmail ? rawEmail.trim() : "";
       console.log(`[forgot-username] Received request for email: '${email}'`);
       
       if (!email) {
         return res.status(400).json({ message: "Email is required" });
+      }
+
+      // ReCAPTCHA Verification
+      const recaptchaEnabled = process.env.RECAPTCHA_ENABLED === "true";
+      if (recaptchaEnabled) {
+          if (skipRecaptcha && req.session.recaptchaVerified) {
+             console.log("[forgot-username] ✅ Skipping reCAPTCHA (session verified)");
+          } else if (!recaptchaToken) {
+             console.log("[forgot-username] ❌ Rejected: reCAPTCHA token missing");
+             return res.status(400).json({ message: "reCAPTCHA verification is required" });
+          } else {
+             try {
+                const recaptchaResponse = await fetch("https://www.google.com/recaptcha/api/siteverify", {
+                  method: "POST",
+                  headers: { "Content-Type": "application/x-www-form-urlencoded" },
+                  body: `secret=${process.env.RECAPTCHA_SECRET_KEY}&response=${recaptchaToken}`,
+                });
+                const recaptchaData = await recaptchaResponse.json();
+                if (!recaptchaData.success) {
+                  console.warn("[forgot-username] ❌ reCAPTCHA verification failed:", recaptchaData["error-codes"]);
+                  return res.status(400).json({ message: "reCAPTCHA verification failed" });
+                }
+                req.session.recaptchaVerified = true;
+                req.session.save();
+             } catch (error) {
+                console.error("[forgot-username] ❌ reCAPTCHA error:", error);
+                return res.status(500).json({ message: "reCAPTCHA verification error" });
+             }
+          }
       }
 
       const user = await storage.getUserByEmail(email);

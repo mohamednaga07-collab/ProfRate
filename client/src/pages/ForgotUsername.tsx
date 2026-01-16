@@ -201,17 +201,7 @@ export default function ForgotUsername() {
                             animate={{ scale: 1 }}
                             transition={{ delay: 0.1, type: "spring", stiffness: 400, damping: 20 }}
                           >
-                            <svg className="h-5 w-5 text-green-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                              <motion.path
-                                strokeLinecap="round"
-                                strokeLinejoin="round"
-                                strokeWidth={2}
-                                d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"
-                                initial={{ pathLength: 0, opacity: 0 }}
-                                animate={{ pathLength: 1, opacity: 1 }}
-                                transition={{ duration: 0.5, ease: "circOut", delay: 0.2 }}
-                              />
-                            </svg>
+                            <CheckCircle className="h-5 w-5 text-green-500" />
                           </motion.div>
                           <motion.span
                             className="text-sm font-medium text-green-500"
