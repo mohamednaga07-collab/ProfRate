@@ -199,7 +199,27 @@ export function ProfilePictureUpload({
           }
         }}
       >
-        {/* Only show fallback when there's no profile image AND no preview */}
+        {/* 1. Custom Preview Layer (Optimistic UI) - Higest Z-Index to cover everything instantly */}
+        {previewUrl && (
+          <img 
+            src={previewUrl}
+            alt="Preview"
+            className="absolute inset-0 h-full w-full object-cover z-20"
+          />
+        )}
+
+        {/* 2. Standard Avatar Image (Server Data) */}
+        {user.profileImageUrl && (
+          <AvatarImage 
+            src={user.profileImageUrl.includes("...") 
+              ? `/api/profile-image/user/${user.id}?v=${user.updatedAt ? new Date(user.updatedAt).getTime() : '1'}` 
+              : user.profileImageUrl} 
+            alt={user.firstName ?? "User"}
+            className="w-full h-full object-cover z-10" 
+          />
+        )}
+
+        {/* 3. Fallback - Only if NO image and NO preview */}
         {!user.profileImageUrl && !previewUrl && (
           <AvatarFallback className="font-semibold z-0">
             {uploading ? (
@@ -209,33 +229,6 @@ export function ProfilePictureUpload({
             )}
           </AvatarFallback>
         )}
-
-        {/* Image layer with smooth crossfade animation */}
-        <AnimatePresence mode="sync">
-          {(user.profileImageUrl || previewUrl) && (
-            <motion.div
-              initial={{ opacity: 0 }}
-              animate={{ opacity: 1 }}
-              transition={{ 
-                duration: 0.2,
-                ease: "easeInOut",
-              }}
-              className="absolute inset-0 z-10 w-full h-full"
-              style={{ 
-                willChange: "opacity",
-                backfaceVisibility: "hidden",
-              }}
-            >
-              <AvatarImage 
-                src={previewUrl ?? (user.profileImageUrl?.includes("...") 
-                  ? `/api/profile-image/user/${user.id}?v=${user.updatedAt ? new Date(user.updatedAt).getTime() : '1'}` 
-                  : user.profileImageUrl ?? undefined)} 
-                alt={user.firstName ?? "User"}
-                className="w-full h-full object-cover" 
-              />
-            </motion.div>
-          )}
-        </AnimatePresence>
       </Avatar>
 
       {showEditButton && (
