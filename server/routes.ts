@@ -590,7 +590,7 @@ export async function registerRoutes(httpServer: Server, app: Express): Promise<
     console.log("🚀".repeat(30) + "\n");
     
     const { username: rawUsername, email } = req.body;
-    const username = rawUsername ? rawUsername.trim() : "";
+    const username = rawUsername ? rawUsername.trim().toLowerCase() : "";
 
     // SERVER-SIDE DUPLICATE GUARD
     const registrationKey = `${username.toLowerCase()}:${email?.toLowerCase()}`;
