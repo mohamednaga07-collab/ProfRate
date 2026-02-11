@@ -113,6 +113,8 @@ app.use(
 );
 
 // Rate limiting
+// Rate limiting
+const isDev = String(process.env.NODE_ENV).trim() === "development";
 const limiter = rateLimit({
   windowMs: 15 * 60 * 1000, // 15 minutes
   max: 100, // Limit each IP to 100 requests per windowMs
@@ -121,8 +123,13 @@ const limiter = rateLimit({
   message: { message: "Too many requests, please try again later." },
 });
 
-// Apply rate limiting to API routes
-app.use("/api", limiter);
+// Apply rate limiting to API routes only in production
+if (!isDev) {
+  app.use("/api", limiter);
+  console.log("🔒 Rate limiting enabled");
+} else {
+  console.log("🔓 Rate limiting disabled for development");
+}
 
 export function log(message: string, source = "express") {
   const formattedTime = new Date().toLocaleTimeString("en-US", {

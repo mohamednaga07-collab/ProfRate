@@ -40,9 +40,8 @@ export function VerifyEmail() {
         setMessage(t(data.message || "auth.verify.successMsg"));
         setStatus("success");
         // Redirect to login after 2 seconds using setLocation
-        setTimeout(() => {
-          setLocation("/login");
-        }, 2000);
+        // Redirect removed to let user read the success message
+        // setLocation("/login");
       } else {
         setMessage(t(data.message || "auth.verify.failedMsg"));
         setStatus("error");

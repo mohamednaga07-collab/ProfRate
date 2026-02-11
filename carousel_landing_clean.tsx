@@ -1,0 +1,478 @@
+﻿import { Button } from "@/components/ui/button";
+import { Card, CardContent } from "@/components/ui/card";
+import { ThemeToggle } from "@/components/ThemeToggle";
+import { AuthForm } from "@/components/AuthForm";
+import { LanguageSwitcher } from "@/components/LanguageSwitcher";
+import { GraduationCap, Star, BarChart3, Shield, Users, ChevronRight, CheckCircle, MapPin } from "lucide-react";
+import { useState, useEffect, useCallback } from "react";
+import { useTranslation } from "react-i18next";
+import { motion } from "framer-motion";
+import styles from "./Landing.module.css";
+
+interface LandingProps {
+  defaultTab?: "login" | "register";
+}
+
+
+
+export default function Landing({ defaultTab = "login" }: LandingProps) {
+  const { t } = useTranslation();
+  const [lastInteraction, setLastInteraction] = useState<number>(0);
+  const [isDragging, setIsDragging] = useState(false);
+
+
+  // Hero carousel images - 4K Premium Resolution
+  const heroImages = [
+    "https://images.unsplash.com/photo-1460518451285-97b6aa326961?w=3840&h=2160&fit=crop&q=95&auto=format",
+    "https://images.unsplash.com/photo-1484417894907-623942c8ee29?w=3840&h=2160&fit=crop&q=95&auto=format",
+    "https://images.unsplash.com/photo-1523580846011-d3a5bc25702b?w=3840&h=2160&fit=crop&q=95&auto=format",
+    "https://images.unsplash.com/photo-1524995997946-a1c2e315a42f?w=3840&h=2160&fit=crop&q=95&auto=format",
+    "https://images.unsplash.com/photo-1503676382389-4809596d5290?w=3840&h=2160&fit=crop&q=95&auto=format",
+    "https://images.unsplash.com/photo-1503428593586-e225b39bddfe?w=3840&h=2160&fit=crop&q=95&auto=format",
+    "https://images.unsplash.com/photo-1516383607781-913a19294fd1?w=3840&h=2160&fit=crop&q=95&auto=format",
+    "https://images.unsplash.com/photo-1519389950473-47ba0277781c?w=3840&h=2160&fit=crop&q=95&auto=format",
+  ];
+
+  // Extended images for seamless infinite loop [Last, ...Images, First]
+  const extendedImages = [
+    heroImages[heroImages.length - 1],
+    ...heroImages,
+    heroImages[0]
+  ];
+
+  // currentIndex is now 1-indexed relative to extendedImages
+  const [currentIndex, setCurrentIndex] = useState(1);
+  const [isTransitioning, setIsTransitioning] = useState(false);
+
+  const handleNext = useCallback(() => {
+    if (isTransitioning) return;
+    setIsTransitioning(true);
+    setCurrentIndex(prev => prev + 1);
+  }, [isTransitioning]);
+
+  const handlePrev = useCallback(() => {
+    if (isTransitioning) return;
+    setIsTransitioning(true);
+    setCurrentIndex(prev => prev - 1);
+  }, [isTransitioning]);
+
+
+
+  // Robust carousel rotation - high-speed & reliable
+  useEffect(() => {
+    // Determine if we should pause only if dragging (user manual movement)
+    const shouldPause = isDragging;
+    
+    if (shouldPause) return; // Don't even start timer if paused
+
+    const autoplayTimer = setInterval(() => {
+      const timeSinceLastInteraction = Date.now() - lastInteraction;
+      // Use 2000ms (2s) pause after interaction as requested
+      if (timeSinceLastInteraction > 2000 || lastInteraction === 0) {
+        handleNext();
+      }
+    }, 5000); 
+    return () => clearInterval(autoplayTimer);
+  }, [isDragging, lastInteraction, handleNext]);
+
+  // Instant reset logic for infinite loop
+  const handleTransitionEnd = () => {
+    setIsTransitioning(false);
+    
+    if (currentIndex === 0) {
+      // Jumped to clone of last image from first -> snap to real last
+      setCurrentIndex(extendedImages.length - 2);
+    } else if (currentIndex === extendedImages.length - 1) {
+      // Jumped to clone of first image from last -> snap to real first
+      setCurrentIndex(1);
+    }
+  };
+
+  const scrollToAuth = () => {
+    const el = document.getElementById("auth-section");
+    if (el) {
+      el.scrollIntoView({ behavior: "smooth", block: "start" });
+    }
+  };
+
+  const handleGetStarted = scrollToAuth;
+  const handleLogin = scrollToAuth;
+
+  return (
+    <div className="min-h-screen bg-background">
+      <header
+        className="fixed top-0 left-0 right-0 z-[100] w-full border-b bg-background/98 backdrop-blur-md supports-[backdrop-filter]:bg-background/90 shadow-sm"
+      >
+        <div className="container flex h-16 items-center justify-between gap-4 px-4 mx-auto">
+          <div className="flex items-center gap-2">
+            <GraduationCap className="h-7 w-7 text-primary" />
+            <span className="font-bold text-xl">{t("brand.name")}</span>
+          </div>
+          <div className="flex items-center gap-2">
+            <LanguageSwitcher />
+            <ThemeToggle />
+            <Button onClick={handleLogin} data-testid="button-landing-login">
+              {t("auth.login")}
+            </Button>
+          </div>
+        </div>
+      </header>
+
+      {/* Spacer for fixed header */}
+      <div className="h-16" />
+
+      <main>
+        {/* Hero Section with Infinite Continuous Strip Carousel */}
+        <section className="relative h-[380px] sm:h-[450px] lg:h-[650px] w-full overflow-hidden bg-slate-900" dir="ltr">
+          <motion.div
+            className="flex h-full will-change-transform"
+            style={{
+              width: `${extendedImages.length * 100}%`,
+              x: `-${currentIndex * (100 / extendedImages.length)}%`,
+            }}
+            animate={{
+              x: `-${currentIndex * (100 / extendedImages.length)}%`,
+            }}
+            transition={{
+              type: "spring",
+              stiffness: 260,
+              damping: 30,
+              mass: 1,
+              tension: 170,
+              friction: 26,
+              duration: isTransitioning ? undefined : 0
+            }}
+            onAnimationComplete={handleTransitionEnd}
+            drag="x"
+            dragConstraints={{ left: 0, right: 0 }}
+            dragElastic={1} 
+            dragMomentum={false}
+            onDragStart={() => setIsDragging(true)}
+            onDragEnd={(e, { offset, velocity }) => {
+              setIsDragging(false);
+              const swipe = offset.x; 
+              const swipeVelocity = velocity.x; 
+              
+              // Discrete Swipe Guard: Trigger exactly one slide change
+              // and ignore excessive momentum
+              if (swipe < -40 || swipeVelocity < -250) {
+                handleNext();
+                setLastInteraction(Date.now());
+              } else if (swipe > 40 || swipeVelocity > 250) {
+                handlePrev();
+                setLastInteraction(Date.now());
+              }
+            }}
+          >
+            {extendedImages.map((src, index) => {
+              const isActive = index === currentIndex;
+              const isVisible = Math.abs(index - currentIndex) <= 1;
+
+              return (
+                <div 
+                  key={`${index}-${src}`}
+                  className={`relative h-full overflow-hidden ${styles.carouselItem} ${isVisible ? styles.visible : styles.hidden}`}
+                >
+                  <div
+                    className={`absolute inset-0 transition-all duration-1000 ease-out will-change-transform ${styles.carouselImage} ${styles[`image${heroImages.indexOf(src) + 1}`]} ${isActive ? styles.active : styles.inactive}`}
+                  />
+                </div>
+              );
+            })}
+          </motion.div>
+
+          {/* Gradient Overlay */}
+          <div className="absolute inset-0 bg-gradient-to-r from-black/70 via-black/60 to-black/50 pointer-events-none z-10" />
+
+          {/* Content Overlay */}
+          <div className="absolute inset-0 flex items-center justify-center z-20 pointer-events-none">
+            <div className="container mx-auto max-w-4xl text-center px-4">
+              <motion.div
+                initial={{ opacity: 0, y: 20 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ duration: 0.6, delay: 0.2 }}
+                className="pointer-events-auto"
+              >
+                <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-white/10 backdrop-blur border border-white/20 text-white text-sm font-medium mb-6">
+                  <Shield className="h-4 w-4" />
+                  {t("landing.badge.anonymous")}
+                </div>
+
+                <h1 className="text-4xl sm:text-5xl lg:text-6xl font-bold tracking-tight mb-6 text-white">
+                  {t("landing.hero.title")}
+                  <span className="text-blue-400 block mt-2">{t("landing.hero.highlight")}</span>
+                </h1>
+
+                <p className="text-lg text-white/90 max-w-2xl mx-auto mb-10">
+                  {t("landing.hero.description")}
+                </p>
+
+                <div className="flex flex-col sm:flex-row items-center justify-center gap-4">
+                  <Button size="lg" onClick={handleGetStarted} data-testid="button-get-started">
+                    {t("landing.getStarted")}
+                    <ChevronRight className="h-5 w-5 ml-1" />
+                  </Button>
+                  <Button size="lg" variant="outline" asChild className="bg-white/10 border-white/20 text-white hover:bg-white/20">
+                    <a href="#features">{t("landing.learnMore")}</a>
+                  </Button>
+                </div>
+              </motion.div>
+            </div>
+          </div>
+
+          {/* Image indicators - Mapped to real index */}
+          <div className="absolute bottom-6 left-1/2 transform -translate-x-1/2 z-30 flex gap-2">
+            {heroImages.map((_, index) => {
+              // Map continuous currentIndex back to 0-7 for dots
+              const realIndex = index + 1;
+              const isActive = (currentIndex === realIndex) || 
+                              (currentIndex === 0 && realIndex === heroImages.length) ||
+                              (currentIndex === extendedImages.length - 1 && realIndex === 1);
+
+              return (
+                <motion.button
+                  key={index}
+                  onClick={() => {
+                    if (isTransitioning) return;
+                    setIsTransitioning(true);
+                    setCurrentIndex(realIndex);
+                    setLastInteraction(Date.now());
+                  }}
+                  className={`h-2 rounded-full transition-all ${
+                    isActive ? "bg-white w-6" : "bg-white/40 w-2"
+                  }`}
+                  whileHover={{ scale: 1.3, backgroundColor: "rgba(255,255,255,0.8)" }}
+                  whileTap={{ scale: 0.9 }}
+                  aria-label={`Go to slide ${index + 1}`}
+                />
+              );
+            })}
+          </div>
+        </section>
+
+        {/* Features Section - Modern Premium Grid */}
+        <section id="features" className="py-24 relative overflow-hidden">
+          <div className="absolute top-0 left-0 w-full h-full bg-slate-50/50 dark:bg-slate-950/20 -z-10" />
+          <div className="container mx-auto px-4">
+            <div className="text-center max-w-3xl mx-auto mb-20">
+              <motion.h2 
+                initial={{ opacity: 0, y: 20 }}
+                whileInView={{ opacity: 1, y: 0 }}
+                viewport={{ once: true }}
+                className="text-4xl font-bold mb-4 tracking-tight"
+              >
+                {t("landing.features.title")}
+              </motion.h2>
+              <div className="h-1.5 w-20 bg-primary mx-auto rounded-full mb-6" />
+              <motion.p 
+                initial={{ opacity: 0 }}
+                whileInView={{ opacity: 1 }}
+                viewport={{ once: true }}
+                transition={{ delay: 0.2 }}
+                className="text-muted-foreground text-xl"
+              >
+                {t("landing.features.subtitle")}
+              </motion.p>
+            </div>
+
+            <div className="grid md:grid-cols-3 gap-10">
+              {[
+                {
+                  key: "factors",
+                  icon: Star,
+                  color: "text-amber-500",
+                  bg: "bg-amber-500/10",
+                },
+                {
+                  key: "comparison",
+                  icon: BarChart3,
+                  color: "text-blue-500",
+                  bg: "bg-blue-500/10",
+                },
+                {
+                  key: "anonymity",
+                  icon: Shield,
+                  color: "text-emerald-500",
+                  bg: "bg-emerald-500/10",
+                },
+              ].map((feature, idx) => (
+                <motion.div
+                  key={feature.key}
+                  initial={{ opacity: 0, y: 30 }}
+                  whileInView={{ opacity: 1, y: 0 }}
+                  viewport={{ once: true }}
+                  transition={{ delay: idx * 0.1 }}
+                >
+                  <Card className={`${styles.featureCard} h-full border-none shadow-2xl relative overflow-hidden group`}>
+                    <CardContent className="pt-10 pb-8 px-8 flex flex-col items-center text-center">
+                      <div className={`${styles.iconWrapper} w-20 h-20 rounded-2xl ${feature.bg} flex items-center justify-center mb-8`}>
+                        <div className={styles.iconGlow} style={{ backgroundColor: feature.color }} />
+                        <feature.icon className={`h-10 w-10 ${feature.color}`} />
+                      </div>
+                      <h3 className="text-2xl font-bold mb-4 group-hover:text-primary transition-colors">
+                        {t(`landing.features.cards.${feature.key}.title`)}
+                      </h3>
+                      <p className="text-muted-foreground leading-relaxed text-lg">
+                        {t(`landing.features.cards.${feature.key}.description`)}
+                      </p>
+                    </CardContent>
+                  </Card>
+                </motion.div>
+              ))}
+            </div>
+          </div>
+        </section>
+
+        {/* Roles Section - Interactive Pro Experience */}
+        <section className="py-24 bg-background">
+          <div className="container mx-auto px-4">
+            <div className="flex flex-col lg:flex-row items-end justify-between mb-16 gap-6">
+              <div className="max-w-2xl">
+                <h2 className={`text-4xl font-bold mb-4 ${styles.gradientText}`}>{t("landing.roles.title")}</h2>
+                <p className="text-muted-foreground text-xl">
+                  {t("landing.roles.subtitle")}
+                </p>
+              </div>
+            </div>
+
+            <div className="grid md:grid-cols-3 gap-8">
+              {[
+                {
+                  key: "student",
+                  icon: Users,
+                  color: "from-blue-600 to-indigo-600",
+                  descriptionId: "landing.roles.cards.student"
+                },
+                {
+                  key: "teacher",
+                  icon: GraduationCap,
+                  color: "from-purple-600 to-pink-600",
+                  descriptionId: "landing.roles.cards.teacher"
+                },
+                {
+                  key: "admin",
+                  icon: Shield,
+                  color: "from-slate-700 to-slate-900",
+                  descriptionId: "landing.roles.cards.admin"
+                },
+              ].map((role, idx) => (
+                <motion.div
+                  key={role.key}
+                  initial={{ opacity: 0, scale: 0.9 }}
+                  whileInView={{ opacity: 1, scale: 1 }}
+                  viewport={{ once: true }}
+                  transition={{ delay: idx * 0.1, type: "spring", stiffness: 100 }}
+                >
+                  <Card className={`${styles.roleCard} h-full border-border/40 hover:border-primary/50 transition-all`}>
+                    <div className={`h-1.5 bg-gradient-to-r ${role.color}`} />
+                    <CardContent className="pt-10 pb-8 px-8">
+                      <div className={`${styles.roleIconContainer} w-16 h-16 rounded-xl bg-muted flex items-center justify-center mb-8`}>
+                        <role.icon className="h-8 w-8" />
+                      </div>
+                      <h3 className="text-2xl font-bold mb-4">{t(`roles.${role.key}`)}</h3>
+                      <p className="text-muted-foreground mb-10 text-lg leading-snug min-h-[4.5rem]">
+                        {t(role.descriptionId)}
+                      </p>
+                      <Button 
+                        variant="ghost" 
+                        onClick={scrollToAuth} 
+                        className="w-full group hover:bg-primary hover:text-white border border-border/60"
+                      >
+                        {t("landing.getStarted")}
+                        <ChevronRight className="h-4 w-4 ml-2 group-hover:translate-x-1 transition-transform" />
+                      </Button>
+                    </CardContent>
+                  </Card>
+                </motion.div>
+              ))}
+            </div>
+          </div>
+        </section>
+
+        <section id="auth-section" className="py-20 px-4 bg-slate-50 dark:bg-slate-950 text-foreground transition-colors duration-300">
+          <div className="container mx-auto max-w-6xl grid lg:grid-cols-2 gap-10 items-center">
+            <motion.div
+              initial={{ opacity: 0, y: 20 }}
+              whileInView={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.5 }}
+              viewport={{ once: true }}
+              className="space-y-4"
+            >
+              <div className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full bg-primary/10 border border-primary/20 text-primary dark:bg-white/10 dark:border-white/15 dark:text-white text-sm font-medium">
+                <Shield className="h-4 w-4" />
+                <span>{t("landing.hero.highlight")}</span>
+              </div>
+              <h2 className="text-3xl font-bold leading-tight">
+                {t("auth.login")}/{t("auth.register")}
+                <span className="block text-primary dark:text-blue-200 text-xl font-semibold mt-2">{t("landing.hero.title")}</span>
+              </h2>
+              <p className="text-muted-foreground dark:text-white/80 max-w-xl">
+                {t("landing.hero.description")}
+              </p>
+              <ul className="space-y-3 text-muted-foreground dark:text-white/80">
+                <li className="flex items-start gap-3">
+                  <CheckCircle className="h-5 w-5 text-emerald-500 dark:text-emerald-300 mt-0.5" />
+                  <span>{t("landing.hero.features.anonymous")}</span>
+                </li>
+                <li className="flex items-start gap-3">
+                  <CheckCircle className="h-5 w-5 text-emerald-500 dark:text-emerald-300 mt-0.5" />
+                  <span>{t("landing.hero.features.sync")}</span>
+                </li>
+                <li className="flex items-start gap-3">
+                  <MapPin className="h-5 w-5 text-sky-500 dark:text-sky-200 mt-0.5" />
+                  <span>{t("landing.hero.features.preferences")}</span>
+                </li>
+              </ul>
+            </motion.div>
+
+            <motion.div
+              initial={{ opacity: 0, y: 20 }}
+              whileInView={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.5, delay: 0.1 }}
+              viewport={{ once: true }}
+            >
+              <Card className="bg-card shadow-2xl border-border/50 backdrop-blur-xl transition-all duration-300">
+                <CardContent className="p-6">
+                  <AuthForm defaultTab={defaultTab} />
+                </CardContent>
+              </Card>
+            </motion.div>
+          </div>
+        </section>
+
+        <section className="py-20 px-4 bg-gradient-to-r from-primary to-primary/80 text-primary-foreground">
+          <div className="container mx-auto max-w-4xl text-center">
+            <motion.div
+              initial={{ opacity: 0, y: 20 }}
+              whileInView={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.5 }}
+              viewport={{ once: true }}
+            >
+              <h2 className="text-3xl font-bold mb-4">{t("landing.final.title")}</h2>
+              <p className="text-primary-foreground/90 max-w-2xl mx-auto mb-8">
+                {t("landing.final.subtitle")}
+              </p>
+              <Button size="lg" variant="secondary" onClick={handleGetStarted}>
+                {t("landing.getStarted")}
+                <ChevronRight className="h-5 w-5 ml-1" />
+              </Button>
+            </motion.div>
+          </div>
+        </section>
+      </main>
+
+      <footer className="py-8 px-4 border-t">
+        <div className="container mx-auto flex flex-col sm:flex-row items-center justify-between gap-4">
+          <div className="flex items-center gap-2">
+            <GraduationCap className="h-5 w-5 text-muted-foreground" />
+            <span className="text-sm text-muted-foreground">{t("brand.name")}</span>
+          </div>
+          <p className="text-sm text-muted-foreground">
+            {t("landing.footer.tagline")}
+          </p>
+        </div>
+      </footer>
+    </div>
+  );
+}
+

@@ -8,6 +8,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Avatar, AvatarImage, AvatarFallback } from "@/components/ui/avatar";
 import { useToast } from "@/hooks/use-toast";
 import { GraduationCap, User, Lock, UserCircle, Mail, AlertCircle } from "lucide-react";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
@@ -594,11 +595,24 @@ export function AuthForm({ onSuccess, defaultTab = "login" }: AuthFormProps) {
           <Card className="w-full max-w-md mx-4 shadow-2xl border-green-500/50">
             <CardContent className="pt-12 pb-12 text-center space-y-4">
               <motion.div
-                animate={{ scale: [1, 1.15, 1] }}
-                transition={{ duration: 0.8, repeat: Infinity, repeatDelay: 1.5 }}
-                className="text-6xl mb-4"
+                initial={{ scale: 0 }}
+                animate={{ scale: 1 }}
+                transition={{ type: "spring", stiffness: 260, damping: 20 }}
+                className="flex justify-center mb-6"
               >
-                🎉
+                <div className="relative">
+                  <div className="absolute inset-0 bg-green-500 blur-xl opacity-20 rounded-full animate-pulse" />
+                  <Avatar className="h-24 w-24 border-4 border-green-500 shadow-xl">
+                    <AvatarImage src="" />
+                    <AvatarFallback className="bg-gradient-to-br from-green-500 to-green-600 text-white text-3xl font-bold">
+                      {(registerFirstName?.[0] || registerUsername?.[0] || "?").toUpperCase()}
+                      {(registerLastName?.[0] || "").toUpperCase()}
+                    </AvatarFallback>
+                  </Avatar>
+                  <div className="absolute -bottom-2 -right-2 bg-green-500 rounded-full p-2 border-4 border-background shadow-lg">
+                    <CheckCircle2 className="w-6 h-6 text-white" />
+                  </div>
+                </div>
               </motion.div>
               <h2 className="text-3xl font-bold text-green-600">{t("auth.success.registration")}</h2>
               <p className="text-lg text-muted-foreground font-medium">

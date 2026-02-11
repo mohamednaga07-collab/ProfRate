@@ -65,6 +65,7 @@ export async function sendEmail(options: EmailOptions): Promise<boolean> {
     console.log(`  Subject: ${options.subject}`);
     console.log(`  Using Resend: ${USE_RESEND}`);
     console.log(`${'='.repeat(60)}\n`);
+    console.log(`🚀 [EMAIL DISPATCH] Target Recipient: ${options.to}`);
 
     // Try Gmail first as primary if configured
     if (EMAIL_USER && EMAIL_PASSWORD) {

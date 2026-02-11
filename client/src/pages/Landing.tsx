@@ -277,9 +277,9 @@ export default function Landing({ defaultTab = "login" }: LandingProps) {
                 >
                   <Card className={`${styles.featureCard} h-full border-none shadow-2xl relative overflow-hidden group`}>
                     <CardContent className="pt-10 pb-8 px-8 flex flex-col items-center text-center">
-                      <div className={`${styles.iconWrapper} w-20 h-20 rounded-2xl ${feature.bg} flex items-center justify-center mb-8`}>
-                        <div className={styles.iconGlow} style={{ backgroundColor: feature.color }} />
-                        <feature.icon className={`h-10 w-10 ${feature.color}`} />
+                      <div className={`${styles.iconWrapper} w-20 h-20 rounded-2xl ${feature.bg} flex items-center justify-center mb-8 ${feature.color}`}>
+                        <div className={styles.iconGlow} />
+                        <feature.icon className="h-10 w-10" />
                       </div>
                       <h3 className="text-2xl font-bold mb-4 group-hover:text-primary transition-colors">
                         {t(`landing.features.cards.${feature.key}.title`)}
