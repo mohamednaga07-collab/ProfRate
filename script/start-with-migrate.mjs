@@ -30,10 +30,12 @@ async function runMigrations() {
       const dbUrl = process.env.DATABASE_URL.includes('?') 
         ? `${process.env.DATABASE_URL}&sslmode=require` 
         : `${process.env.DATABASE_URL}?sslmode=require`;
-      execSync(`npx drizzle-kit push --dialect=postgresql --schema=shared/schema.ts --url="${dbUrl}" --force`, {
-        stdio: 'inherit',
-        env: { ...process.env, NODE_ENV: 'production' }
+      console.log('🚀 Running drizzle-kit push...');
+      const output = execSync(`npx drizzle-kit push --dialect=postgresql --schema=shared/schema.ts --url="${dbUrl}" --force`, {
+        env: { ...process.env, NODE_ENV: 'production', NODE_TLS_REJECT_UNAUTHORIZED: '0' },
+        encoding: 'utf-8'
       });
+      console.log(output);
       
       console.log('✅ Database schema is up to date');
       break;
