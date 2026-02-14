@@ -14,27 +14,39 @@ if (!process.env.DATABASE_URL) {
 } else {
   console.log("✓ Using PostgreSQL database");
 
+  // Ensure sslmode=require is in the connection string itself
+  // This is the most reliable way to ensure SSL for external Render URLs
+  let connectionString = process.env.DATABASE_URL;
+  if (!connectionString.includes('sslmode=')) {
+    connectionString += connectionString.includes('?') ? '&sslmode=require' : '?sslmode=require';
+  }
+
   try {
-    const dbUrl = new URL(process.env.DATABASE_URL);
+    const dbUrl = new URL(connectionString);
     console.log(`✓ Connecting to database at: ${dbUrl.hostname}`);
   } catch (e) {
     console.log("✓ Connecting to database (URL parsing failed)");
   }
 
-  // Always use SSL for external connections (required by Render, Neon, etc.)
   pool = new Pool({ 
-    connectionString: process.env.DATABASE_URL,
+    connectionString,
     ssl: { rejectUnauthorized: false },
-    connectionTimeoutMillis: 10000, 
+    max: 3,                       // Low pool size for Render free tier
+    connectionTimeoutMillis: 15000,
+    idleTimeoutMillis: 30000,
   });
   
-  pool.connect((err, client, release) => {
-    if (err) {
-      console.error("❌ Database connection failed:", err.message);
-    } else {
-      console.log("✅ Database connected successfully");
-      release();
-    }
+  // Prevent unhandled pool errors from crashing the app
+  pool.on('error', (err) => {
+    console.error('⚠️ Unexpected database pool error:', err.message);
+  });
+  
+  // Test connection
+  pool.connect().then((client) => {
+    console.log("✅ Database connected successfully");
+    client.release();
+  }).catch((err) => {
+    console.error("❌ Database connection failed:", err.message);
   });
   
   db = drizzle(pool, { schema });
