@@ -14,41 +14,48 @@ if (!process.env.DATABASE_URL) {
 } else {
   console.log("✓ Using PostgreSQL database");
 
-  // Ensure sslmode=require is in the connection string itself
-  // This is the most reliable way to ensure SSL for external Render URLs
-  let connectionString = process.env.DATABASE_URL;
-  if (!connectionString.includes('sslmode=')) {
-    connectionString += connectionString.includes('?') ? '&sslmode=require' : '?sslmode=require';
-  }
-
+  // Parse connection URL into explicit parameters to avoid URL parsing issues
+  let parsedUrl: URL;
   try {
-    const dbUrl = new URL(connectionString);
-    console.log(`✓ Connecting to database at: ${dbUrl.hostname}`);
+    parsedUrl = new URL(process.env.DATABASE_URL);
+    console.log(`✓ Connecting to database at: ${parsedUrl.hostname}:${parsedUrl.port || 5432}`);
   } catch (e) {
-    console.log("✓ Connecting to database (URL parsing failed)");
+    console.error("❌ Failed to parse DATABASE_URL");
+    throw e;
   }
 
-  pool = new Pool({ 
-    connectionString,
-    ssl: { rejectUnauthorized: false },
-    max: 3,                       // Low pool size for Render free tier
+  // Use explicit connection parameters for maximum compatibility
+  // The 'servername' in SSL is critical for SNI (Server Name Indication)
+  // which Render's proxy needs to route SSL connections correctly
+  pool = new Pool({
+    host: parsedUrl.hostname,
+    port: parseInt(parsedUrl.port || '5432'),
+    database: parsedUrl.pathname.slice(1),
+    user: decodeURIComponent(parsedUrl.username),
+    password: decodeURIComponent(parsedUrl.password),
+    ssl: {
+      rejectUnauthorized: false,
+      servername: parsedUrl.hostname,  // SNI for Render's proxy
+    },
+    max: 2,                           // Minimal pool for free tier
     connectionTimeoutMillis: 15000,
     idleTimeoutMillis: 30000,
   });
-  
-  // Prevent unhandled pool errors from crashing the app
+
+  // Detailed pool event logging for debugging
   pool.on('error', (err) => {
-    console.error('⚠️ Unexpected database pool error:', err.message);
+    console.error('⚠️ Pool error:', err.message);
   });
-  
+
   // Test connection
   pool.connect().then((client) => {
     console.log("✅ Database connected successfully");
     client.release();
   }).catch((err) => {
     console.error("❌ Database connection failed:", err.message);
+    console.error("   Error code:", (err as any).code);
   });
-  
+
   db = drizzle(pool, { schema });
 }
 
