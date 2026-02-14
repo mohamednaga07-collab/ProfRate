@@ -20,7 +20,8 @@ const getOidcConfig = memoize(
         console.warn("   Set REPL_ID in .env for OpenID Connect authentication.");
         return null;
       }
-      throw new Error("REPL_ID environment variable is required");
+      console.warn("⚠️  REPL_ID not set. OIDC auth will be disabled.");
+      return null;
     }
     try {
       // Add timeout to prevent blocking server startup if Replit OIDC is unreachable
