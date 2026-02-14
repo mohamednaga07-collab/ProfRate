@@ -7,6 +7,7 @@ import { useAuth } from "@/hooks/useAuth";
 import { motion, AnimatePresence } from "framer-motion";
 import React from "react";
 // Page imports - explicitly typed to help IDE resolution
+import { Header } from "@/components/Header";
 import { useTranslation } from "react-i18next";
 import { ErrorBoundary } from "@/components/ErrorBoundary";
 import { Suspense, lazy } from "react";
