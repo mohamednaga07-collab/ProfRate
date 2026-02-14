@@ -18,6 +18,12 @@ async function runMigrations() {
   while (attempts < maxAttempts) {
     try {
       console.log(`📡 Migration attempt ${attempts + 1}/${maxAttempts}...`);
+      try {
+        const dbUrl = new URL(process.env.DATABASE_URL);
+        console.log(`   Target host: ${dbUrl.hostname}`);
+      } catch (e) {
+        console.log(`   Target URL parsing failed`);
+      }
       
       // Use --url to provide connection string explicitly
       // Schema is now aligned so prompts should not occur
