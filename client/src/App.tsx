@@ -78,10 +78,10 @@ function AnimatedPageWrapper({ children }: { children: React.ReactNode }) {
       initial="initial"
       animate="animate"
       exit="exit"
-      className="w-full flex-1 pt-16"
+      className={`w-full flex-1 transition-[padding] duration-500 ${location === "/" ? "pt-0" : "pt-16"}`}
       style={{ willChange: "transform, opacity" }}
     >
-      <div className="w-full h-full min-h-[calc(100vh-64px)]">
+      <div className={`w-full h-full ${location === "/" ? "min-h-screen" : "min-h-[calc(100vh-64px)]"}`}>
         {children}
       </div>
     </motion.div>

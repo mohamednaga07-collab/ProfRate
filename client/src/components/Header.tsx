@@ -15,6 +15,15 @@ export function Header() {
   const { user, isAuthenticated, isLoading, logout } = useAuth();
   const [location, navigate] = useLocation();
   const [searchQuery, setSearchQuery] = useState("");
+  const [isScrolled, setIsScrolled] = useState(false);
+
+  React.useEffect(() => {
+    const handleScroll = () => {
+      setIsScrolled(window.scrollY > 20);
+    };
+    window.addEventListener("scroll", handleScroll);
+    return () => window.removeEventListener("scroll", handleScroll);
+  }, []);
 
   const handleSearch = (e: React.FormEvent) => {
     e.preventDefault();
@@ -27,8 +36,11 @@ export function Header() {
     logout();
   };
 
+  const isLanding = location === "/";
+  const headerOpacity = isLanding && !isScrolled ? "bg-transparent border-transparent" : "bg-background/98 backdrop-blur-md supports-[backdrop-filter]:bg-background/90 border-b shadow-sm";
+
   return (
-    <header className="sticky top-0 z-50 w-full border-b bg-background/98 backdrop-blur-md supports-[backdrop-filter]:bg-background/90 shadow-sm">
+    <header className={`fixed top-0 z-50 w-full transition-all duration-300 ${headerOpacity}`}>
       <div className="container flex h-16 items-center justify-between gap-4 px-4 mx-auto">
         <Link href="/" className="flex items-center gap-2 shrink-0">
           <GraduationCap className="h-7 w-7 text-primary" />

@@ -10,7 +10,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Avatar, AvatarImage, AvatarFallback } from "@/components/ui/avatar";
 import { useToast } from "@/hooks/use-toast";
-import { GraduationCap, User, Lock, UserCircle, Mail, AlertCircle } from "lucide-react";
+import { GraduationCap, User, Lock, UserCircle, Mail, AlertCircle, CheckCircle2 } from "lucide-react";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { motion } from "framer-motion";
 import { apiRequest, queryClient, prefetchCsrfToken } from "@/lib/queryClient";
@@ -618,8 +618,8 @@ export function AuthForm({ onSuccess, defaultTab = "login" }: AuthFormProps) {
                 </div>
               </motion.div>
               <h2 className="text-3xl font-bold text-green-600">{t("auth.success.registration")}</h2>
-              <p className="text-lg text-muted-foreground font-medium">
-                {t("auth.success.registrationWelcome", { name: registerFirstName || registerUsername })}
+              <p className="text-lg text-muted-foreground font-medium leading-relaxed">
+                {t("auth.success.verificationSent", { email: registerEmail })}
               </p>
             </CardContent>
           </Card>

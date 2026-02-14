@@ -84,7 +84,7 @@ export default function Landing({ defaultTab = "login" }: LandingProps) {
   return (
     <div className="min-h-screen bg-background">
       <main>
-        <section className="relative h-[380px] sm:h-[450px] lg:h-[650px] w-full overflow-hidden bg-slate-900" dir="ltr">
+        <section className="relative h-[480px] sm:h-[550px] lg:h-[800px] w-full overflow-hidden bg-slate-900" dir="ltr">
           <motion.div
             className="flex h-full will-change-transform"
             style={{
@@ -142,7 +142,7 @@ export default function Landing({ defaultTab = "login" }: LandingProps) {
 
           <div className="absolute inset-0 bg-gradient-to-r from-black/70 via-black/60 to-black/50 pointer-events-none z-10" />
 
-          <div className="absolute inset-0 flex items-center justify-center z-20 pointer-events-none">
+          <div className="absolute inset-0 flex items-center justify-center z-20 pointer-events-none pt-16">
             <div className="container mx-auto max-w-4xl text-center px-4">
               <motion.div
                 initial={{ opacity: 0, y: 20 }}
