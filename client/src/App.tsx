@@ -52,11 +52,10 @@ const pageVariants = {
   },
   exit: {
     opacity: 0,
-    scale: 1.01,
-    y: -10,
+    scale: 0.98, // Slight shrink feel on exit
     transition: {
-      duration: 0.2,
-      ease: "easeInOut",
+      duration: 0.4, // Longer exit for smoother dissolve
+      ease: [0.43, 0.13, 0.23, 0.96], // Elegant ease-in-out
     },
   },
 };
