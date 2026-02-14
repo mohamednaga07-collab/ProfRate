@@ -28,7 +28,7 @@ export function Header() {
   };
 
   return (
-    <header className="sticky top-0 z-50 w-full border-b bg-background/98 backdrop-blur-md supports-[backdrop-filter]:bg-background/90 shadow-sm">
+    <header className="fixed top-0 left-0 right-0 z-[100] w-full border-b bg-background/98 backdrop-blur-md supports-[backdrop-filter]:bg-background/90 shadow-sm">
       <div className="container flex h-16 items-center justify-between gap-4 px-4 mx-auto">
         <Link href="/" className="flex items-center gap-2 shrink-0">
           <GraduationCap className="h-7 w-7 text-primary" />

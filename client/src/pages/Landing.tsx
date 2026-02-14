@@ -83,24 +83,6 @@ export default function Landing({ defaultTab = "login" }: LandingProps) {
 
   return (
     <div className="min-h-screen bg-background">
-      <header className="fixed top-0 left-0 right-0 z-[100] w-full border-b bg-background/98 backdrop-blur-md supports-[backdrop-filter]:bg-background/90 shadow-sm">
-        <div className="container flex h-16 items-center justify-between gap-4 px-4 mx-auto">
-          <div className="flex items-center gap-2">
-            <GraduationCap className="h-7 w-7 text-primary" />
-            <span className="font-bold text-xl">{t("brand.name")}</span>
-          </div>
-          <div className="flex items-center gap-2">
-            <LanguageSwitcher />
-            <ThemeToggle />
-            <Button onClick={scrollToAuth} data-testid="button-landing-login">
-              {t("auth.login")}
-            </Button>
-          </div>
-        </div>
-      </header>
-
-      <div className="h-16" />
-
       <main>
         <section className="relative h-[380px] sm:h-[450px] lg:h-[650px] w-full overflow-hidden bg-slate-900" dir="ltr">
           <motion.div
@@ -342,13 +324,13 @@ export default function Landing({ defaultTab = "login" }: LandingProps) {
         </section>
 
         <section id="auth-section" className="py-20 px-4 bg-slate-50 dark:bg-slate-950 text-foreground transition-colors duration-300">
-          <div className="container mx-auto max-w-6xl grid lg:grid-cols-2 gap-10 items-center">
+          <div className="container mx-auto max-w-6xl grid lg:grid-cols-2 gap-10 items-start">
             <motion.div
               initial={{ opacity: 0, y: 20 }}
               whileInView={{ opacity: 1, y: 0 }}
               transition={{ duration: 0.5 }}
               viewport={{ once: true }}
-              className="space-y-4"
+              className="space-y-6"
             >
               <div className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full bg-primary/10 border border-primary/20 text-primary dark:bg-white/10 dark:border-white/15 dark:text-white text-sm font-medium">
                 <Shield className="h-4 w-4" />
