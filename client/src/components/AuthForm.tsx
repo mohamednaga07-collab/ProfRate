@@ -1,7 +1,7 @@
 import { useState } from "react";
 import { useEffect } from "react";
 import { useRef } from "react";
-import { Link, useLocation } from "wouter";
+import { Link } from "wouter";
 import ReCAPTCHA from "react-google-recaptcha";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -23,7 +23,6 @@ interface AuthFormProps {
 
 export function AuthForm({ onSuccess, defaultTab = "login" }: AuthFormProps) {
   const { t, i18n } = useTranslation();
-  const [, setLocation] = useLocation();
   const { toast } = useToast();
   const [isLoading, setIsLoading] = useState(false);
   const [activeTab, setActiveTab] = useState(defaultTab);
@@ -393,8 +392,8 @@ export function AuthForm({ onSuccess, defaultTab = "login" }: AuthFormProps) {
         // Short delay to show toast, but keep it snappy
         console.log("🔄 Redirecting to:", finalTarget);
         setTimeout(() => {
-          setLocation(finalTarget);
-        }, 1200); // Snappy transition
+          window.location.assign(finalTarget);
+        }, 1500); // Increased delay slightly to allow reading the role warning toast if applicable
       } else {
         throw new Error("Login failed - no user data returned");
       }
