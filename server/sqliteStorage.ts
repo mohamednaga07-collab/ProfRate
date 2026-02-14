@@ -1,19 +1,4 @@
-
-import Database from "better-sqlite3";
 import path from "path";
-import type { User } from "../shared/schema";
-
-const dbPath = path.join(process.cwd(), "dev.db");
-const db = new Database(dbPath);
-
-db.pragma("journal_mode = WAL");
-
-db.exec(`
-  CREATE TABLE IF NOT EXISTS doctors (
-    id INTEGER PRIMARY KEY,
-    name TEXT NOT NULL,
-    department TEXT NOT NULL,
-    title TEXT,
     bio TEXT,
     profileImageUrl TEXT,
     createdAt TEXT DEFAULT CURRENT_TIMESTAMP,
