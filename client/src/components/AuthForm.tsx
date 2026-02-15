@@ -10,7 +10,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Avatar, AvatarImage, AvatarFallback } from "@/components/ui/avatar";
 import { useToast } from "@/hooks/use-toast";
-import { GraduationCap, User, Lock, UserCircle, Mail, AlertCircle, CheckCircle2 } from "lucide-react";
+import { GraduationCap, User, Lock, UserCircle, Mail, AlertCircle, CheckCircle2, Sparkles, ArrowRight } from "lucide-react";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { motion } from "framer-motion";
 import { apiRequest, queryClient, prefetchCsrfToken } from "@/lib/queryClient";
