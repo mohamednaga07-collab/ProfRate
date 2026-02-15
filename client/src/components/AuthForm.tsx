@@ -12,7 +12,7 @@ import { Avatar, AvatarImage, AvatarFallback } from "@/components/ui/avatar";
 import { useToast } from "@/hooks/use-toast";
 import { GraduationCap, User, Lock, UserCircle, Mail, AlertCircle, CheckCircle2, Sparkles, ArrowRight } from "lucide-react";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
-import { motion } from "framer-motion";
+import { motion, AnimatePresence } from "framer-motion";
 import { apiRequest, queryClient, prefetchCsrfToken } from "@/lib/queryClient";
 import { useTranslation } from "react-i18next";
 
@@ -587,98 +587,105 @@ export function AuthForm({ onSuccess, defaultTab = "login" }: AuthFormProps) {
         mass: 1,
       }}
     >
-      {registrationSuccess && (
-        <motion.div
-          initial={{ opacity: 0, scale: 0.9 }}
-          animate={{ opacity: 1, scale: 1 }}
-          transition={{ duration: 0.5, type: "spring" }}
-          className="w-full max-w-md mx-auto"
-        >
-          <Card className="w-full shadow-2xl border-green-500/20 bg-background/95 backdrop-blur-xl overflow-hidden relative">
-            <div className="absolute top-0 left-0 w-full h-1.5 bg-gradient-to-r from-green-400 via-emerald-500 to-green-600" />
-            
-            <CardContent className="pt-12 pb-10 flex flex-col items-center text-center space-y-6">
-              <motion.div
-                initial={{ scale: 0, rotate: -45 }}
-                animate={{ scale: 1, rotate: 0 }}
-                transition={{ delay: 0.2, type: "spring", stiffness: 200 }}
-                className="relative"
-              >
-                <div className="absolute inset-0 bg-green-500 blur-2xl opacity-30 rounded-full animate-pulse" />
-                <div className="relative h-28 w-28 rounded-full bg-gradient-to-br from-green-500/10 to-emerald-500/20 border-2 border-green-500/30 flex items-center justify-center p-1 backdrop-blur-sm">
-                  <div className="h-full w-full rounded-full bg-gradient-to-br from-green-500 to-emerald-600 flex items-center justify-center shadow-lg shadow-green-500/20">
-                    <CheckCircle2 className="h-14 w-14 text-white drop-shadow-md" />
-                  </div>
-                </div>
-                
+      <AnimatePresence mode="wait">
+        {registrationSuccess ? (
+          <motion.div
+            key="success-message"
+            initial={{ opacity: 0, scale: 0.9, y: 20 }}
+            animate={{ opacity: 1, scale: 1, y: 0 }}
+            exit={{ opacity: 0, scale: 0.95, y: -20 }}
+            transition={{ duration: 0.5, type: "spring" }}
+            className="w-full max-w-md mx-auto"
+          >
+            <Card className="w-full shadow-2xl border-green-500/20 bg-background/95 backdrop-blur-xl overflow-hidden relative">
+              <div className="absolute top-0 left-0 w-full h-1.5 bg-gradient-to-r from-green-400 via-emerald-500 to-green-600" />
+              
+              <CardContent className="pt-12 pb-10 flex flex-col items-center text-center space-y-6">
                 <motion.div
-                  initial={{ scale: 0 }}
-                  animate={{ scale: 1 }}
-                  transition={{ delay: 0.5, type: "spring" }}
-                  className="absolute -top-1 -right-1"
+                  initial={{ scale: 0, rotate: -45 }}
+                  animate={{ scale: 1, rotate: 0 }}
+                  transition={{ delay: 0.2, type: "spring", stiffness: 200 }}
+                  className="relative"
                 >
-                  <div className="bg-background rounded-full p-1.5 shadow-md border border-border">
-                    <Sparkles className="h-5 w-5 text-yellow-500" />
+                  <div className="absolute inset-0 bg-green-500 blur-2xl opacity-30 rounded-full animate-pulse" />
+                  <div className="relative h-28 w-28 rounded-full bg-gradient-to-br from-green-500/10 to-emerald-500/20 border-2 border-green-500/30 flex items-center justify-center p-1 backdrop-blur-sm">
+                    <div className="h-full w-full rounded-full bg-gradient-to-br from-green-500 to-emerald-600 flex items-center justify-center shadow-lg shadow-green-500/20">
+                      <CheckCircle2 className="h-14 w-14 text-white drop-shadow-md" />
+                    </div>
                   </div>
-                </motion.div>
-              </motion.div>
-
-              <div className="space-y-3 px-4">
-                <motion.h2 
-                  initial={{ opacity: 0, y: 10 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  transition={{ delay: 0.3 }}
-                  className="text-3xl font-extrabold tracking-tight bg-gradient-to-br from-green-600 to-emerald-700 bg-clip-text text-transparent p-1"
-                >
-                  {t("auth.success.registration")}
-                </motion.h2>
-                
-                <motion.div
-                  initial={{ opacity: 0, y: 10 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  transition={{ delay: 0.4 }}
-                  className="space-y-4"
-                >
-                  <p className="text-[17px] text-muted-foreground font-medium leading-relaxed max-w-xs mx-auto">
-                    {t("auth.success.verificationSent", { email: registerEmail })}
-                  </p>
                   
-                  <div className="bg-secondary/50 rounded-2xl p-4 border border-border/50 backdrop-blur-sm mt-4">
-                    <p className="text-sm text-muted-foreground font-semibold flex items-center justify-center gap-2">
-                       <Mail className="w-4 h-4 text-primary" />
-                       Please check your inbox & spam
-                    </p>
-                  </div>
+                  <motion.div
+                    initial={{ scale: 0 }}
+                    animate={{ scale: 1 }}
+                    transition={{ delay: 0.5, type: "spring" }}
+                    className="absolute -top-1 -right-1"
+                  >
+                    <div className="bg-background rounded-full p-1.5 shadow-md border border-border">
+                      <Sparkles className="h-5 w-5 text-yellow-500" />
+                    </div>
+                  </motion.div>
                 </motion.div>
-              </div>
 
-              <motion.div
-                initial={{ opacity: 0, y: 20 }}
-                animate={{ opacity: 1, y: 0 }}
-                transition={{ delay: 0.6 }}
-                className="w-full px-6 pt-4"
-              >
-                <Button 
-                  onClick={() => {
-                    setRegistrationSuccess(false);
-                    setActiveTab("login");
-                  }}
-                  className="w-full h-12 text-lg font-bold rounded-xl shadow-lg shadow-primary/20 hover:shadow-primary/30 transition-all group"
+                <div className="space-y-3 px-4">
+                  <motion.h2 
+                    initial={{ opacity: 0, y: 10 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    transition={{ delay: 0.3 }}
+                    className="text-3xl font-extrabold tracking-tight bg-gradient-to-br from-green-600 to-emerald-700 bg-clip-text text-transparent p-1"
+                  >
+                    {t("auth.success.registration")}
+                  </motion.h2>
+                  
+                  <motion.div
+                    initial={{ opacity: 0, y: 10 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    transition={{ delay: 0.4 }}
+                    className="space-y-4"
+                  >
+                    <p className="text-[17px] text-muted-foreground font-medium leading-relaxed max-w-xs mx-auto">
+                      {t("auth.success.verificationSent", { email: registerEmail })}
+                    </p>
+                    
+                    <div className="bg-secondary/50 rounded-2xl p-4 border border-border/50 backdrop-blur-sm mt-4">
+                      <p className="text-sm text-muted-foreground font-semibold flex items-center justify-center gap-2">
+                         <Mail className="w-4 h-4 text-primary" />
+                         Please check your inbox & spam
+                      </p>
+                    </div>
+                  </motion.div>
+                </div>
+
+                <motion.div
+                  initial={{ opacity: 0, y: 20 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  transition={{ delay: 0.6 }}
+                  className="w-full px-6 pt-4"
                 >
-                  {t("auth.backToLogin")}
-                  <ArrowRight className="ml-2 w-5 h-5 group-hover:translate-x-1 transition-transform" />
-                </Button>
-              </motion.div>
-            </CardContent>
-          </Card>
-        </motion.div>
-      )}
-
-      <motion.div
-        ref={authCardRef}
-        className="w-full max-w-md mx-auto"
-        style={{ willChange: "transform, opacity" }}
-      >
+                  <Button 
+                    onClick={() => {
+                      setRegistrationSuccess(false);
+                      setActiveTab("login");
+                    }}
+                    className="w-full h-12 text-lg font-bold rounded-xl shadow-lg shadow-primary/20 hover:shadow-primary/30 transition-all group"
+                  >
+                    {t("auth.backToLogin")}
+                    <ArrowRight className="ml-2 w-5 h-5 group-hover:translate-x-1 transition-transform" />
+                  </Button>
+                </motion.div>
+              </CardContent>
+            </Card>
+          </motion.div>
+        ) : (
+          <motion.div
+            key="auth-card"
+            ref={authCardRef}
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            exit={{ opacity: 0, y: -20 }}
+            transition={{ duration: 0.4 }}
+            className="w-full max-w-md mx-auto"
+            style={{ willChange: "transform, opacity" }}
+          >
         <Card className="w-full shadow-xl hover:shadow-2xl transition-shadow duration-300 border-border/50">
           <motion.div
             initial={{ opacity: 0 }}
@@ -1127,7 +1134,9 @@ export function AuthForm({ onSuccess, defaultTab = "login" }: AuthFormProps) {
             </Tabs>
           </CardContent>
         </Card>
-      </motion.div>
+          </motion.div>
+        )}
+      </AnimatePresence>
     </motion.div>
   );
 }
