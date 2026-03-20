@@ -1,5 +1,5 @@
 import { useQuery } from "@tanstack/react-query";
-import { queryClient } from "@/lib/queryClient";
+import { queryClient, getQueryFn } from "@/lib/queryClient";
 import { useLocation } from "wouter";
 import type { User } from "@shared/schema";
 
@@ -7,6 +7,7 @@ export function useAuth() {
   const [, setLocation] = useLocation();
   const { data: user, isLoading } = useQuery<User | null>({
     queryKey: ["/api/auth/user"],
+    queryFn: getQueryFn({ on401: "returnNull" }),
     retry: false,
     refetchOnMount: true,
     staleTime: 60000,
