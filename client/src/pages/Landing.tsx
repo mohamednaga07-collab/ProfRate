@@ -84,7 +84,7 @@ export default function Landing({ defaultTab = "login" }: LandingProps) {
   return (
     <div className="min-h-screen bg-background">
       <main>
-        <section className="relative h-[480px] sm:h-[550px] lg:h-[800px] w-full overflow-hidden bg-slate-900" dir="ltr">
+        <section className="relative h-[350px] sm:h-[450px] lg:h-[600px] w-full overflow-hidden bg-slate-900" dir="ltr">
           <motion.div
             className="flex h-full will-change-transform"
             style={{
