@@ -393,7 +393,7 @@ export function AuthForm({ onSuccess, defaultTab = "login" }: AuthFormProps) {
         // Short delay to show toast, but keep it snappy
         console.log("🔄 Redirecting to:", finalTarget);
         setTimeout(() => {
-          setLocation(finalTarget);
+          setLocation(finalTarget, { replace: true });
         }, 1200); // Snappy transition
       } else {
         throw new Error("Login failed - no user data returned");
@@ -481,6 +481,12 @@ export function AuthForm({ onSuccess, defaultTab = "login" }: AuthFormProps) {
         variant: "destructive",
       });
       setIsLoading(false);
+      
+      // Reset reCAPTCHA on failed login
+      if (!isSessionVerified && loginRecaptchaRef.current) {
+        loginRecaptchaRef.current.reset();
+        setLoginRecaptchaToken(null);
+      }
     }
   };
 

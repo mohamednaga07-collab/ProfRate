@@ -776,21 +776,19 @@ export async function registerRoutes(httpServer: Server, app: Express): Promise<
       const emailHtml = generateVerificationEmailHtml(username, verificationLink, newUser.profileImageUrl);
       const emailText = `Hi ${username},\n\nThank you for registering! Please verify your email address: ${verificationLink}\n\nOnce verified, you'll be able to log in.`;
       
-      // Send verification email asynchronously (non-blocking) so registration is instant
-      setImmediate(async () => {
-        try {
-          console.log(`📧 [Async Registration] Attempting to send verification email to: ${email}`);
-          await sendEmail({
-            to: email,
-            subject: "Verify Your ProfRate Account",
-            html: emailHtml,
-            text: emailText,
-          });
-          console.log(`✅ [Async Registration] Verification email sent successfully to ${email}`);
-        } catch (emailError: any) {
-          console.error(`❌ [Async Registration] Failed to send verification email to ${email}:`, emailError.message || emailError);
-        }
-      });
+      // Send verification email synchronously to ensure it completes before sending response
+      try {
+        console.log(`📧 [Registration] Attempting to send verification email to: ${email}`);
+        await sendEmail({
+          to: email,
+          subject: "Verify Your ProfRate Account",
+          html: emailHtml,
+          text: emailText,
+        });
+        console.log(`✅ [Registration] Verification email sent successfully to ${email}`);
+      } catch (emailError: any) {
+        console.error(`❌ [Registration] Failed to send verification email to ${email}:`, emailError.message || emailError);
+      }
 
       // Don't send password to client
       const { password: _, ...userWithoutPassword } = newUser as any;

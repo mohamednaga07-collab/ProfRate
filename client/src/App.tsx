@@ -229,7 +229,7 @@ function Router() {
           {() => (
             <AnimatedPageWrapper>
               {!isAuthenticated ? (
-                <Landing />
+                <NotFound />
               ) : user?.role === "admin" ? (
                 <AdminDashboard />
               ) : (
@@ -242,14 +242,14 @@ function Router() {
         <Route path="/admin/analytics">
           {() => (
             <AnimatedPageWrapper>
-              {!isAuthenticated ? <Landing /> : user?.role === "admin" ? <AdminAnalytics /> : <NotFound />}
+              {!isAuthenticated ? <NotFound /> : user?.role === "admin" ? <AdminAnalytics /> : <NotFound />}
             </AnimatedPageWrapper>
           )}
         </Route>
         <Route path="/admin/settings">
           {() => (
             <AnimatedPageWrapper>
-              {!isAuthenticated ? <Landing /> : user?.role === "admin" ? <AdminSettings /> : <NotFound />}
+              {!isAuthenticated ? <NotFound /> : user?.role === "admin" ? <AdminSettings /> : <NotFound />}
             </AnimatedPageWrapper>
           )}
         </Route>
