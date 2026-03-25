@@ -34,8 +34,11 @@ const AdminSettings = lazy(() => import("@/pages/AdminSettings"));
 const ProfileSettings = lazy(() => import("@/pages/ProfileSettings"));
 const TeacherFeedback = lazy(() => import("@/pages/TeacherFeedback"));
 const TeacherPortfolio = lazy(() => import("@/pages/TeacherPortfolio"));
+const TeacherCourses = lazy(() => import("@/pages/TeacherCourses"));
 const StudentAchievements = lazy(() => import("@/pages/StudentAchievements"));
 const StudentStats = lazy(() => import("@/pages/StudentStats"));
+const StudentRatings = lazy(() => import("@/pages/StudentRatings"));
+const AdminActivityLog = lazy(() => import("@/pages/AdminActivityLog"));
 
 const pageVariants = {
   initial: {
@@ -274,6 +277,31 @@ function Router() {
             </AnimatedPageWrapper>
           )}
         </Route>
+
+        <Route path="/teacher/courses">
+          {() => (
+            <AnimatedPageWrapper>
+              {!isAuthenticated ? <Landing /> : <TeacherCourses />}
+            </AnimatedPageWrapper>
+          )}
+        </Route>
+
+        <Route path="/student/ratings">
+          {() => (
+            <AnimatedPageWrapper>
+              {!isAuthenticated ? <Landing /> : <StudentRatings />}
+            </AnimatedPageWrapper>
+          )}
+        </Route>
+
+        <Route path="/admin/activity">
+          {() => (
+            <AnimatedPageWrapper>
+              {!isAuthenticated ? <Landing /> : user?.role === "admin" ? <AdminActivityLog /> : <NotFound />}
+            </AnimatedPageWrapper>
+          )}
+        </Route>
+
 
         <Route path="/admin">
           {() => (

@@ -1,5 +1,5 @@
 import { useLocation } from "wouter";
-import { Settings, BarChart3, Users, Trophy, FileText, Clock, MessageCircle, Zap, Crown, BookOpen, LogOut } from "lucide-react";
+import { Settings, BarChart3, Users, Trophy, FileText, Clock, MessageCircle, Zap, Crown, BookOpen, LogOut, Activity } from "lucide-react";
 import { useQuery } from "@tanstack/react-query";
 import { useState, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
@@ -99,15 +99,18 @@ export function RoleBasedProfileMenu({
       case "admin-panel":
         navigate("/admin");
         break;
+      case "activity-log":
+        navigate("/admin/activity");
+        break;
       case "profile-settings":
         navigate("/profile/settings");
         break;
       // Teacher actions
       case "my-courses":
-        navigate("/teacher-dashboard");
+        navigate("/teacher/courses");
         break;
       case "performance":
-        navigate("/teacher-dashboard");
+        navigate("/teacher/feedback");
         break;
       case "feedback":
         navigate("/teacher/feedback");
@@ -120,7 +123,7 @@ export function RoleBasedProfileMenu({
         navigate("/student/achievements");
         break;
       case "ratings":
-        navigate("/doctors");
+        navigate("/student/ratings");
         break;
       case "stats":
         navigate("/student/stats");
@@ -141,7 +144,7 @@ export function RoleBasedProfileMenu({
           { icon: BarChart3, label: t("admin.nav.analytics"), action: "analytics" },
           { icon: Settings, label: t("admin.nav.settings"), action: "settings" },
           { icon: Crown, label: t("admin.nav.panel"), action: "admin-panel" },
-          { icon: BookOpen, label: t("profile.settings"), action: "profile-settings" },
+          { icon: Activity, label: t("admin.nav.activity") || "Activity Log", action: "activity-log" },
         ];
       case "teacher":
         return [
