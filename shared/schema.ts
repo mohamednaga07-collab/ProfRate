@@ -107,6 +107,29 @@ export const doctorRatingsRelations = relations(doctorRatings, ({ one }) => ({
   }),
 }));
 
+// Teacher portfolios table for the showcase feature
+export const teacherPortfolios = pgTable("teacher_portfolios", {
+  id: integer("id").primaryKey().generatedAlwaysAsIdentity(),
+  userId: varchar("user_id").notNull().unique().references(() => users.id, { onDelete: "cascade" }),
+  title: varchar("title", { length: 200 }),
+  philosophy: text("philosophy"),
+  syllabusUrl: text("syllabus_url"),
+  materials: jsonb("materials").default([]),
+  createdAt: timestamp("created_at").defaultNow(),
+  updatedAt: timestamp("updated_at").defaultNow(),
+});
+
+// Student enrollments/academic trajectory
+export const studentEnrollments = pgTable("student_enrollments", {
+  id: integer("id").primaryKey().generatedAlwaysAsIdentity(),
+  userId: varchar("user_id").notNull().references(() => users.id, { onDelete: "cascade" }),
+  courseName: varchar("course_name", { length: 200 }).notNull(),
+  courseCode: varchar("course_code", { length: 50 }),
+  term: varchar("term", { length: 100 }),
+  grade: varchar("grade", { length: 20 }),
+  createdAt: timestamp("created_at").defaultNow(),
+});
+
 // Activity logs table for tracking user actions
 export const activityLogs = pgTable("activity_logs", {
   id: integer("id").primaryKey().generatedAlwaysAsIdentity(),
@@ -131,6 +154,8 @@ export const insertReviewSchema: any = (createInsertSchema(reviews) as any).omit
   knowledge: z.number().min(1).max(5),
   fairness: z.number().min(1).max(5),
 });
+export const insertTeacherPortfolioSchema: any = (createInsertSchema(teacherPortfolios) as any).omit({ id: true, createdAt: true, updatedAt: true });
+export const insertStudentEnrollmentSchema: any = (createInsertSchema(studentEnrollments) as any).omit({ id: true, createdAt: true });
 
 export type UpsertUser = typeof users.$inferInsert;
 export type User = typeof users.$inferSelect;
@@ -140,6 +165,10 @@ export type Review = typeof reviews.$inferSelect;
 export type InsertReview = z.infer<typeof insertReviewSchema>;
 export type DoctorRating = typeof doctorRatings.$inferSelect;
 export type ActivityLog = typeof activityLogs.$inferSelect;
+export type TeacherPortfolio = typeof teacherPortfolios.$inferSelect;
+export type InsertTeacherPortfolio = z.infer<typeof insertTeacherPortfolioSchema>;
+export type StudentEnrollment = typeof studentEnrollments.$inferSelect;
+export type InsertStudentEnrollment = z.infer<typeof insertStudentEnrollmentSchema>;
 
 // Combined doctor with ratings type
 export type DoctorWithRatings = Doctor & {

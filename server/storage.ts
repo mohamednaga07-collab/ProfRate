@@ -4,6 +4,8 @@ import {
   reviews,
   doctorRatings,
   activityLogs,
+  teacherPortfolios,
+  studentEnrollments,
   type User,
   type UpsertUser,
   type Doctor,
@@ -12,6 +14,10 @@ import {
   type InsertReview,
   type DoctorRating,
   type DoctorWithRatings,
+  type TeacherPortfolio,
+  type InsertTeacherPortfolio,
+  type StudentEnrollment,
+  type InsertStudentEnrollment,
 } from "@shared/schema";
 import { db } from "./db";
 import { eq, desc, sql } from "drizzle-orm";
@@ -78,6 +84,18 @@ export interface IStorage {
 
   // User update
   updateUser(id: string, updates: Partial<User>): Promise<User>;
+
+  // Teacher portfolio
+  getTeacherPortfolio(userId: string): Promise<TeacherPortfolio | undefined>;
+  upsertTeacherPortfolio(data: InsertTeacherPortfolio): Promise<TeacherPortfolio>;
+
+  // Student enrollments
+  getStudentEnrollments(userId: string): Promise<StudentEnrollment[]>;
+  createStudentEnrollment(data: InsertStudentEnrollment): Promise<StudentEnrollment>;
+  deleteStudentEnrollment(id: number, userId: string): Promise<void>;
+
+  // Student activity/achievements
+  getStudentActivityLogs(userId: string): Promise<any[]>;
 }
 
 export class DatabaseStorage implements IStorage {
@@ -311,6 +329,47 @@ export class DatabaseStorage implements IStorage {
   async updateUser(id: string, updates: Partial<User>): Promise<User> {
     const [user] = await db.update(users).set({ ...updates, updatedAt: new Date() }).where(eq(users.id, id)).returning();
     return user;
+  }
+
+  // Teacher portfolio
+  async getTeacherPortfolio(userId: string): Promise<TeacherPortfolio | undefined> {
+    const [portfolio] = await db.select().from(teacherPortfolios).where(eq(teacherPortfolios.userId, userId));
+    return portfolio;
+  }
+
+  async upsertTeacherPortfolio(data: InsertTeacherPortfolio): Promise<TeacherPortfolio> {
+    const [portfolio] = await db
+      .insert(teacherPortfolios)
+      .values({ ...data, updatedAt: new Date() })
+      .onConflictDoUpdate({
+        target: teacherPortfolios.userId,
+        set: { ...data, updatedAt: new Date() },
+      })
+      .returning();
+    return portfolio;
+  }
+
+  // Student enrollments
+  async getStudentEnrollments(userId: string): Promise<StudentEnrollment[]> {
+    return db.select().from(studentEnrollments)
+      .where(eq(studentEnrollments.userId, userId))
+      .orderBy(desc(studentEnrollments.createdAt));
+  }
+
+  async createStudentEnrollment(data: InsertStudentEnrollment): Promise<StudentEnrollment> {
+    const [enrollment] = await db.insert(studentEnrollments).values(data).returning();
+    return enrollment;
+  }
+
+  async deleteStudentEnrollment(id: number, userId: string): Promise<void> {
+    await db.delete(studentEnrollments)
+      .where(eq(studentEnrollments.id, id));
+  }
+
+  async getStudentActivityLogs(userId: string): Promise<any[]> {
+    return db.select().from(activityLogs)
+      .where(eq(activityLogs.userId, userId))
+      .orderBy(desc(activityLogs.timestamp));
   }
 
   private async updateDoctorRatings(doctorId: number): Promise<void> {

@@ -339,4 +339,21 @@ export class SqliteStorage implements IStorage {
       return { totalUsers:0, totalDoctors:0, totalReviews:0, activeUsers:0, usersGrowth:0, doctorsGrowth:0, reviewsGrowth:0 };
     }
   }
+
+  // ── Teacher portfolio stubs (SQLite is dev-only; full logic lives in DatabaseStorage) ──
+  async getTeacherPortfolio(_userId: string): Promise<any> { return null; }
+  async upsertTeacherPortfolio(data: any): Promise<any> { return data; }
+
+  // ── Student enrollment stubs ──
+  async getStudentEnrollments(_userId: string): Promise<any[]> { return []; }
+  async createStudentEnrollment(data: any): Promise<any> { return { id: 0, ...data, createdAt: new Date().toISOString() }; }
+  async deleteStudentEnrollment(_id: number, _userId: string): Promise<void> { return; }
+
+  // ── Student activity stubs ──
+  async getStudentActivityLogs(userId: string): Promise<any[]> {
+    try {
+      return this.db.prepare("SELECT * FROM activity_logs WHERE userId = ? ORDER BY timestamp DESC").all(userId) as any[];
+    } catch (e) { return []; }
+  }
 }
+

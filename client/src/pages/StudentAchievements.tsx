@@ -1,46 +1,161 @@
+import { useQuery } from "@tanstack/react-query";
+import { Header } from "@/components/Header";
+import { Card, CardContent } from "@/components/ui/card";
 import { motion } from "framer-motion";
-import { Trophy, MoveLeft, Construction } from "lucide-react";
-import { useTranslation } from "react-i18next";
-import { Button } from "@/components/ui/button";
-import { Link } from "wouter";
+import { Trophy, Lock, Zap, Star } from "lucide-react";
+
+interface Badge {
+  id: string;
+  title: string;
+  description: string;
+  icon: string;
+  earned: boolean;
+  category: string;
+}
+
+interface AchievementData {
+  badges: Badge[];
+  stats: {
+    totalBadges: number;
+    earnedBadges: number;
+    loginCount: number;
+    reviewCount: number;
+    totalActions: number;
+    points: number;
+  };
+}
+
+const categoryColors: Record<string, string> = {
+  milestone: "from-yellow-500/20 to-amber-500/10 border-yellow-300 dark:border-yellow-700",
+  engagement: "from-blue-500/20 to-blue-600/10 border-blue-300 dark:border-blue-700",
+  contribution: "from-purple-500/20 to-purple-600/10 border-purple-300 dark:border-purple-700",
+  community: "from-green-500/20 to-green-600/10 border-green-300 dark:border-green-700",
+};
 
 export default function StudentAchievements() {
-  const { t } = useTranslation();
+  const { data, isLoading } = useQuery({
+    queryKey: ["/api/student/achievements"],
+    queryFn: async () => {
+      const res = await fetch("/api/student/achievements");
+      if (!res.ok) throw new Error("Failed");
+      return res.json() as Promise<AchievementData>;
+    },
+  });
+
+  const badges = data?.badges ?? [];
+  const stats = data?.stats;
+  const earnedPct = stats ? Math.round((stats.earnedBadges / stats.totalBadges) * 100) : 0;
 
   return (
-    <div className="container px-4 py-10 md:py-20 max-w-4xl mx-auto flex flex-col items-center justify-center text-center">
-      <motion.div
-        initial={{ opacity: 0, y: 20 }}
-        animate={{ opacity: 1, y: 0 }}
-        transition={{ duration: 0.5 }}
-        className="space-y-6 flex flex-col items-center"
-      >
-        <div className="h-24 w-24 rounded-full bg-yellow-500/10 flex items-center justify-center mb-4">
-          <Trophy className="h-12 w-12 text-yellow-500" />
-        </div>
-        
-        <h1 className="text-3xl md:text-5xl font-bold tracking-tight">
-          My Achievements
-        </h1>
-        
-        <p className="text-muted-foreground max-w-md mx-auto text-lg pt-2">
-          Track your earned badges, contribution levels, and community rating streaks. This gamification feature is currently under active development.
-        </p>
+    <div className="min-h-screen bg-gradient-to-br from-background via-background to-amber-500/5">
+      <Header />
+      <main className="container mx-auto px-4 py-8 max-w-5xl">
+        {/* Header */}
+        <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} className="mb-8">
+          <div className="flex items-center gap-3">
+            <div className="p-3 rounded-xl bg-amber-500/10 border border-amber-200 dark:border-amber-800">
+              <Trophy className="h-6 w-6 text-amber-500" />
+            </div>
+            <div>
+              <h1 className="text-3xl font-bold">My Achievements</h1>
+              <p className="text-muted-foreground">Track your earned badges, contributions, and community impact</p>
+            </div>
+          </div>
+        </motion.div>
 
-        <div className="flex items-center gap-2 mt-8 p-4 rounded-xl bg-muted/50 border border-border/50">
-          <Construction className="h-5 w-5 text-amber-500" />
-          <span className="text-sm font-medium">Coming soon in the next major update</span>
-        </div>
+        {isLoading ? (
+          <div className="flex justify-center py-24">
+            <div className="h-8 w-8 animate-spin rounded-full border-4 border-primary border-t-transparent" />
+          </div>
+        ) : (
+          <>
+            {/* Summary Strip */}
+            <motion.div initial={{ opacity: 0, y: 16 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.1 }}
+              className="grid grid-cols-2 sm:grid-cols-4 gap-4 mb-10">
+              {[
+                { label: "Total Points", value: stats?.points ?? 0, icon: <Zap className="h-5 w-5 text-yellow-500" />, color: "text-yellow-600 dark:text-yellow-400" },
+                { label: "Badges Earned", value: `${stats?.earnedBadges ?? 0}/${stats?.totalBadges ?? 0}`, icon: <Trophy className="h-5 w-5 text-amber-500" />, color: "text-amber-600 dark:text-amber-400" },
+                { label: "Reviews Given", value: stats?.reviewCount ?? 0, icon: <Star className="h-5 w-5 text-purple-500" />, color: "text-purple-600 dark:text-purple-400" },
+                { label: "Logins", value: stats?.loginCount ?? 0, icon: <Zap className="h-5 w-5 text-blue-500" />, color: "text-blue-600 dark:text-blue-400" },
+              ].map((s, i) => (
+                <Card key={i} className="bg-card/80 backdrop-blur">
+                  <CardContent className="pt-5 pb-4">
+                    <div className="flex items-center justify-between mb-1">
+                      {s.icon}
+                    </div>
+                    <p className={`text-2xl font-bold ${s.color}`}>{s.value}</p>
+                    <p className="text-xs text-muted-foreground mt-1">{s.label}</p>
+                  </CardContent>
+                </Card>
+              ))}
+            </motion.div>
 
-        <div className="pt-8">
-          <Button asChild variant="outline" className="rounded-full">
-            <Link href="/">
-              <MoveLeft className="mr-2 h-4 w-4" />
-              Back to Dashboard
-            </Link>
-          </Button>
-        </div>
-      </motion.div>
+            {/* Progress Bar */}
+            <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ delay: 0.15 }} className="mb-8">
+              <div className="flex items-center justify-between mb-2">
+                <span className="text-sm font-medium">Badge Progress</span>
+                <span className="text-sm text-muted-foreground">{earnedPct}% complete</span>
+              </div>
+              <div className="h-3 rounded-full bg-muted overflow-hidden">
+                <motion.div
+                  className="h-full rounded-full bg-gradient-to-r from-amber-400 to-yellow-500"
+                  initial={{ width: 0 }}
+                  animate={{ width: `${earnedPct}%` }}
+                  transition={{ duration: 1, delay: 0.3 }}
+                />
+              </div>
+            </motion.div>
+
+            {/* Badges Grid */}
+            <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-4">
+              {badges.map((badge, i) => (
+                <motion.div
+                  key={badge.id}
+                  initial={{ opacity: 0, scale: 0.95 }}
+                  animate={{ opacity: 1, scale: 1 }}
+                  transition={{ delay: 0.2 + i * 0.06 }}
+                >
+                  <Card className={`relative overflow-hidden border transition-all duration-300 ${
+                    badge.earned
+                      ? `bg-gradient-to-br ${categoryColors[badge.category] ?? ""} shadow-sm`
+                      : "bg-muted/20 border-border opacity-60 grayscale"
+                  }`}>
+                    <CardContent className="p-5">
+                      <div className="flex items-start gap-4">
+                        <div className={`text-4xl leading-none transition-transform ${badge.earned ? "scale-110" : ""}`}>
+                          {badge.icon}
+                        </div>
+                        <div className="flex-1">
+                          <div className="flex items-center gap-2 mb-1">
+                            <h3 className={`font-bold text-base ${badge.earned ? "text-foreground" : "text-muted-foreground"}`}>
+                              {badge.title}
+                            </h3>
+                            {!badge.earned && <Lock className="h-3.5 w-3.5 text-muted-foreground flex-shrink-0" />}
+                          </div>
+                          <p className="text-sm text-muted-foreground leading-snug">{badge.description}</p>
+                          <span className={`inline-block mt-2 text-xs px-2 py-0.5 rounded-full font-medium capitalize
+                            ${badge.earned ? "bg-white/30 text-foreground" : "bg-muted text-muted-foreground"}`}>
+                            {badge.category}
+                          </span>
+                        </div>
+                      </div>
+                      {badge.earned && (
+                        <div className="absolute top-3 right-3">
+                          <div className="h-6 w-6 rounded-full bg-green-500 flex items-center justify-center">
+                            <svg className="h-3.5 w-3.5 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={3} d="M5 13l4 4L19 7" />
+                            </svg>
+                          </div>
+                        </div>
+                      )}
+                    </CardContent>
+                  </Card>
+                </motion.div>
+              ))}
+            </div>
+          </>
+        )}
+      </main>
     </div>
   );
 }

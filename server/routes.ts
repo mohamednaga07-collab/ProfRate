@@ -1826,6 +1826,212 @@ export async function registerRoutes(httpServer: Server, app: Express): Promise<
     }
   });
 
+  // ─────────────────────────────────────────────────────────────────────────
+  // TEACHER PORTFOLIO ENDPOINTS
+  // ─────────────────────────────────────────────────────────────────────────
+
+  // GET /api/teacher/portfolio  – fetch current teacher's portfolio
+  app.get("/api/teacher/portfolio", isAuthenticated, async (req, res) => {
+    try {
+      const userId = getUserId(req)!;
+      const portfolio = await storage.getTeacherPortfolio(userId);
+      res.json(portfolio ?? null);
+    } catch (err) {
+      res.status(500).json({ message: "Failed to fetch portfolio" });
+    }
+  });
+
+  // PUT /api/teacher/portfolio  – create or update portfolio
+  app.put("/api/teacher/portfolio", isAuthenticated, validateCsrfHeader, async (req, res) => {
+    try {
+      const userId = getUserId(req)!;
+      const { title, philosophy, syllabusUrl, materials } = req.body;
+      const portfolio = await storage.upsertTeacherPortfolio({
+        userId,
+        title: title || null,
+        philosophy: philosophy || null,
+        syllabusUrl: syllabusUrl || null,
+        materials: materials || [],
+      });
+      res.json(portfolio);
+    } catch (err: any) {
+      res.status(500).json({ message: "Failed to save portfolio" });
+    }
+  });
+
+  // ─────────────────────────────────────────────────────────────────────────
+  // TEACHER FEEDBACK ENDPOINT
+  // Fetches all qualitative text reviews for the matched doctor profile
+  // ─────────────────────────────────────────────────────────────────────────
+  app.get("/api/teacher/feedback", isAuthenticated, async (req, res) => {
+    try {
+      const user = req.user as any;
+      if (!user) return res.status(401).json({ message: "Unauthorized" });
+
+      const allDoctors = await storage.getAllDoctors();
+      const fullName = [user.firstName, user.lastName].filter(Boolean).join(" ").trim().toLowerCase();
+
+      const normalize = (name: string) => name.replace(/^Dr\.?\s+/i, "").trim().toLowerCase();
+
+      // Match teacher by name
+      const matchedDoctors = fullName
+        ? allDoctors.filter(d => normalize(d.name) === fullName)
+        : [];
+
+      if (matchedDoctors.length === 0) {
+        return res.json({ reviews: [], doctor: null, matched: false });
+      }
+
+      const doctor = matchedDoctors[0];
+      const reviews = await storage.getReviewsByDoctor(doctor.id);
+
+      res.json({
+        doctor: { id: doctor.id, name: doctor.name, ratings: doctor.ratings },
+        reviews,
+        matched: true,
+      });
+    } catch (err) {
+      console.error("Error fetching teacher feedback:", err);
+      res.status(500).json({ message: "Failed to fetch feedback" });
+    }
+  });
+
+  // ─────────────────────────────────────────────────────────────────────────
+  // STUDENT ACHIEVEMENT ENDPOINTS
+  // Computes badges dynamically from activity logs
+  // ─────────────────────────────────────────────────────────────────────────
+  app.get("/api/student/achievements", isAuthenticated, async (req, res) => {
+    try {
+      const userId = getUserId(req)!;
+      const logs = await storage.getStudentActivityLogs(userId);
+
+      const loginCount = logs.filter(l => l.type === "login").length;
+      const reviewCount = logs.filter(l => l.type === "review").length;
+      const totalActions = logs.length;
+
+      const badges = [
+        {
+          id: "first_login",
+          title: "First Steps",
+          description: "Logged in to ProfRate for the first time",
+          icon: "🚀",
+          earned: loginCount >= 1,
+          category: "milestone",
+        },
+        {
+          id: "active_user",
+          title: "Active Member",
+          description: "Logged in 5 or more times",
+          icon: "⭐",
+          earned: loginCount >= 5,
+          category: "engagement",
+        },
+        {
+          id: "loyal_user",
+          title: "Loyal Member",
+          description: "Logged in 20 or more times",
+          icon: "💎",
+          earned: loginCount >= 20,
+          category: "engagement",
+        },
+        {
+          id: "first_review",
+          title: "First Voice",
+          description: "Submitted your first professor rating",
+          icon: "📝",
+          earned: reviewCount >= 1,
+          category: "contribution",
+        },
+        {
+          id: "active_reviewer",
+          title: "Active Reviewer",
+          description: "Submitted 5 or more professor ratings",
+          icon: "✍️",
+          earned: reviewCount >= 5,
+          category: "contribution",
+        },
+        {
+          id: "top_contributor",
+          title: "Top Contributor",
+          description: "Submitted 10 or more professor ratings",
+          icon: "🏆",
+          earned: reviewCount >= 10,
+          category: "contribution",
+        },
+        {
+          id: "community_builder",
+          title: "Community Builder",
+          description: "Accumulated 30+ total platform interactions",
+          icon: "🌟",
+          earned: totalActions >= 30,
+          category: "community",
+        },
+      ];
+
+      const earnedCount = badges.filter(b => b.earned).length;
+      const points = loginCount * 5 + reviewCount * 20 + (earnedCount * 50);
+
+      res.json({
+        badges,
+        stats: {
+          totalBadges: badges.length,
+          earnedBadges: earnedCount,
+          loginCount,
+          reviewCount,
+          totalActions,
+          points,
+        },
+      });
+    } catch (err) {
+      console.error("Error computing achievements:", err);
+      res.status(500).json({ message: "Failed to load achievements" });
+    }
+  });
+
+  // ─────────────────────────────────────────────────────────────────────────
+  // STUDENT ENROLLMENT (ACADEMIC STATS) ENDPOINTS
+  // ─────────────────────────────────────────────────────────────────────────
+  app.get("/api/student/enrollments", isAuthenticated, async (req, res) => {
+    try {
+      const userId = getUserId(req)!;
+      const enrollments = await storage.getStudentEnrollments(userId);
+      res.json(enrollments);
+    } catch (err) {
+      res.status(500).json({ message: "Failed to fetch enrollments" });
+    }
+  });
+
+  app.post("/api/student/enrollments", isAuthenticated, validateCsrfHeader, async (req, res) => {
+    try {
+      const userId = getUserId(req)!;
+      const { courseName, courseCode, term, grade } = req.body;
+      if (!courseName?.trim()) {
+        return res.status(400).json({ message: "Course name is required" });
+      }
+      const enrollment = await storage.createStudentEnrollment({
+        userId,
+        courseName: courseName.trim(),
+        courseCode: courseCode?.trim() || null,
+        term: term?.trim() || null,
+        grade: grade?.trim() || null,
+      });
+      res.status(201).json(enrollment);
+    } catch (err) {
+      res.status(500).json({ message: "Failed to add enrollment" });
+    }
+  });
+
+  app.delete("/api/student/enrollments/:id", isAuthenticated, validateCsrfHeader, async (req, res) => {
+    try {
+      const userId = getUserId(req)!;
+      const id = parseInt(req.params.id);
+      await storage.deleteStudentEnrollment(id, userId);
+      res.json({ message: "Enrollment removed" });
+    } catch (err) {
+      res.status(500).json({ message: "Failed to remove enrollment" });
+    }
+  });
+
   // Catch-all for API routes to prevent fallback to client routing (which causes loops)
   app.all("/api/*", (req, res) => {
     res.status(404).json({ message: "API endpoint not found" });
