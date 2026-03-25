@@ -347,8 +347,14 @@ export default function DoctorListing() {
                     <Sparkles className="h-4 w-4 text-amber-600 dark:text-amber-300" />
                     <span>{t("listing.actions.rateHint", { defaultValue: "Anonymous, under 60 seconds." })}</span>
                   </div>
-                  <Button asChild size="sm" className="gap-2 bg-gradient-to-r from-amber-500 to-orange-500 text-white hover:from-amber-600 hover:to-orange-600 shadow-md hover:shadow-lg border border-amber-600/20 font-semibold">
-                    <a href="#professor-list">{t("listing.actions.rateCta", { defaultValue: "Start rating" })}</a>
+                  <Button 
+                    size="sm" 
+                    className="gap-2 bg-gradient-to-r from-amber-500 to-orange-500 text-white hover:from-amber-600 hover:to-orange-600 shadow-md hover:shadow-lg border border-amber-600/20 font-semibold"
+                    onClick={() => {
+                      document.getElementById("professor-list")?.scrollIntoView({ behavior: "smooth" });
+                    }}
+                  >
+                    {t("listing.actions.rateCta", { defaultValue: "Start rating" })}
                   </Button>
                 </div>
               </CardContent>
