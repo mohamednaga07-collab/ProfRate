@@ -26,6 +26,9 @@ interface Doctor {
     avgCommunication: number;
     avgKnowledge: number;
     avgFairness: number;
+    avgEngagement: number;
+    avgHelpfulness: number;
+    avgCourseOrganization: number;
     overallRating: number;
     totalReviews: number;
   } | null;
@@ -39,6 +42,9 @@ interface Review {
   communication: number;
   knowledge: number;
   fairness: number;
+  engagement: number;
+  helpfulness: number;
+  courseOrganization: number;
   comment: string | null;
   createdAt: string;
 }
@@ -137,11 +143,14 @@ export default function TeacherDashboard() {
     .filter((doc) => doc.ratings && doc.ratings.totalReviews > 0)
     .map((doc) => ({
       name: doc.name,
-      Teaching: doc.ratings?.avgTeachingQuality ?? 0,
-      Availability: doc.ratings?.avgAvailability ?? 0,
-      Communication: doc.ratings?.avgCommunication ?? 0,
-      Knowledge: doc.ratings?.avgKnowledge ?? 0,
-      Fairness: doc.ratings?.avgFairness ?? 0,
+      Teaching: (doc.ratings?.avgTeachingQuality ?? 0) * 2,
+      Availability: (doc.ratings?.avgAvailability ?? 0) * 2,
+      Communication: (doc.ratings?.avgCommunication ?? 0) * 2,
+      Knowledge: (doc.ratings?.avgKnowledge ?? 0) * 2,
+      Fairness: (doc.ratings?.avgFairness ?? 0) * 2,
+      Engagement: doc.ratings?.avgEngagement ?? 0,
+      Helpfulness: doc.ratings?.avgHelpfulness ?? 0,
+      Organization: doc.ratings?.avgCourseOrganization ?? 0,
     }));
 
   if (doctorsLoading) {
@@ -418,7 +427,7 @@ export default function TeacherDashboard() {
                           stroke="hsl(var(--muted-foreground))"
                         />
                         <YAxis
-                          domain={[0, 5]}
+                          domain={[0, 10]}
                           label={{ value: t("teacherDashboard.chart.ratingLabel"), angle: -90, position: "insideLeft" }}
                           stroke="hsl(var(--muted-foreground))"
                         />
@@ -436,6 +445,9 @@ export default function TeacherDashboard() {
                         <Bar dataKey="Communication" name={t("doctorProfile.factorsShort.communication")} fill="#ec4899" radius={[8, 8, 0, 0]} />
                         <Bar dataKey="Knowledge" name={t("doctorProfile.factorsShort.knowledge")} fill="#f59e0b" radius={[8, 8, 0, 0]} />
                         <Bar dataKey="Fairness" name={t("doctorProfile.factorsShort.fairness")} fill="#10b981" radius={[8, 8, 0, 0]} />
+                        <Bar dataKey="Engagement" name={t("doctorProfile.factorsShort.engagement")} fill="#ef4444" radius={[8, 8, 0, 0]} />
+                        <Bar dataKey="Helpfulness" name={t("doctorProfile.factorsShort.helpfulness")} fill="#0ea5e9" radius={[8, 8, 0, 0]} />
+                        <Bar dataKey="Organization" name={t("doctorProfile.factorsShort.organization")} fill="#84cc16" radius={[8, 8, 0, 0]} />
                       </BarChart>
                     </ResponsiveContainer>
                   </CardContent>
@@ -465,27 +477,42 @@ export default function TeacherDashboard() {
                           {
                             category: t("doctorProfile.factorsShort.teaching"),
                             value: teacherReviews[0].ratings?.avgTeachingQuality ?? 0,
-                            fullMark: 5
+                            fullMark: 10
                           },
                           {
                             category: t("doctorProfile.factorsShort.availability"),
                             value: teacherReviews[0].ratings?.avgAvailability ?? 0,
-                            fullMark: 5
+                            fullMark: 10
                           },
                           {
                             category: t("doctorProfile.factorsShort.communication"),
                             value: teacherReviews[0].ratings?.avgCommunication ?? 0,
-                            fullMark: 5
+                            fullMark: 10
                           },
                           {
                             category: t("doctorProfile.factorsShort.knowledge"),
                             value: teacherReviews[0].ratings?.avgKnowledge ?? 0,
-                            fullMark: 5
+                            fullMark: 10
                           },
                           {
                             category: t("doctorProfile.factorsShort.fairness"),
                             value: teacherReviews[0].ratings?.avgFairness ?? 0,
-                            fullMark: 5
+                            fullMark: 10
+                          },
+                          {
+                            category: t("doctorProfile.factorsShort.engagement"),
+                            value: teacherReviews[0].ratings?.avgEngagement ?? 0,
+                            fullMark: 10
+                          },
+                          {
+                            category: t("doctorProfile.factorsShort.helpfulness"),
+                            value: teacherReviews[0].ratings?.avgHelpfulness ?? 0,
+                            fullMark: 10
+                          },
+                          {
+                            category: t("doctorProfile.factorsShort.organization"),
+                            value: teacherReviews[0].ratings?.avgCourseOrganization ?? 0,
+                            fullMark: 10
                           },
                         ]}>
                           <PolarGrid stroke="hsl(var(--muted))" />
@@ -494,13 +521,15 @@ export default function TeacherDashboard() {
                             stroke="hsl(var(--muted-foreground))"
                             tick={(props: any) => {
                               const { x, y, payload, index } = props;
-                              // Optimized positions with better spacing and fitting colors
                               const config = [
-                                { dx: 0, dy: -12, color: "#3b82f6" },      // Top (Teaching - Blue) - lowered
-                                { dx: 20, dy: -6, color: "#8b5cf6" },      // Top-right (Availability - Purple) - moved right
-                                { dx: 12, dy: 14, color: "#10b981" },      // Bottom-right (Communication - Green)
-                                { dx: -12, dy: 14, color: "#f59e0b" },     // Bottom-left (Knowledge - Amber)
-                                { dx: -20, dy: -6, color: "#ec4899" }      // Top-left (Fairness - Rose) - moved left
+                                { dx: 0, dy: -5, color: "#3b82f6" },       // 1 - Blue
+                                { dx: 10, dy: -5, color: "#8b5cf6" },      // 2 - Purple
+                                { dx: 15, dy: 5, color: "#ec4899" },       // 3 - Pink
+                                { dx: 10, dy: 15, color: "#f59e0b" },      // 4 - Amber
+                                { dx: 0, dy: 15, color: "#10b981" },       // 5 - Green
+                                { dx: -10, dy: 15, color: "#ef4444" },     // 6 - Red
+                                { dx: -15, dy: 5, color: "#0ea5e9" },      // 7 - Sky
+                                { dx: -10, dy: -5, color: "#84cc16" },     // 8 - Lime
                               ];
                               const position = config[index] || { dx: 0, dy: 4, color: "hsl(var(--muted-foreground))" };
                               return (
@@ -509,7 +538,7 @@ export default function TeacherDashboard() {
                                   y={y + position.dy} 
                                   textAnchor="middle" 
                                   fill={position.color}
-                                  fontSize={14}
+                                  fontSize={13}
                                   fontWeight={500}
                                 >
                                   {payload.value}
@@ -517,7 +546,7 @@ export default function TeacherDashboard() {
                               );
                             }}
                           />
-                          <PolarRadiusAxis angle={90} domain={[0, 5]} stroke="hsl(var(--muted-foreground))" tick={false} />
+                          <PolarRadiusAxis angle={90} domain={[0, 10]} stroke="hsl(var(--muted-foreground))" tick={false} />
                           <Radar 
                             name="Your Ratings" 
                             dataKey="value" 

@@ -104,19 +104,7 @@ function Router() {
 
   console.log("🔄 Router render - isAuthenticated:", isAuthenticated, "isLoading:", isLoading, "user:", user?.username);
 
-  // Listen for browser back/forward navigation (popstate)
-  React.useEffect(() => {
-    const handlePopState = () => {
-      // If we are authenticated and the user uses browser navigation, log them out.
-      if (isAuthenticated) {
-        console.log("🔒 Back/Forward button pressed while authenticated. Enforcing logout for security.");
-        logout();
-      }
-    };
-
-    window.addEventListener("popstate", handlePopState);
-    return () => window.removeEventListener("popstate", handlePopState);
-  }, [isAuthenticated, logout]);
+  // Removed aggressive popstate logout listener to prevent accidental logouts on browser refresh.
 
   if (isLoading) {
     return (

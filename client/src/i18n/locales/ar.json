@@ -81,7 +81,6 @@
     }
   },
   "auth": {
-    "email": "البريد الإلكتروني",
     "enterEmail": "البريد الإلكتروني",
     "chooseUsername": "اسم المستخدم",
     "login": "تسجيل الدخول",
@@ -194,8 +193,6 @@
     "passReq8Char": "8 أحرف على الأقل",
     "passReqLower": "أحرف صغيرة",
     "passReqUpper": "أحرف كبيرة",
-    "passReqLower": "أحرف صغيرة",
-    "passReqUpper": "أحرف كبيرة",
     "passReqNumber": "أرقام",
     "enterEmailForReset": "أدخل بريدك الإلكتروني وسنرسل لك رابطاً لإعادة تعيين كلمة المرور.",
     "enterEmailForUsername": "أدخل بريدك الإلكتروني وسنرسل لك اسم المستخدم الخاص بك.",
@@ -253,32 +250,6 @@
       "sidebarTitle": "الشريط الجانبي",
       "sidebarDescription": "يعرض الشريط الجانبي على الهاتف.",
       "toggleSidebar": "تبديل الشريط الجانبي"
-    }
-  },
-  "doctorProfile": {
-    "doctorPrefix": "د.",
-    "notFound": {
-      "title": "لم يتم العثور على بيانات التاجر"
-    },
-    "factors": {
-      "teachingQuality": "جودة التدريس",
-      "availability": "التوفر",
-      "communication": "التواصل",
-      "knowledge": "المعرفة",
-      "fairness": "الإنصاف",
-      "engagement": "انخراط الطلاب",
-      "helpfulness": "الدعم والمساعدة",
-      "courseOrganization": "تنظيم المقرر"
-    },
-    "factorsShort": {
-      "teaching": "التدريس",
-      "availability": "التوفر",
-      "communication": "التواصل",
-      "knowledge": "المعرفة",
-      "fairness": "الإنصاف",
-      "engagement": "الانخراط",
-      "helpfulness": "الدعم",
-      "courseOrganization": "التنظيم"
     }
   },
   "home": {

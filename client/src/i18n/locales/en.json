@@ -242,26 +242,6 @@
       "toggleSidebar": "Toggle Sidebar"
     }
   },
-  "doctorProfile": {
-    "doctorPrefix": "Dr.",
-    "notFound": {
-      "title": "Professor data not found"
-    },
-    "factors": {
-      "teachingQuality": "Teaching Quality",
-      "availability": "Availability",
-      "communication": "Communication",
-      "knowledge": "Knowledge",
-      "fairness": "Fairness"
-    },
-    "factorsShort": {
-      "teaching": "Teaching",
-      "availability": "Availability",
-      "communication": "Communication",
-      "knowledge": "Knowledge",
-      "fairness": "Fairness"
-    }
-  },
   "home": {
     "welcomeBack": "Welcome back, {{name}}!",
     "studentTagline": "Rate your professors and help fellow students make better decisions.",
