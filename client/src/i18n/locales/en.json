@@ -610,6 +610,8 @@
       "settingsDesc": "Configure system settings.",
       "panel": "Admin Panel",
       "panelDesc": "Access the main admin panel.",
+      "activity": "Activity Log",
+      "activityDesc": "View the full platform audit trail.",
       "manageUsers": "Users",
       "manageUsersDesc": "View and manage all users.",
       "manageDoctors": "Doctors",

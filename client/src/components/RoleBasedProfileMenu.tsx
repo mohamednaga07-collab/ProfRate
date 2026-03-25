@@ -1,7 +1,7 @@
 import { useLocation } from "wouter";
 import { Settings, BarChart3, Users, Trophy, FileText, Clock, MessageCircle, Zap, Crown, BookOpen, LogOut, Activity } from "lucide-react";
 import { useQuery } from "@tanstack/react-query";
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import {
   DropdownMenu,
@@ -53,6 +53,7 @@ export function RoleBasedProfileMenu({
   const [health, setHealth] = useState<'healthy' | 'degraded' | 'down'>('healthy');
   const [healthPercent, setHealthPercent] = useState(100);
   const [healthPulse, setHealthPulse] = useState(false);
+  const failCount = useRef(0);
   useEffect(() => {
     let mounted = true;
     const checkHealth = async () => {
@@ -60,25 +61,34 @@ export function RoleBasedProfileMenu({
         const res = await fetch("/api/health");
         if (!mounted) return;
         if (res.ok) {
+          failCount.current = 0;
           const data = await res.json();
-          // Map backend "ok" status to frontend "healthy" state
           const backendStatus = data.status === "ok" ? "healthy" : data.status;
           setHealth(backendStatus || 'healthy');
           setHealthPercent(typeof data.percent === 'number' ? data.percent : 100);
         } else {
-          setHealth('degraded');
-          setHealthPercent(60);
+          failCount.current += 1;
+          if (failCount.current >= 3) {
+            setHealth('degraded');
+            setHealthPercent(60);
+          }
         }
       } catch {
-        // If fetch fails completely, it's down
-        setHealth('down');
-        setHealthPercent(0);
+        // Only mark as down after 3 consecutive network failures — prevents flicker
+        failCount.current += 1;
+        if (!mounted) return;
+        if (failCount.current >= 3) {
+          setHealth('down');
+          setHealthPercent(0);
+        }
       }
-      setHealthPulse(true);
-      setTimeout(() => setHealthPulse(false), 600);
+      if (mounted) {
+        setHealthPulse(true);
+        setTimeout(() => setHealthPulse(false), 600);
+      }
     };
     checkHealth();
-    const interval = setInterval(checkHealth, 3000);
+    const interval = setInterval(checkHealth, 10000); // 10s interval — less aggressive
     return () => { mounted = false; clearInterval(interval); };
   }, []);
 
@@ -348,16 +358,19 @@ export function RoleBasedProfileMenu({
             transition={{ duration: 0.3, delay: 0.3 }}
             className="py-2"
           >
-            <DropdownMenuItem
-              onClick={() => {
-                navigate("/profile/settings");
-                setIsOpen(false);
-              }}
-              className="cursor-pointer text-foreground hover:bg-primary/10 px-4 py-2 transition-colors"
-            >
-              <Settings className="h-4 w-4 mr-3" />
-              <span className="text-sm font-medium">{t("profile.settings", { defaultValue: "Profile Settings" })}</span>
-            </DropdownMenuItem>
+            {/* Profile Settings — hidden for admin (they have Activity Log in role menu) */}
+            {userRole !== 'admin' && (
+              <DropdownMenuItem
+                onClick={() => {
+                  navigate("/profile/settings");
+                  setIsOpen(false);
+                }}
+                className="cursor-pointer text-foreground hover:bg-primary/10 px-4 py-2 transition-colors"
+              >
+                <Settings className="h-4 w-4 mr-3" />
+                <span className="text-sm font-medium">{t("profile.settings", { defaultValue: "Profile Settings" })}</span>
+              </DropdownMenuItem>
+            )}
             <DropdownMenuItem
               onClick={onLogout}
               className="cursor-pointer text-rose-600 dark:text-rose-400 hover:bg-rose-500/10 px-4 py-2 transition-colors"
