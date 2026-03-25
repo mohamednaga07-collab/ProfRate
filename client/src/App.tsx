@@ -93,7 +93,7 @@ function AnimatedPageWrapper({ children }: { children: React.ReactNode }) {
 }
 
 function Router() {
-  const { isAuthenticated, isLoading, user } = useAuth();
+  const { isAuthenticated, isLoading, user, logout } = useAuth();
   const [location] = useLocation();
   const { t } = useTranslation();
 
