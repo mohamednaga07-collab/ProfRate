@@ -9,6 +9,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { useToast } from "@/hooks/use-toast";
 import { motion } from "framer-motion";
 import { BookOpen, ExternalLink, Save, Plus, Trash2, FileText, Sparkles, Eye, Edit2 } from "lucide-react";
+import { useTranslation } from "react-i18next";
 
 interface Material { title: string; url: string }
 interface Portfolio {
@@ -21,6 +22,7 @@ interface Portfolio {
 export default function TeacherPortfolio() {
   const { user } = useAuth();
   const { toast } = useToast();
+  const { t } = useTranslation();
   const queryClient = useQueryClient();
   const [editing, setEditing] = useState(false);
   const [form, setForm] = useState<Portfolio>({ title: "", philosophy: "", syllabusUrl: "", materials: [] });
@@ -56,9 +58,9 @@ export default function TeacherPortfolio() {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["/api/teacher/portfolio"] });
       setEditing(false);
-      toast({ title: "Portfolio saved!", description: "Your portfolio has been updated successfully." });
+      toast({ title: t("teacherPortfolio.toast.savedTitle"), description: t("teacherPortfolio.toast.savedDesc") });
     },
-    onError: () => toast({ title: "Error", description: "Failed to save portfolio.", variant: "destructive" }),
+    onError: () => toast({ title: t("teacherPortfolio.toast.errorTitle"), description: t("teacherPortfolio.toast.errorDesc"), variant: "destructive" }),
   });
 
   const addMaterial = () => {
@@ -84,8 +86,8 @@ export default function TeacherPortfolio() {
                 <BookOpen className="h-6 w-6 text-blue-500" />
               </div>
               <div>
-                <h1 className="text-3xl font-bold">Teaching Portfolio</h1>
-                <p className="text-muted-foreground">Showcase your teaching journey and resources</p>
+                <h1 className="text-3xl font-bold">{t("teacherPortfolio.title")}</h1>
+                <p className="text-muted-foreground">{t("teacherPortfolio.subtitle")}</p>
               </div>
             </div>
             <Button
@@ -93,7 +95,7 @@ export default function TeacherPortfolio() {
               disabled={saveMutation.isPending}
               className="gap-2"
             >
-              {editing ? <><Save className="h-4 w-4" /> Save Changes</> : <><Edit2 className="h-4 w-4" /> Edit Portfolio</>}
+              {editing ? <><Save className="h-4 w-4" />{t("teacherPortfolio.saveChanges")}</> : <><Edit2 className="h-4 w-4" />{t("teacherPortfolio.editPortfolio")}</>}
             </Button>
           </div>
         </motion.div>
@@ -109,7 +111,7 @@ export default function TeacherPortfolio() {
               <Card className="bg-card/80 backdrop-blur">
                 <CardHeader>
                   <CardTitle className="flex items-center gap-2 text-lg">
-                    <Sparkles className="h-5 w-5 text-yellow-500" /> Portfolio Title
+                    <Sparkles className="h-5 w-5 text-yellow-500" /> {t("teacherPortfolio.portfolioTitle.label")}
                   </CardTitle>
                 </CardHeader>
                 <CardContent>
@@ -117,11 +119,11 @@ export default function TeacherPortfolio() {
                     <Input
                       value={form.title ?? ""}
                       onChange={e => setForm(f => ({ ...f, title: e.target.value }))}
-                      placeholder="e.g. Dr. Smith's Teaching Portfolio"
+                      placeholder={t("teacherPortfolio.portfolioTitle.placeholder")}
                     />
                   ) : (
                     <p className="text-xl font-semibold text-primary">
-                      {displayData?.title || <span className="text-muted-foreground italic">No title set — click Edit to add one</span>}
+                      {displayData?.title || <span className="text-muted-foreground italic">{t("teacherPortfolio.portfolioTitle.empty")}</span>}
                     </p>
                   )}
                 </CardContent>
@@ -133,21 +135,21 @@ export default function TeacherPortfolio() {
               <Card className="bg-card/80 backdrop-blur">
                 <CardHeader>
                   <CardTitle className="flex items-center gap-2 text-lg">
-                    <FileText className="h-5 w-5 text-purple-500" /> Teaching Philosophy
+                    <FileText className="h-5 w-5 text-purple-500" /> {t("teacherPortfolio.philosophy.label")}
                   </CardTitle>
-                  <CardDescription>Describe your approach to education and student interaction</CardDescription>
+                  <CardDescription>{t("teacherPortfolio.philosophy.desc")}</CardDescription>
                 </CardHeader>
                 <CardContent>
                   {editing ? (
                     <Textarea
                       value={form.philosophy ?? ""}
                       onChange={e => setForm(f => ({ ...f, philosophy: e.target.value }))}
-                      placeholder="Share your teaching philosophy..."
+                      placeholder={t("teacherPortfolio.philosophy.placeholder")}
                       className="min-h-[140px] resize-none"
                     />
                   ) : (
                     <p className="text-base leading-relaxed whitespace-pre-wrap text-foreground/90">
-                      {displayData?.philosophy || <span className="text-muted-foreground italic">No philosophy written yet.</span>}
+                      {displayData?.philosophy || <span className="text-muted-foreground italic">{t("teacherPortfolio.philosophy.empty")}</span>}
                     </p>
                   )}
                 </CardContent>
@@ -159,9 +161,9 @@ export default function TeacherPortfolio() {
               <Card className="bg-card/80 backdrop-blur">
                 <CardHeader>
                   <CardTitle className="flex items-center gap-2 text-lg">
-                    <ExternalLink className="h-5 w-5 text-green-500" /> Syllabus URL
+                    <ExternalLink className="h-5 w-5 text-green-500" /> {t("teacherPortfolio.syllabus.label")}
                   </CardTitle>
-                  <CardDescription>Link to your public syllabus or course outline</CardDescription>
+                  <CardDescription>{t("teacherPortfolio.syllabus.desc")}</CardDescription>
                 </CardHeader>
                 <CardContent>
                   {editing ? (
@@ -178,10 +180,10 @@ export default function TeacherPortfolio() {
                       rel="noopener noreferrer"
                       className="text-primary hover:underline flex items-center gap-2 font-medium"
                     >
-                      <Eye className="h-4 w-4" /> View Syllabus
+                      <Eye className="h-4 w-4" /> {t("teacherPortfolio.syllabus.view")}
                     </a>
                   ) : (
-                    <p className="text-muted-foreground italic">No syllabus link added yet.</p>
+                    <p className="text-muted-foreground italic">{t("teacherPortfolio.syllabus.empty")}</p>
                   )}
                 </CardContent>
               </Card>
@@ -192,9 +194,9 @@ export default function TeacherPortfolio() {
               <Card className="bg-card/80 backdrop-blur">
                 <CardHeader>
                   <CardTitle className="flex items-center gap-2 text-lg">
-                    <BookOpen className="h-5 w-5 text-orange-500" /> Course Materials
+                    <BookOpen className="h-5 w-5 text-orange-500" /> {t("teacherPortfolio.materials.label")}
                   </CardTitle>
-                  <CardDescription>Links to readings, slides, or any public resources</CardDescription>
+                  <CardDescription>{t("teacherPortfolio.materials.desc")}</CardDescription>
                 </CardHeader>
                 <CardContent className="space-y-4">
                   {((displayData?.materials ?? []) as Material[]).map((m, i) => (
@@ -216,24 +218,24 @@ export default function TeacherPortfolio() {
                     </div>
                   ))}
                   {((displayData?.materials ?? []) as Material[]).length === 0 && !editing && (
-                    <p className="text-muted-foreground italic">No materials added yet.</p>
+                    <p className="text-muted-foreground italic">{t("teacherPortfolio.materials.empty")}</p>
                   )}
                   {editing && (
                     <div className="flex gap-2 flex-wrap pt-2">
                       <Input
                         value={newMat.title}
                         onChange={e => setNewMat(n => ({ ...n, title: e.target.value }))}
-                        placeholder="Material title"
+                        placeholder={t("teacherPortfolio.materials.titlePlaceholder")}
                         className="flex-1 min-w-[160px]"
                       />
                       <Input
                         value={newMat.url}
                         onChange={e => setNewMat(n => ({ ...n, url: e.target.value }))}
-                        placeholder="https://... (optional)"
+                        placeholder={t("teacherPortfolio.materials.urlPlaceholder")}
                         className="flex-1 min-w-[160px]"
                       />
                       <Button type="button" variant="outline" onClick={addMaterial} className="gap-1">
-                        <Plus className="h-4 w-4" /> Add
+                        <Plus className="h-4 w-4" /> {t("teacherPortfolio.materials.add")}
                       </Button>
                     </div>
                   )}

@@ -52,7 +52,8 @@ interface Review {
 export default function TeacherDashboard() {
   const { user } = useAuth();
   const [, navigate] = useLocation();
-  const { t } = useTranslation();
+  const { t, i18n } = useTranslation();
+  const isRTL = i18n.language === "ar";
   // Hero images carousel - 4K Premium Resolution
   const heroImages = [0, 1, 2, 3, 4, 5, 6, 7];
 
@@ -543,7 +544,9 @@ export default function TeacherDashboard() {
                               
                               // Push 15px outwards along the direction vector, plus adjust y to visually center with node
                               const pushDist = 8;
-                              const finalX = x + (dirX / dist) * pushDist;
+                              // In RTL mode the SVG viewport is mirrored, so negate X push
+                              const rtlFactor = isRTL ? -1 : 1;
+                              const finalX = x + rtlFactor * (dirX / dist) * pushDist;
                               // Slight vertical fix for top/bottom overlap
                               const finalY = y + (dirY / dist) * pushDist + (dirY < 0 ? -4 : 4);
 

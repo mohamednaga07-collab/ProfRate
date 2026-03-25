@@ -6,16 +6,18 @@ import { motion } from "framer-motion";
 import { Settings, Shield, Bell, Database, Save } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { useState } from "react";
+import { useTranslation } from "react-i18next";
 
 export default function AdminSettings() {
   const { toast } = useToast();
+  const { t } = useTranslation();
   const [saving, setSaving] = useState(false);
 
   const handleSave = () => {
     setSaving(true);
     setTimeout(() => {
       setSaving(false);
-      toast({ title: "Settings Saved", description: "Global platform settings have been updated successfully." });
+      toast({ title: t("adminPlatformSettings.toast.savedTitle"), description: t("adminPlatformSettings.toast.savedDesc") });
     }, 800);
   };
 
@@ -29,12 +31,12 @@ export default function AdminSettings() {
               <Settings className="h-6 w-6 text-zinc-500 flex-shrink-0 cursor-pointer" />
             </div>
             <div>
-              <h1 className="text-3xl font-bold">Platform Settings</h1>
-              <p className="text-muted-foreground">Manage global configuration for ProfRate</p>
+              <h1 className="text-3xl font-bold">{t("adminPlatformSettings.title")}</h1>
+              <p className="text-muted-foreground">{t("adminPlatformSettings.subtitle")}</p>
             </div>
           </div>
           <Button onClick={handleSave} disabled={saving} className="gap-2">
-            <Save className="h-4 w-4" /> {saving ? "Saving..." : "Save Config"}
+            <Save className="h-4 w-4" /> {saving ? t("adminPlatformSettings.saving") : t("adminPlatformSettings.saveConfig")}
           </Button>
         </motion.div>
 
@@ -42,21 +44,21 @@ export default function AdminSettings() {
           <motion.div initial={{ opacity: 0, y: 16 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.1 }}>
             <Card className="bg-card/80 backdrop-blur">
               <CardHeader>
-                <CardTitle className="flex items-center gap-2"><Shield className="h-5 w-5 text-primary" /> Security Basics</CardTitle>
-                <CardDescription>Control core access barriers and registration</CardDescription>
+                <CardTitle className="flex items-center gap-2"><Shield className="h-5 w-5 text-primary" /> {t("adminPlatformSettings.security.title")}</CardTitle>
+                <CardDescription>{t("adminPlatformSettings.security.desc")}</CardDescription>
               </CardHeader>
               <CardContent className="space-y-6">
                 <div className="flex items-center justify-between">
                   <div className="space-y-0.5">
-                    <p className="font-medium">Registration Open</p>
-                    <p className="text-sm text-muted-foreground">Allow new users to sign up automatically</p>
+                    <p className="font-medium">{t("adminPlatformSettings.security.registrationOpen")}</p>
+                    <p className="text-sm text-muted-foreground">{t("adminPlatformSettings.security.registrationOpenDesc")}</p>
                   </div>
                   <Switch defaultChecked />
                 </div>
                 <div className="flex items-center justify-between">
                   <div className="space-y-0.5">
-                    <p className="font-medium">Force Email Verification</p>
-                    <p className="text-sm text-muted-foreground">Require university (.edu) email verification before login</p>
+                    <p className="font-medium">{t("adminPlatformSettings.security.emailVerification")}</p>
+                    <p className="text-sm text-muted-foreground">{t("adminPlatformSettings.security.emailVerificationDesc")}</p>
                   </div>
                   <Switch defaultChecked />
                 </div>
@@ -67,21 +69,21 @@ export default function AdminSettings() {
           <motion.div initial={{ opacity: 0, y: 16 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.2 }}>
             <Card className="bg-card/80 backdrop-blur">
               <CardHeader>
-                <CardTitle className="flex items-center gap-2"><Database className="h-5 w-5 text-indigo-500" /> Data Management</CardTitle>
-                <CardDescription>Handling reviews and professor listings</CardDescription>
+                <CardTitle className="flex items-center gap-2"><Database className="h-5 w-5 text-indigo-500" /> {t("adminPlatformSettings.data.title")}</CardTitle>
+                <CardDescription>{t("adminPlatformSettings.data.desc")}</CardDescription>
               </CardHeader>
               <CardContent className="space-y-6">
                 <div className="flex items-center justify-between">
                   <div className="space-y-0.5">
-                    <p className="font-medium">Auto-Publish Reviews</p>
-                    <p className="text-sm text-muted-foreground">Publish student reviews immediately without manual approval</p>
+                    <p className="font-medium">{t("adminPlatformSettings.data.autoPublish")}</p>
+                    <p className="text-sm text-muted-foreground">{t("adminPlatformSettings.data.autoPublishDesc")}</p>
                   </div>
                   <Switch defaultChecked />
                 </div>
                 <div className="flex items-center justify-between">
                   <div className="space-y-0.5">
-                    <p className="font-medium">Profanity Filter Active</p>
-                    <p className="text-sm text-muted-foreground">Automatically hide reviews containing flagged words</p>
+                    <p className="font-medium">{t("adminPlatformSettings.data.profanityFilter")}</p>
+                    <p className="text-sm text-muted-foreground">{t("adminPlatformSettings.data.profanityFilterDesc")}</p>
                   </div>
                   <Switch defaultChecked />
                 </div>
@@ -92,14 +94,14 @@ export default function AdminSettings() {
           <motion.div initial={{ opacity: 0, y: 16 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.3 }}>
             <Card className="bg-card/80 backdrop-blur">
               <CardHeader>
-                <CardTitle className="flex items-center gap-2"><Bell className="h-5 w-5 text-orange-500" /> System Notifications</CardTitle>
-                <CardDescription>Maintenance and platform-wide alerts</CardDescription>
+                <CardTitle className="flex items-center gap-2"><Bell className="h-5 w-5 text-orange-500" /> {t("adminPlatformSettings.notifications.title")}</CardTitle>
+                <CardDescription>{t("adminPlatformSettings.notifications.desc")}</CardDescription>
               </CardHeader>
               <CardContent className="space-y-6">
                 <div className="flex items-center justify-between">
                   <div className="space-y-0.5">
-                    <p className="font-medium">Maintenance Mode</p>
-                    <p className="text-sm text-destructive">Locks out all non-admin users (use with extreme caution)</p>
+                    <p className="font-medium">{t("adminPlatformSettings.notifications.maintenance")}</p>
+                    <p className="text-sm text-destructive">{t("adminPlatformSettings.notifications.maintenanceDesc")}</p>
                   </div>
                   <Switch />
                 </div>

@@ -836,5 +836,98 @@
       "recommendations": "Recommendations",
       "soon": "Coming soon!"
     }
+  },
+  "teacherCourses": {
+    "title": "My Courses & Profile",
+    "subtitle": "Your public professor profile and student engagement overview",
+    "reviews": "reviews",
+    "noProfile": {
+      "title": "No doctor profile found",
+      "description": "Your account ({{name}}) is not yet linked to a professor entry. Ask an admin to create one matching your full name."
+    },
+    "stats": {
+      "overallRating": "Overall Rating",
+      "totalReviews": "Total Reviews",
+      "bestScore": "Best Score",
+      "availability": "Availability"
+    },
+    "radar": {
+      "title": "Skill Radar",
+      "subtitle": "How students rate you across {{count}} dimensions (0-10 scale)",
+      "dataLabel": "Ratings"
+    },
+    "breakdown": {
+      "title": "Category Breakdown",
+      "subtitle": "Your average score per rating dimension (scaled to 10)"
+    }
+  },
+  "teacherPortfolio": {
+    "title": "Teaching Portfolio",
+    "subtitle": "Showcase your teaching journey and resources",
+    "saveChanges": "Save Changes",
+    "editPortfolio": "Edit Portfolio",
+    "portfolioTitle": {
+      "label": "Portfolio Title",
+      "placeholder": "e.g. Dr. Smith's Teaching Portfolio",
+      "empty": "No title set — click Edit to add one"
+    },
+    "philosophy": {
+      "label": "Teaching Philosophy",
+      "desc": "Describe your approach to education and student interaction",
+      "placeholder": "Share your teaching philosophy...",
+      "empty": "No philosophy written yet."
+    },
+    "syllabus": {
+      "label": "Syllabus URL",
+      "desc": "Link to your public syllabus or course outline",
+      "view": "View Syllabus",
+      "empty": "No syllabus link added yet."
+    },
+    "materials": {
+      "label": "Course Materials",
+      "desc": "Links to readings, slides, or any public resources",
+      "empty": "No materials added yet.",
+      "titlePlaceholder": "Material title",
+      "urlPlaceholder": "https://... (optional)",
+      "add": "Add"
+    },
+    "toast": {
+      "savedTitle": "Portfolio saved!",
+      "savedDesc": "Your portfolio has been updated successfully.",
+      "errorTitle": "Error",
+      "errorDesc": "Failed to save portfolio."
+    }
+  },
+  "adminPlatformSettings": {
+    "title": "Platform Settings",
+    "subtitle": "Manage global configuration for ProfRate",
+    "saveConfig": "Save Config",
+    "saving": "Saving...",
+    "toast": {
+      "savedTitle": "Settings Saved",
+      "savedDesc": "Global platform settings have been updated successfully."
+    },
+    "security": {
+      "title": "Security Basics",
+      "desc": "Control core access barriers and registration",
+      "registrationOpen": "Registration Open",
+      "registrationOpenDesc": "Allow new users to sign up automatically",
+      "emailVerification": "Force Email Verification",
+      "emailVerificationDesc": "Require university (.edu) email verification before login"
+    },
+    "data": {
+      "title": "Data Management",
+      "desc": "Handling reviews and professor listings",
+      "autoPublish": "Auto-Publish Reviews",
+      "autoPublishDesc": "Publish student reviews immediately without manual approval",
+      "profanityFilter": "Profanity Filter Active",
+      "profanityFilterDesc": "Automatically hide reviews containing flagged words"
+    },
+    "notifications": {
+      "title": "System Notifications",
+      "desc": "Maintenance and platform-wide alerts",
+      "maintenance": "Maintenance Mode",
+      "maintenanceDesc": "Locks out all non-admin users (use with extreme caution)"
+    }
   }
 }
