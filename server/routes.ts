@@ -1016,6 +1016,7 @@ export async function registerRoutes(httpServer: Server, app: Express): Promise<
 
       const review = await storage.createReview({
         doctorId,
+        userId: req.user!.id,
         // Legacy 1-5 columns (backward compat)
         teachingQuality: computed.teachingQuality,
         availability:    computed.availability,
