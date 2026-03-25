@@ -110,7 +110,7 @@ export function RoleBasedProfileMenu({
         navigate("/teacher/courses");
         break;
       case "performance":
-        navigate("/teacher/feedback");
+        navigate("/teacher/performance");
         break;
       case "feedback":
         navigate("/teacher/feedback");
@@ -129,7 +129,7 @@ export function RoleBasedProfileMenu({
         navigate("/student/stats");
         break;
       case "recommendations":
-        navigate("/doctors");
+        navigate("/student/recommendations");
         break;
     }
     setIsOpen(false);

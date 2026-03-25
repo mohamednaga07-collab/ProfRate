@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { Header } from "@/components/Header";
 import { useAuth } from "@/hooks/useAuth";
@@ -6,12 +6,9 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
-import { Label } from "@/components/ui/label";
 import { useToast } from "@/hooks/use-toast";
 import { motion } from "framer-motion";
-import { BookOpen, Link, Save, Plus, Trash2, FileText, Sparkles, Eye, Edit2 } from "lucide-react";
-import { apiRequest } from "@/lib/queryClient";
-import { useLocation } from "wouter";
+import { BookOpen, ExternalLink, Save, Plus, Trash2, FileText, Sparkles, Eye, Edit2 } from "lucide-react";
 
 interface Material { title: string; url: string }
 interface Portfolio {
@@ -23,24 +20,26 @@ interface Portfolio {
 
 export default function TeacherPortfolio() {
   const { user } = useAuth();
-  const [, navigate] = useLocation();
   const { toast } = useToast();
   const queryClient = useQueryClient();
   const [editing, setEditing] = useState(false);
   const [form, setForm] = useState<Portfolio>({ title: "", philosophy: "", syllabusUrl: "", materials: [] });
   const [newMat, setNewMat] = useState({ title: "", url: "" });
 
-  const { data: portfolio, isLoading } = useQuery({
+  const { data: portfolio, isLoading } = useQuery<Portfolio | null>({
     queryKey: ["/api/teacher/portfolio"],
     queryFn: async () => {
       const res = await fetch("/api/teacher/portfolio");
       if (!res.ok) throw new Error("Failed");
-      return res.json() as Promise<Portfolio | null>;
+      return res.json();
     },
-    onSuccess: (data) => {
-      if (data) setForm({ ...data, materials: (data.materials as Material[]) || [] });
-    },
-  } as any);
+  });
+
+  useEffect(() => {
+    if (portfolio) {
+      setForm({ ...portfolio, materials: (portfolio.materials as Material[]) || [] });
+    }
+  }, [portfolio]);
 
   const saveMutation = useMutation({
     mutationFn: async (data: Portfolio) => {
@@ -160,7 +159,7 @@ export default function TeacherPortfolio() {
               <Card className="bg-card/80 backdrop-blur">
                 <CardHeader>
                   <CardTitle className="flex items-center gap-2 text-lg">
-                    <Link className="h-5 w-5 text-green-500" /> Syllabus URL
+                    <ExternalLink className="h-5 w-5 text-green-500" /> Syllabus URL
                   </CardTitle>
                   <CardDescription>Link to your public syllabus or course outline</CardDescription>
                 </CardHeader>
@@ -198,7 +197,7 @@ export default function TeacherPortfolio() {
                   <CardDescription>Links to readings, slides, or any public resources</CardDescription>
                 </CardHeader>
                 <CardContent className="space-y-4">
-                  {(displayData?.materials as Material[] ?? []).map((m, i) => (
+                  {((displayData?.materials ?? []) as Material[]).map((m, i) => (
                     <div key={i} className="flex items-center justify-between gap-3 p-3 rounded-lg bg-muted/50 border">
                       <div className="flex-1 min-w-0">
                         <p className="font-medium truncate">{m.title}</p>
@@ -216,7 +215,7 @@ export default function TeacherPortfolio() {
                       )}
                     </div>
                   ))}
-                  {(displayData?.materials as Material[] ?? []).length === 0 && !editing && (
+                  {((displayData?.materials ?? []) as Material[]).length === 0 && !editing && (
                     <p className="text-muted-foreground italic">No materials added yet.</p>
                   )}
                   {editing && (

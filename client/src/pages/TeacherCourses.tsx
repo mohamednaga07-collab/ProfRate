@@ -1,27 +1,29 @@
 import { useQuery } from "@tanstack/react-query";
 import { Header } from "@/components/Header";
 import { useAuth } from "@/hooks/useAuth";
-import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { motion } from "framer-motion";
 import { BookOpen, Users, Star, TrendingUp, BarChart3, AlertCircle } from "lucide-react";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { StarRating } from "@/components/StarRating";
 import { RadarChart, PolarGrid, PolarAngleAxis, PolarRadiusAxis, Radar, ResponsiveContainer } from "recharts";
 
+interface DoctorRatings {
+  avgTeachingQuality: number;
+  avgAvailability: number;
+  avgCommunication: number;
+  avgKnowledge: number;
+  avgFairness: number;
+  overallRating: number;
+  totalReviews: number;
+}
+
 interface DoctorWithRatings {
   id: number;
   name: string;
   department: string;
   title: string;
-  ratings: {
-    avgTeachingQuality: number;
-    avgAvailability: number;
-    avgCommunication: number;
-    avgKnowledge: number;
-    avgFairness: number;
-    overallRating: number;
-    totalReviews: number;
-  } | null;
+  ratings: DoctorRatings | null;
 }
 
 export default function TeacherCourses() {
@@ -43,11 +45,11 @@ export default function TeacherCourses() {
   const doc = matched[0];
 
   const radarData = doc?.ratings ? [
-    { category: "Teaching", value: doc.ratings.avgTeachingQuality, fullMark: 5 },
-    { category: "Availability", value: doc.ratings.avgAvailability, fullMark: 5 },
-    { category: "Communication", value: doc.ratings.avgCommunication, fullMark: 5 },
-    { category: "Knowledge", value: doc.ratings.avgKnowledge, fullMark: 5 },
-    { category: "Fairness", value: doc.ratings.avgFairness, fullMark: 5 },
+    { category: "Teaching", value: doc.ratings.avgTeachingQuality },
+    { category: "Availability", value: doc.ratings.avgAvailability },
+    { category: "Communication", value: doc.ratings.avgCommunication },
+    { category: "Knowledge", value: doc.ratings.avgKnowledge },
+    { category: "Fairness", value: doc.ratings.avgFairness },
   ] : [];
 
   return (
@@ -74,7 +76,7 @@ export default function TeacherCourses() {
           <Alert className="border-amber-400/40 bg-amber-50 dark:bg-amber-950/20">
             <AlertCircle className="h-4 w-4 text-amber-500" />
             <AlertDescription className="text-amber-800 dark:text-amber-200">
-              <strong>No doctor profile found</strong> — your account (<em>{user?.firstName} {user?.lastName}</em>) is not yet linked to a professor entry. Ask an admin to create one matching your full name.
+              <strong>No doctor profile found</strong> — your account ({user?.firstName} {user?.lastName}) is not yet linked to a professor entry. Ask an admin to create one matching your full name.
             </AlertDescription>
           </Alert>
         ) : (
