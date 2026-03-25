@@ -417,8 +417,8 @@ export async function registerRoutes(httpServer: Server, app: Express): Promise<
       // This prevents students from logging in through the teacher form and vice-versa.
       if (role && userRole && userRole !== role) {
         console.warn(`🚫 Role mismatch: User ${username} (registered as ${userRole}) attempted login via ${role} form.`);
-        return res.status(403).json({ 
-          message: `Account type mismatch. This account is registered as a ${userRole}. Please use the correct login form.` 
+        return res.status(401).json({ 
+          message: "Invalid username or password" 
         });
       }
 

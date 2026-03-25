@@ -82,63 +82,58 @@ export function RoleBasedProfileMenu({
     return () => { mounted = false; clearInterval(interval); };
   }, []);
 
-  // Role-specific menu items with handlers
+  // Master handler for all menu items across roles
+  const handleItemClick = (action: string) => {
+    switch (action) {
+      // Admin actions
+      case "manage-users":
+        navigate("/admin/users");
+        toast({ title: t("admin.nav.manageUsers"), description: t("admin.nav.manageUsersDesc") });
+        break;
+      case "analytics":
+        navigate("/admin/analytics");
+        break;
+      case "settings":
+        navigate("/admin/settings");
+        break;
+      case "admin-panel":
+        navigate("/admin");
+        break;
+      case "profile-settings":
+        navigate("/profile/settings");
+        break;
+      // Teacher actions
+      case "my-courses":
+        navigate("/teacher-dashboard");
+        break;
+      case "performance":
+        navigate("/teacher-dashboard");
+        break;
+      case "feedback":
+        navigate("/teacher/feedback");
+        break;
+      case "portfolio":
+        navigate("/teacher/portfolio");
+        break;
+      // Student actions
+      case "achievements":
+        navigate("/student/achievements");
+        break;
+      case "ratings":
+        navigate("/doctors");
+        break;
+      case "stats":
+        navigate("/student/stats");
+        break;
+      case "recommendations":
+        navigate("/doctors");
+        break;
+    }
+    setIsOpen(false);
+  };
+
+  // Role-specific menu items configuration
   const getMenuItems = () => {
-    const handleItemClick = (action: string) => {
-      switch (action) {
-        // Admin actions
-        case "manage-users":
-          navigate("/admin/users");
-          toast({ title: t("admin.nav.manageUsers"), description: t("admin.nav.manageUsersDesc") });
-          break;
-        case "analytics":
-          navigate("/admin/analytics");
-          toast({ title: t("admin.nav.analytics"), description: t("admin.nav.analyticsDesc") });
-          break;
-        case "settings":
-          navigate("/admin/settings");
-          toast({ title: t("admin.nav.settings"), description: t("admin.nav.settingsDesc") });
-          break;
-        case "admin-panel":
-          navigate("/admin");
-          toast({ title: t("admin.nav.panel"), description: t("admin.nav.panelDesc") });
-          break;
-        case "profile-settings":
-          navigate("/profile/settings");
-          toast({ title: t("profile.settings"), description: t("profile.settingsDesc") });
-          break;
-        // Teacher actions
-        case "my-courses":
-          navigate("/teacher-dashboard");
-          break;
-        case "performance":
-          navigate("/teacher-dashboard");
-          toast({ title: t("teacher.nav.performance"), description: t("teacher.nav.performanceDesc") });
-          break;
-        case "feedback":
-          toast({ title: t("teacher.nav.feedback"), description: t("teacher.nav.soon") });
-          break;
-        case "portfolio":
-          toast({ title: t("teacher.nav.portfolio"), description: t("teacher.nav.soon") });
-          break;
-        // Student actions
-        case "achievements":
-          toast({ title: t("student.nav.achievements"), description: t("student.nav.soon") });
-          break;
-        case "ratings":
-          navigate("/doctors");
-          toast({ title: t("student.nav.ratings"), description: t("student.nav.ratingsDesc") });
-          break;
-        case "stats":
-          toast({ title: t("student.nav.stats"), description: t("student.nav.soon") });
-          break;
-        case "recommendations":
-          navigate("/doctors");
-          toast({ title: t("student.nav.recommendations"), description: t("student.nav.soon") });
-          break;
-      }
-      setIsOpen(false);
-    };
 
     switch (userRole) {
       case "admin":
@@ -330,57 +325,7 @@ export function RoleBasedProfileMenu({
               >
                 <DropdownMenuItem asChild>
                   <button 
-                    onClick={() => {
-                      const handleItemClick = (action: string) => {
-                        switch (action) {
-                          // Admin actions
-                          case "manage-users":
-                            navigate("/admin");
-                            break;
-                          case "analytics":
-                            navigate("/admin");
-                            toast({ title: "Analytics", description: "View admin analytics dashboard" });
-                            break;
-                          case "settings":
-                            toast({ title: "System Settings", description: "System settings coming soon!" });
-                            break;
-                          case "admin-panel":
-                            navigate("/admin");
-                            break;
-                          // Teacher actions
-                          case "my-courses":
-                            navigate("/teacher-dashboard");
-                            break;
-                          case "performance":
-                            navigate("/teacher-dashboard");
-                            toast({ title: "Performance Stats", description: "View your teaching performance" });
-                            break;
-                          case "feedback":
-                            toast({ title: "Student Feedback", description: "Student feedback coming soon!" });
-                            break;
-                          case "portfolio":
-                            toast({ title: "Teaching Portfolio", description: "Your teaching portfolio coming soon!" });
-                            break;
-                          // Student actions
-                          case "achievements":
-                            toast({ title: "My Achievements", description: "Your achievements and badges coming soon!" });
-                            break;
-                          case "ratings":
-                            navigate("/doctors");
-                            toast({ title: "Recent Ratings", description: "View your rating history" });
-                            break;
-                          case "stats":
-                            toast({ title: "Learning Stats", description: "Your learning statistics coming soon!" });
-                            break;
-                          case "recommendations":
-                            navigate("/doctors");
-                            toast({ title: "Recommendations", description: "Personalized recommendations coming soon!" });
-                            break;
-                        }
-                        setIsOpen(false);
-                      };
-                      handleItemClick((item as any).action);
-                    }}
+                    onClick={() => handleItemClick((item as any).action)}
                     className="w-full flex items-center gap-3 cursor-pointer text-foreground hover:bg-primary/10 px-4 py-2 transition-colors"
                   >
                     <item.icon className={`h-4 w-4 ${roleColor.accent}`} />

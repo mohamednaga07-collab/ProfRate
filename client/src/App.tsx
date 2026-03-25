@@ -32,6 +32,10 @@ const AdminDoctors = lazy(() => import("@/pages/AdminDoctors"));
 const AdminAnalytics = lazy(() => import("@/pages/AdminAnalytics"));
 const AdminSettings = lazy(() => import("@/pages/AdminSettings"));
 const ProfileSettings = lazy(() => import("@/pages/ProfileSettings"));
+const TeacherFeedback = lazy(() => import("@/pages/TeacherFeedback"));
+const TeacherPortfolio = lazy(() => import("@/pages/TeacherPortfolio"));
+const StudentAchievements = lazy(() => import("@/pages/StudentAchievements"));
+const StudentStats = lazy(() => import("@/pages/StudentStats"));
 
 const pageVariants = {
   initial: {
@@ -94,6 +98,20 @@ function Router() {
   const { t } = useTranslation();
 
   console.log("🔄 Router render - isAuthenticated:", isAuthenticated, "isLoading:", isLoading, "user:", user?.username);
+
+  // Listen for browser back/forward navigation (popstate)
+  React.useEffect(() => {
+    const handlePopState = () => {
+      // If we are authenticated and the user uses browser navigation, log them out.
+      if (isAuthenticated) {
+        console.log("🔒 Back/Forward button pressed while authenticated. Enforcing logout for security.");
+        logout();
+      }
+    };
+
+    window.addEventListener("popstate", handlePopState);
+    return () => window.removeEventListener("popstate", handlePopState);
+  }, [isAuthenticated, logout]);
 
   if (isLoading) {
     return (
@@ -224,12 +242,44 @@ function Router() {
             </AnimatedPageWrapper>
           )}
         </Route>
+        
+        <Route path="/teacher/feedback">
+          {() => (
+            <AnimatedPageWrapper>
+              {!isAuthenticated ? <Landing /> : <TeacherFeedback />}
+            </AnimatedPageWrapper>
+          )}
+        </Route>
+
+        <Route path="/teacher/portfolio">
+          {() => (
+            <AnimatedPageWrapper>
+              {!isAuthenticated ? <Landing /> : <TeacherPortfolio />}
+            </AnimatedPageWrapper>
+          )}
+        </Route>
+
+        <Route path="/student/achievements">
+          {() => (
+            <AnimatedPageWrapper>
+              {!isAuthenticated ? <Landing /> : <StudentAchievements />}
+            </AnimatedPageWrapper>
+          )}
+        </Route>
+
+        <Route path="/student/stats">
+          {() => (
+            <AnimatedPageWrapper>
+              {!isAuthenticated ? <Landing /> : <StudentStats />}
+            </AnimatedPageWrapper>
+          )}
+        </Route>
 
         <Route path="/admin">
           {() => (
             <AnimatedPageWrapper>
               {!isAuthenticated ? (
-                <NotFound />
+                <Landing />
               ) : user?.role === "admin" ? (
                 <AdminDashboard />
               ) : (
@@ -242,14 +292,14 @@ function Router() {
         <Route path="/admin/analytics">
           {() => (
             <AnimatedPageWrapper>
-              {!isAuthenticated ? <NotFound /> : user?.role === "admin" ? <AdminAnalytics /> : <NotFound />}
+              {!isAuthenticated ? <Landing /> : user?.role === "admin" ? <AdminAnalytics /> : <NotFound />}
             </AnimatedPageWrapper>
           )}
         </Route>
         <Route path="/admin/settings">
           {() => (
             <AnimatedPageWrapper>
-              {!isAuthenticated ? <NotFound /> : user?.role === "admin" ? <AdminSettings /> : <NotFound />}
+              {!isAuthenticated ? <Landing /> : user?.role === "admin" ? <AdminSettings /> : <NotFound />}
             </AnimatedPageWrapper>
           )}
         </Route>
