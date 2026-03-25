@@ -2,7 +2,7 @@ import type { Express } from "express";
 import { type Server } from "http";
 import { storage } from "./storage";
 import { setupAuth, isAuthenticated } from "./antigravityAuth";
-import { insertDoctorSchema, insertReviewSchema } from "@shared/schema";
+import { insertDoctorSchema, insertReviewSchema, subScoresSchema, computeAllScores } from "@shared/schema";
 import { hashPassword, verifyPassword, validatePasswordStrength, sanitizeUsername, isValidUsername, isValidEmail, recordLoginAttempt, isAccountLocked, getLockoutTimeRemaining, clearLoginAttempts, generateCsrfToken, validateCsrfToken, clearCsrfToken, validateInputLength, validateFormInputs, MAX_INPUT_LENGTHS, validateCsrfHeader, sanitizeHtmlContent, loginLimiter, registerLimiter } from "./auth";
 import { randomUUID } from "crypto";
 import crypto from "crypto";
@@ -999,28 +999,37 @@ export async function registerRoutes(httpServer: Server, app: Express): Promise<
       if (!userId) {
         return res.status(401).json({ message: "Unauthorized" });
       }
-      const user = await storage.getUser(userId);
-
-      if (user?.role !== "student") {
-        return res.status(403).json({ message: "Only students can submit reviews" });
-      }
 
       const doctorId = parseInt(req.params.id);
       if (isNaN(doctorId)) {
         return res.status(400).json({ message: "Invalid doctor ID" });
       }
 
-      // Sanitize comment content
+      // Sanitize optional comment
       if (req.body.comment) {
         req.body.comment = sanitizeHtmlContent(req.body.comment);
       }
 
-      const validatedData = insertReviewSchema.parse({
-        ...req.body,
-        doctorId,
-      });
+      // Parse and validate the new subScores payload (using top-level import)
+      const subScoresParsed = subScoresSchema.parse(req.body.subScores);
+      const computed = computeAllScores(subScoresParsed);
 
-      const review = await storage.createReview(validatedData);
+      const review = await storage.createReview({
+        doctorId,
+        // Legacy 1-5 columns (backward compat)
+        teachingQuality: computed.teachingQuality,
+        availability:    computed.availability,
+        communication:   computed.communication,
+        knowledge:       computed.knowledge,
+        fairness:        computed.fairness,
+        // New 1-10 columns
+        engagement:         computed.engagement,
+        helpfulness:        computed.helpfulness,
+        courseOrganization: computed.courseOrganization,
+        subScores:   subScoresParsed,
+        overallScore: computed.overallScore,
+        comment: req.body.comment || null,
+      });
       res.status(201).json(review);
     } catch (error: any) {
       console.error("Error creating review:", error);
@@ -1030,6 +1039,7 @@ export async function registerRoutes(httpServer: Server, app: Express): Promise<
       res.status(500).json({ message: "Failed to create review" });
     }
   });
+
 
   // Forgot Password Route
   app.post("/api/auth/forgot-password", validateCsrfHeader, async (req: any, res) => {

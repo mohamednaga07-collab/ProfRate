@@ -109,8 +109,38 @@ export class SqliteStorage implements IStorage {
       if (!cols.some((c: any) => c.name === "verificationToken")) {
         this.db.exec("ALTER TABLE users ADD COLUMN verificationToken TEXT");
       }
+
+      // doctor_ratings new columns
+      const drCols = this.db.prepare("PRAGMA table_info(doctor_ratings)").all() as any[];
+      if (!drCols.some((c: any) => c.name === "avgEngagement")) {
+        this.db.exec("ALTER TABLE doctor_ratings ADD COLUMN avgEngagement REAL DEFAULT 0");
+      }
+      if (!drCols.some((c: any) => c.name === "avgHelpfulness")) {
+        this.db.exec("ALTER TABLE doctor_ratings ADD COLUMN avgHelpfulness REAL DEFAULT 0");
+      }
+      if (!drCols.some((c: any) => c.name === "avgCourseOrganization")) {
+        this.db.exec("ALTER TABLE doctor_ratings ADD COLUMN avgCourseOrganization REAL DEFAULT 0");
+      }
+
+      // reviews new columns
+      const rCols = this.db.prepare("PRAGMA table_info(reviews)").all() as any[];
+      if (!rCols.some((c: any) => c.name === "engagement")) {
+        this.db.exec("ALTER TABLE reviews ADD COLUMN engagement INTEGER");
+      }
+      if (!rCols.some((c: any) => c.name === "helpfulness")) {
+        this.db.exec("ALTER TABLE reviews ADD COLUMN helpfulness INTEGER");
+      }
+      if (!rCols.some((c: any) => c.name === "courseOrganization")) {
+        this.db.exec("ALTER TABLE reviews ADD COLUMN courseOrganization INTEGER");
+      }
+      if (!rCols.some((c: any) => c.name === "overallScore")) {
+        this.db.exec("ALTER TABLE reviews ADD COLUMN overallScore REAL");
+      }
+      if (!rCols.some((c: any) => c.name === "subScores")) {
+        this.db.exec("ALTER TABLE reviews ADD COLUMN subScores TEXT"); // stored as JSON string
+      }
     } catch (e) {
-      console.error("Failed to ensure reset token columns:", e);
+      console.error("Failed to ensure new schema columns:", e);
     }
   }
 
@@ -155,7 +185,7 @@ export class SqliteStorage implements IStorage {
   }
 
   async getDoctor(id: number): Promise<DoctorWithRatings | undefined> {
-    const row = this.db.prepare("SELECT d.*, dr.avgTeachingQuality, dr.avgAvailability, dr.avgCommunication, dr.avgKnowledge, dr.avgFairness, dr.overallRating, dr.totalReviews FROM doctors d LEFT JOIN doctor_ratings dr ON d.id = dr.doctorId WHERE d.id = ?").get(id) as any;
+    const row = this.db.prepare("SELECT d.*, dr.avgTeachingQuality, dr.avgAvailability, dr.avgCommunication, dr.avgKnowledge, dr.avgFairness, dr.avgEngagement, dr.avgHelpfulness, dr.avgCourseOrganization, dr.overallRating, dr.totalReviews FROM doctors d LEFT JOIN doctor_ratings dr ON d.id = dr.doctorId WHERE d.id = ?").get(id) as any;
     if (!row) return undefined;
     return {
       id: row.id, name: row.name, department: row.department, title: row.title, bio: row.bio,
@@ -164,7 +194,10 @@ export class SqliteStorage implements IStorage {
         id: row.id, doctorId: row.id,
         avgTeachingQuality: row.avgTeachingQuality || 0, avgAvailability: row.avgAvailability || 0,
         avgCommunication: row.avgCommunication || 0, avgKnowledge: row.avgKnowledge || 0,
-        avgFairness: row.avgFairness || 0, overallRating: row.overallRating || 0,
+        avgFairness: row.avgFairness || 0, 
+        avgEngagement: row.avgEngagement || 0, avgHelpfulness: row.avgHelpfulness || 0,
+        avgCourseOrganization: row.avgCourseOrganization || 0,
+        overallRating: row.overallRating || 0,
         totalReviews: row.totalReviews || 0, updatedAt: row.updatedAt,
       } : null,
     };
@@ -191,33 +224,67 @@ export class SqliteStorage implements IStorage {
   }
 
   async createReview(review: InsertReview): Promise<Review> {
-    const result = this.db.prepare("INSERT INTO reviews (doctorId, teachingQuality, availability, communication, knowledge, fairness, comment) VALUES (?, ?, ?, ?, ?, ?, ?)").run(review.doctorId, review.teachingQuality, review.availability, review.communication, review.knowledge, review.fairness, review.comment || null) as any;
-    const reviews = this.db.prepare("SELECT * FROM reviews WHERE doctorId = ?").all(review.doctorId) as any[];
-    if (reviews.length > 0) {
-      const avg = (field: string) => reviews.reduce((s: number, r: any) => s + r[field], 0) / reviews.length;
-      const a = avg("teachingQuality"), b = avg("availability"), c = avg("communication"), d = avg("knowledge"), e = avg("fairness");
-      this.db.prepare("UPDATE doctor_ratings SET avgTeachingQuality=?, avgAvailability=?, avgCommunication=?, avgKnowledge=?, avgFairness=?, overallRating=?, totalReviews=? WHERE doctorId=?").run(a, b, c, d, e, (a+b+c+d+e)/5, reviews.length, review.doctorId);
-    }
+    const result = this.db.prepare(
+      "INSERT INTO reviews (doctorId, teachingQuality, availability, communication, knowledge, fairness, engagement, helpfulness, courseOrganization, overallScore, subScores, comment) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)"
+    ).run(
+      review.doctorId, review.teachingQuality, review.availability, review.communication, review.knowledge, review.fairness,
+      review.engagement ?? null, review.helpfulness ?? null, review.courseOrganization ?? null, review.overallScore ?? null,
+      review.subScores ? JSON.stringify(review.subScores) : null,
+      review.comment || null
+    ) as any;
+    this.updateDoctorRatings(review.doctorId);
     return { id: Number(result.lastInsertRowid), ...review, createdAt: new Date() } as Review;
   }
 
   async getAllReviews(): Promise<Review[]> {
-    try { return this.db.prepare("SELECT * FROM reviews ORDER BY createdAt DESC").all() as Review[]; }
-    catch (e) { console.error("getAllReviews error:", e); return []; }
+    try {
+      const rows = this.db.prepare("SELECT * FROM reviews ORDER BY createdAt DESC").all() as any[];
+      return rows.map(r => ({ ...r, subScores: r.subScores ? JSON.parse(r.subScores) : null }));
+    } catch (e) { console.error("getAllReviews error:", e); return []; }
   }
 
   async deleteReview(id: number): Promise<void> {
     const review = this.db.prepare("SELECT doctorId FROM reviews WHERE id = ?").get(id) as any;
     if (!review) return;
     this.db.prepare("DELETE FROM reviews WHERE id = ?").run(id);
-    const reviews = this.db.prepare("SELECT * FROM reviews WHERE doctorId = ?").all(review.doctorId) as any[];
-    if (reviews.length > 0) {
-      const avg = (field: string) => reviews.reduce((s: number, r: any) => s + r[field], 0) / reviews.length;
-      const a = avg("teachingQuality"), b = avg("availability"), c = avg("communication"), d = avg("knowledge"), e = avg("fairness");
-      this.db.prepare("UPDATE doctor_ratings SET avgTeachingQuality=?, avgAvailability=?, avgCommunication=?, avgKnowledge=?, avgFairness=?, overallRating=?, totalReviews=?, updatedAt=CURRENT_TIMESTAMP WHERE doctorId=?").run(a, b, c, d, e, (a+b+c+d+e)/5, reviews.length, review.doctorId);
-    } else {
-      this.db.prepare("UPDATE doctor_ratings SET avgTeachingQuality=0, avgAvailability=0, avgCommunication=0, avgKnowledge=0, avgFairness=0, overallRating=0, totalReviews=0, updatedAt=CURRENT_TIMESTAMP WHERE doctorId=?").run(review.doctorId);
+    this.updateDoctorRatings(review.doctorId);
+  }
+
+  private updateDoctorRatings(doctorId: number) {
+    const reviews = this.db.prepare("SELECT * FROM reviews WHERE doctorId = ?").all(doctorId) as any[];
+    if (reviews.length === 0) {
+      this.db.prepare(
+        "UPDATE doctor_ratings SET avgTeachingQuality=0, avgAvailability=0, avgCommunication=0, avgKnowledge=0, avgFairness=0, avgEngagement=0, avgHelpfulness=0, avgCourseOrganization=0, overallRating=0, totalReviews=0, updatedAt=CURRENT_TIMESTAMP WHERE doctorId=?"
+      ).run(doctorId);
+      return;
     }
+
+    const count = reviews.length;
+    const avg = (field: string) => reviews.reduce((s: number, r: any) => s + r[field], 0) / count;
+    
+    // For legacy 1-5 columns
+    const a = avg("teachingQuality"), b = avg("availability"), c = avg("communication"), d = avg("knowledge"), e = avg("fairness");
+    
+    // For modern 1-10 columns (ignore nulls)
+    const engageReviews = reviews.filter(r => r.engagement != null);
+    const avgEngage = engageReviews.length > 0 ? engageReviews.reduce((sum, r) => sum + r.engagement, 0) / engageReviews.length : 0;
+    
+    const helpReviews = reviews.filter(r => r.helpfulness != null);
+    const avgHelp = helpReviews.length > 0 ? helpReviews.reduce((sum, r) => sum + r.helpfulness, 0) / helpReviews.length : 0;
+    
+    const orgReviews = reviews.filter(r => r.courseOrganization != null);
+    const avgOrg = orgReviews.length > 0 ? orgReviews.reduce((sum, r) => sum + r.courseOrganization, 0) / orgReviews.length : 0;
+
+    // Overall Score
+    let overallRating = (a + b + c + d + e) / 5;
+    const modernReviews = reviews.filter(r => r.overallScore != null);
+    if (modernReviews.length > 0) {
+      overallRating = modernReviews.reduce((sum, r) => sum + r.overallScore, 0) / modernReviews.length;
+    }
+
+    this.db.prepare(
+      "UPDATE doctor_ratings SET avgTeachingQuality=?, avgAvailability=?, avgCommunication=?, avgKnowledge=?, avgFairness=?, avgEngagement=?, avgHelpfulness=?, avgCourseOrganization=?, overallRating=?, totalReviews=?, updatedAt=CURRENT_TIMESTAMP WHERE doctorId=?"
+    ).run(a, b, c, d, e, avgEngage, avgHelp, avgOrg, overallRating, count, doctorId);
   }
 
   async upsertUser(user: any): Promise<User> {
@@ -292,7 +359,7 @@ export class SqliteStorage implements IStorage {
   }
 
   async getAllDoctors(): Promise<DoctorWithRatings[]> {
-    const rows = this.db.prepare("SELECT d.*, dr.avgTeachingQuality, dr.avgAvailability, dr.avgCommunication, dr.avgKnowledge, dr.avgFairness, dr.overallRating, dr.totalReviews FROM doctors d LEFT JOIN doctor_ratings dr ON d.id = dr.doctorId ORDER BY d.createdAt DESC").all() as any[];
+    const rows = this.db.prepare("SELECT d.*, dr.avgTeachingQuality, dr.avgAvailability, dr.avgCommunication, dr.avgKnowledge, dr.avgFairness, dr.avgEngagement, dr.avgHelpfulness, dr.avgCourseOrganization, dr.overallRating, dr.totalReviews FROM doctors d LEFT JOIN doctor_ratings dr ON d.id = dr.doctorId ORDER BY d.createdAt DESC").all() as any[];
     return rows.map((row: any) => ({
       id: row.id, name: row.name, department: row.department, title: row.title, bio: row.bio,
       profileImageUrl: row.profileImageUrl, createdAt: row.createdAt, updatedAt: row.updatedAt,
@@ -300,7 +367,10 @@ export class SqliteStorage implements IStorage {
         id: row.id, doctorId: row.id,
         avgTeachingQuality: row.avgTeachingQuality||0, avgAvailability: row.avgAvailability||0,
         avgCommunication: row.avgCommunication||0, avgKnowledge: row.avgKnowledge||0,
-        avgFairness: row.avgFairness||0, overallRating: row.overallRating||0,
+        avgFairness: row.avgFairness||0, 
+        avgEngagement: row.avgEngagement||0, avgHelpfulness: row.avgHelpfulness||0,
+        avgCourseOrganization: row.avgCourseOrganization||0,
+        overallRating: row.overallRating||0,
         totalReviews: row.totalReviews||0, updatedAt: row.updatedAt,
       } : null,
     }));

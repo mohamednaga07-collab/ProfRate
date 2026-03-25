@@ -237,68 +237,10 @@ export class DatabaseStorage implements IStorage {
   }
 
   async deleteReview(id: number): Promise<void> {
-    // Get review info before deleting
     const [review] = await db.select().from(reviews).where(eq(reviews.id, id));
     if (!review) return;
     await db.delete(reviews).where(eq(reviews.id, id));
-    // Recalculate ratings for that doctor
-    const doctorReviews = await db.select().from(reviews).where(eq(reviews.doctorId, review.doctorId));
-    if (doctorReviews.length > 0) {
-      const avgTeachingQuality = doctorReviews.reduce((sum: number, r: any) => sum + r.teachingQuality, 0) / doctorReviews.length;
-      const avgAvailability = doctorReviews.reduce((sum: number, r: any) => sum + r.availability, 0) / doctorReviews.length;
-      const avgCommunication = doctorReviews.reduce((sum: number, r: any) => sum + r.communication, 0) / doctorReviews.length;
-      const avgKnowledge = doctorReviews.reduce((sum: number, r: any) => sum + r.knowledge, 0) / doctorReviews.length;
-      const avgFairness = doctorReviews.reduce((sum: number, r: any) => sum + r.fairness, 0) / doctorReviews.length;
-      const overallRating = (avgTeachingQuality + avgAvailability + avgCommunication + avgKnowledge + avgFairness) / 5;
-      await db.insert(doctorRatings).values({
-        doctorId: review.doctorId,
-        avgTeachingQuality,
-        avgAvailability,
-        avgCommunication,
-        avgKnowledge,
-        avgFairness,
-        overallRating,
-        totalReviews: doctorReviews.length,
-        updatedAt: new Date(),
-      }).onConflictDoUpdate({
-        target: doctorRatings.doctorId,
-        set: {
-          avgTeachingQuality,
-          avgAvailability,
-          avgCommunication,
-          avgKnowledge,
-          avgFairness,
-          overallRating,
-          totalReviews: doctorReviews.length,
-          updatedAt: new Date(),
-        },
-      });
-    } else {
-      // No reviews left, reset to 0
-      await db.insert(doctorRatings).values({
-        doctorId: review.doctorId,
-        avgTeachingQuality: 0,
-        avgAvailability: 0,
-        avgCommunication: 0,
-        avgKnowledge: 0,
-        avgFairness: 0,
-        overallRating: 0,
-        totalReviews: 0,
-        updatedAt: new Date(),
-      }).onConflictDoUpdate({
-        target: doctorRatings.doctorId,
-        set: {
-          avgTeachingQuality: 0,
-          avgAvailability: 0,
-          avgCommunication: 0,
-          avgKnowledge: 0,
-          avgFairness: 0,
-          overallRating: 0,
-          totalReviews: 0,
-          updatedAt: new Date(),
-        },
-      });
-    }
+    await this.updateDoctorRatings(review.doctorId);
   }
 
   async logActivity(data: {
@@ -375,41 +317,69 @@ export class DatabaseStorage implements IStorage {
   private async updateDoctorRatings(doctorId: number): Promise<void> {
     const doctorReviews = await db.select().from(reviews).where(eq(reviews.doctorId, doctorId));
 
-    if (doctorReviews.length === 0) return;
-
-    const avgTeachingQuality = doctorReviews.reduce((sum: number, r: any) => sum + r.teachingQuality, 0) / doctorReviews.length;
-    const avgAvailability = doctorReviews.reduce((sum: number, r: any) => sum + r.availability, 0) / doctorReviews.length;
-    const avgCommunication = doctorReviews.reduce((sum: number, r: any) => sum + r.communication, 0) / doctorReviews.length;
-    const avgKnowledge = doctorReviews.reduce((sum: number, r: any) => sum + r.knowledge, 0) / doctorReviews.length;
-    const avgFairness = doctorReviews.reduce((sum: number, r: any) => sum + r.fairness, 0) / doctorReviews.length;
-    const overallRating = (avgTeachingQuality + avgAvailability + avgCommunication + avgKnowledge + avgFairness) / 5;
-
-    await db
-      .insert(doctorRatings)
-      .values({
+    if (doctorReviews.length === 0) {
+      await db.insert(doctorRatings).values({
         doctorId,
-        avgTeachingQuality,
-        avgAvailability,
-        avgCommunication,
-        avgKnowledge,
-        avgFairness,
-        overallRating,
-        totalReviews: doctorReviews.length,
-        updatedAt: new Date(),
-      })
-      .onConflictDoUpdate({
+        avgTeachingQuality: 0, avgAvailability: 0, avgCommunication: 0, avgKnowledge: 0, avgFairness: 0,
+        avgEngagement: 0, avgHelpfulness: 0, avgCourseOrganization: 0,
+        overallRating: 0, totalReviews: 0, updatedAt: new Date(),
+      }).onConflictDoUpdate({
         target: doctorRatings.doctorId,
         set: {
-          avgTeachingQuality,
-          avgAvailability,
-          avgCommunication,
-          avgKnowledge,
-          avgFairness,
-          overallRating,
-          totalReviews: doctorReviews.length,
-          updatedAt: new Date(),
+          avgTeachingQuality: 0, avgAvailability: 0, avgCommunication: 0, avgKnowledge: 0, avgFairness: 0,
+          avgEngagement: 0, avgHelpfulness: 0, avgCourseOrganization: 0,
+          overallRating: 0, totalReviews: 0, updatedAt: new Date(),
         },
       });
+      return;
+    }
+
+    const count = doctorReviews.length;
+    const avgTeachingQuality = doctorReviews.reduce((sum: number, r: any) => sum + r.teachingQuality, 0) / count;
+    const avgAvailability = doctorReviews.reduce((sum: number, r: any) => sum + r.availability, 0) / count;
+    const avgCommunication = doctorReviews.reduce((sum: number, r: any) => sum + r.communication, 0) / count;
+    const avgKnowledge = doctorReviews.reduce((sum: number, r: any) => sum + r.knowledge, 0) / count;
+    const avgFairness = doctorReviews.reduce((sum: number, r: any) => sum + r.fairness, 0) / count;
+    
+    // For new columns, only average over reviews that have them (non-null)
+    const engageReviews = doctorReviews.filter((r: any) => r.engagement != null);
+    const avgEngagement = engageReviews.length > 0 ? engageReviews.reduce((sum: number, r: any) => sum + r.engagement!, 0) / engageReviews.length : 0;
+    
+    const helpReviews = doctorReviews.filter((r: any) => r.helpfulness != null);
+    const avgHelpfulness = helpReviews.length > 0 ? helpReviews.reduce((sum: number, r: any) => sum + r.helpfulness!, 0) / helpReviews.length : 0;
+    
+    const orgReviews = doctorReviews.filter((r: any) => r.courseOrganization != null);
+    const avgCourseOrganization = orgReviews.length > 0 ? orgReviews.reduce((sum: number, r: any) => sum + r.courseOrganization!, 0) / orgReviews.length : 0;
+
+    // Base legacy rating
+    let overallRating = (avgTeachingQuality + avgAvailability + avgCommunication + avgKnowledge + avgFairness) / 5;
+    
+    // If there is ANY review with modern overallScore, compute the true modern overall rating
+    const modernReviews = doctorReviews.filter((r: any) => r.overallScore != null);
+    if (modernReviews.length > 0) {
+      // Compute 1-10 overall directly from the modern reviews for greater accuracy
+      overallRating = modernReviews.reduce((sum: number, r: any) => sum + r.overallScore!, 0) / modernReviews.length;
+    }
+
+    const payload = {
+      doctorId,
+      avgTeachingQuality,
+      avgAvailability,
+      avgCommunication,
+      avgKnowledge,
+      avgFairness,
+      avgEngagement,
+      avgHelpfulness,
+      avgCourseOrganization,
+      overallRating,
+      totalReviews: count,
+      updatedAt: new Date(),
+    };
+
+    await db.insert(doctorRatings).values(payload).onConflictDoUpdate({
+      target: doctorRatings.doctorId,
+      set: payload,
+    });
   }
 
   // Stats

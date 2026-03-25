@@ -14,6 +14,11 @@ interface Review {
   communication: number;
   knowledge: number;
   fairness: number;
+  engagement: number | null;
+  helpfulness: number | null;
+  courseOrganization: number | null;
+  overallScore: number | null;
+  subScores: any | null;
   comment: string | null;
   createdAt: string;
 }
@@ -26,13 +31,19 @@ interface FeedbackResponse {
 
 function SentimentTag({ text }: { text: string }) {
   const lower = text.toLowerCase();
-  const positive = ["great", "excellent", "amazing", "best", "good", "helpful", "clear", "kind", "fair", "awesome", "wonderful", "fantastic"];
-  const negative = ["bad", "poor", "terrible", "awful", "boring", "hard", "unclear", "rude", "unfair", "worst"];
+  const positive = ["great", "excellent", "amazing", "best", "good", "helpful", "clear", "kind", "fair", "awesome", "wonderful", "fantastic", "loved"];
+  const negative = ["bad", "poor", "terrible", "awful", "boring", "hard", "unclear", "rude", "unfair", "worst", "unhelpful"];
   const isPos = positive.some(w => lower.includes(w));
   const isNeg = negative.some(w => lower.includes(w));
   if (isPos) return <span className="text-xs px-2 py-0.5 rounded-full bg-green-500/10 text-green-600 border border-green-200 dark:border-green-800 font-medium">Positive</span>;
   if (isNeg) return <span className="text-xs px-2 py-0.5 rounded-full bg-red-500/10 text-red-600 border border-red-200 dark:border-red-800 font-medium">Critical</span>;
   return <span className="text-xs px-2 py-0.5 rounded-full bg-blue-500/10 text-blue-600 border border-blue-200 dark:border-blue-800 font-medium">Neutral</span>;
+}
+
+function getCategoryAvg(catSubScores: Record<string, number> | undefined) {
+  if (!catSubScores) return 0;
+  const vals = Object.values(catSubScores);
+  return vals.length > 0 ? vals.reduce((a, b) => a + b, 0) / vals.length : 0;
 }
 
 export default function TeacherFeedback() {
@@ -98,8 +109,10 @@ export default function TeacherFeedback() {
                 <CardContent className="pt-6 flex items-center justify-between">
                   <div>
                     <p className="text-sm text-muted-foreground">Overall Rating</p>
-                    <p className="text-3xl font-bold text-purple-600 dark:text-purple-400">{avgOverall.toFixed(1)}</p>
-                    <StarRating rating={avgOverall} size="sm" />
+                    <p className="text-3xl font-bold text-purple-600 dark:text-purple-400">
+                      {avgOverall > 5 ? `${avgOverall.toFixed(1)} / 10` : `${avgOverall.toFixed(1)} / 5`}
+                    </p>
+                    <StarRating rating={avgOverall > 5 ? avgOverall / 2 : avgOverall} size="sm" />
                   </div>
                   <Award className="h-10 w-10 text-purple-400/60" />
                 </CardContent>
@@ -133,41 +146,68 @@ export default function TeacherFeedback() {
                   <MessageSquare className="h-5 w-5 text-primary" /> Written Feedback
                 </h2>
                 <div className="grid gap-4">
-                  {commented.map((review, idx) => (
-                    <motion.div key={review.id} initial={{ opacity: 0, y: 16 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.15 + idx * 0.06 }}>
-                      <Card className="bg-card/80 backdrop-blur hover:shadow-md transition-shadow">
-                        <CardContent className="p-5">
-                          <div className="flex items-start justify-between mb-3 flex-wrap gap-2">
-                            <div className="flex items-center gap-2">
-                              <div className="h-8 w-8 rounded-full bg-primary/10 flex items-center justify-center text-sm font-bold text-primary">
-                                A
+                  {commented.map((review, idx) => {
+                    const hasSubScores = !!review.subScores;
+                    return (
+                      <motion.div key={review.id} initial={{ opacity: 0, y: 16 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.15 + idx * 0.06 }}>
+                        <Card className="bg-card/80 backdrop-blur hover:shadow-md transition-shadow">
+                          <CardContent className="p-5">
+                            <div className="flex items-start justify-between mb-3 flex-wrap gap-2">
+                              <div className="flex items-center gap-2">
+                                <div className="h-8 w-8 rounded-full bg-primary/10 flex items-center justify-center text-sm font-bold text-primary">
+                                  A
+                                </div>
+                                <span className="text-sm text-muted-foreground">Anonymous Student</span>
+                                <span className="text-xs text-muted-foreground">
+                                  · {new Date(review.createdAt).toLocaleDateString()}
+                                </span>
                               </div>
-                              <span className="text-sm text-muted-foreground">Anonymous Student</span>
-                              <span className="text-xs text-muted-foreground">
-                                · {new Date(review.createdAt).toLocaleDateString()}
-                              </span>
+                              <div className="flex gap-2">
+                                {hasSubScores && <span className="text-xs px-2 py-0.5 rounded-full bg-primary/10 text-primary border border-primary/20 font-medium">Detailed Review</span>}
+                                {review.comment && <SentimentTag text={review.comment} />}
+                              </div>
                             </div>
-                            {review.comment && <SentimentTag text={review.comment} />}
-                          </div>
-                          <p className="text-base leading-relaxed mb-4 italic">"{review.comment}"</p>
-                          <div className="grid grid-cols-2 sm:grid-cols-5 gap-2 pt-3 border-t">
-                            {[
-                              { label: "Teaching", val: review.teachingQuality, color: "text-blue-500" },
-                              { label: "Availability", val: review.availability, color: "text-purple-500" },
-                              { label: "Communication", val: review.communication, color: "text-pink-500" },
-                              { label: "Knowledge", val: review.knowledge, color: "text-amber-500" },
-                              { label: "Fairness", val: review.fairness, color: "text-green-500" },
-                            ].map(f => (
-                              <div key={f.label} className="text-center">
-                                <div className={`text-lg font-bold ${f.color}`}>{f.val}/5</div>
-                                <div className="text-xs text-muted-foreground">{f.label}</div>
-                              </div>
-                            ))}
-                          </div>
-                        </CardContent>
-                      </Card>
-                    </motion.div>
-                  ))}
+                            <p className="text-base leading-relaxed mb-4 italic">"{review.comment}"</p>
+                            
+                            {hasSubScores ? (
+                               <div className="grid grid-cols-2 sm:grid-cols-4 lg:grid-cols-8 gap-2 pt-3 border-t">
+                                 {[
+                                   { key: "teachingQuality", label: "Teaching", color: "text-blue-500" },
+                                   { key: "availability", label: "Available", color: "text-green-500" },
+                                   { key: "communication", label: "Comms", color: "text-purple-500" },
+                                   { key: "knowledge", label: "Knowledge", color: "text-amber-500" },
+                                   { key: "fairness", label: "Fairness", color: "text-red-500" },
+                                   { key: "engagement", label: "Engage", color: "text-yellow-500" },
+                                   { key: "helpfulness", label: "Helpful", color: "text-pink-500" },
+                                   { key: "courseOrganization", label: "Org", color: "text-teal-500" },
+                                 ].map(f => (
+                                   <div key={f.key} className="text-center p-1 bg-muted/30 rounded-md">
+                                     <div className={`text-sm font-bold ${f.color}`}>{getCategoryAvg(review.subScores[f.key]).toFixed(1)}</div>
+                                     <div className="text-[10px] text-muted-foreground uppercase tracking-wider">{f.label}</div>
+                                   </div>
+                                 ))}
+                               </div>
+                            ) : (
+                               <div className="grid grid-cols-2 sm:grid-cols-5 gap-2 pt-3 border-t">
+                                 {[
+                                   { label: "Teaching", val: review.teachingQuality, color: "text-blue-500" },
+                                   { label: "Availability", val: review.availability, color: "text-purple-500" },
+                                   { label: "Communication", val: review.communication, color: "text-pink-500" },
+                                   { label: "Knowledge", val: review.knowledge, color: "text-amber-500" },
+                                   { label: "Fairness", val: review.fairness, color: "text-green-500" },
+                                 ].map(f => (
+                                   <div key={f.label} className="text-center p-2 bg-muted/30 rounded-md">
+                                     <div className={`text-lg font-bold ${f.color}`}>{f.val}/5</div>
+                                     <div className="text-xs text-muted-foreground">{f.label}</div>
+                                   </div>
+                                 ))}
+                               </div>
+                            )}
+                          </CardContent>
+                        </Card>
+                      </motion.div>
+                    );
+                  })}
                 </div>
               </div>
             )}

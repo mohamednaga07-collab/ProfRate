@@ -14,6 +14,9 @@ interface DoctorRatings {
   avgCommunication: number;
   avgKnowledge: number;
   avgFairness: number;
+  avgEngagement: number;
+  avgHelpfulness: number;
+  avgCourseOrganization: number;
   overallRating: number;
   totalReviews: number;
 }
@@ -45,12 +48,15 @@ export default function TeacherCourses() {
   const doc = matched[0];
 
   const radarData = doc?.ratings ? [
-    { category: "Teaching", value: doc.ratings.avgTeachingQuality },
-    { category: "Availability", value: doc.ratings.avgAvailability },
-    { category: "Communication", value: doc.ratings.avgCommunication },
-    { category: "Knowledge", value: doc.ratings.avgKnowledge },
-    { category: "Fairness", value: doc.ratings.avgFairness },
-  ] : [];
+    { category: "Teaching", value: (doc.ratings.avgTeachingQuality || 0) * 2 },
+    { category: "Availability", value: (doc.ratings.avgAvailability || 0) * 2 },
+    { category: "Communication", value: (doc.ratings.avgCommunication || 0) * 2 },
+    { category: "Knowledge", value: (doc.ratings.avgKnowledge || 0) * 2 },
+    { category: "Fairness", value: (doc.ratings.avgFairness || 0) * 2 },
+    { category: "Engagement", value: doc.ratings.avgEngagement || 0 },
+    { category: "Helpfulness", value: doc.ratings.avgHelpfulness || 0 },
+    { category: "Organization", value: doc.ratings.avgCourseOrganization || 0 },
+  ].filter(d => d.value > 0) : []; // Hide 0-value new categories if legacy only
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-background via-background to-blue-500/5">
@@ -109,8 +115,8 @@ export default function TeacherCourses() {
                 {[
                   { label: "Overall Rating", value: doc.ratings.overallRating.toFixed(1), icon: <Star className="h-4 w-4 text-amber-500" />, color: "text-amber-600 dark:text-amber-400" },
                   { label: "Total Reviews", value: doc.ratings.totalReviews, icon: <Users className="h-4 w-4 text-blue-500" />, color: "text-blue-600 dark:text-blue-400" },
-                  { label: "Best Score", value: Math.max(doc.ratings.avgTeachingQuality, doc.ratings.avgKnowledge, doc.ratings.avgCommunication).toFixed(1), icon: <TrendingUp className="h-4 w-4 text-green-500" />, color: "text-green-600 dark:text-green-400" },
-                  { label: "Availability", value: `${(doc.ratings.avgAvailability * 20).toFixed(0)}%`, icon: <BarChart3 className="h-4 w-4 text-purple-500" />, color: "text-purple-600 dark:text-purple-400" },
+                  { label: "Best Score", value: Math.max((doc.ratings.avgTeachingQuality||0)*2, doc.ratings.avgEngagement||0, (doc.ratings.avgCommunication||0)*2).toFixed(1), icon: <TrendingUp className="h-4 w-4 text-green-500" />, color: "text-green-600 dark:text-green-400" },
+                  { label: "Availability", value: `${((doc.ratings.avgAvailability||0) * 20).toFixed(0)}%`, icon: <BarChart3 className="h-4 w-4 text-purple-500" />, color: "text-purple-600 dark:text-purple-400" },
                 ].map((s, i) => (
                   <Card key={i} className="bg-card/80 backdrop-blur">
                     <CardContent className="pt-4 pb-4">
@@ -129,14 +135,14 @@ export default function TeacherCourses() {
                 <Card className="bg-card/80 backdrop-blur">
                   <CardHeader>
                     <CardTitle className="flex items-center gap-2"><BarChart3 className="h-5 w-5" /> Skill Radar</CardTitle>
-                    <CardDescription>How students rate you across all 5 dimensions</CardDescription>
+                    <CardDescription>How students rate you across {radarData.length} dimensions (0-10 scale)</CardDescription>
                   </CardHeader>
                   <CardContent>
                     <ResponsiveContainer width="100%" height={300}>
                       <RadarChart data={radarData}>
                         <PolarGrid stroke="hsl(var(--muted))" />
                         <PolarAngleAxis dataKey="category" stroke="hsl(var(--muted-foreground))" tick={{ fontSize: 13 }} />
-                        <PolarRadiusAxis angle={90} domain={[0, 5]} tick={false} />
+                        <PolarRadiusAxis angle={90} domain={[0, 10]} tick={false} />
                         <Radar name="Ratings" dataKey="value" stroke="#3b82f6" fill="#3b82f6" fillOpacity={0.55} />
                       </RadarChart>
                     </ResponsiveContainer>
@@ -151,26 +157,31 @@ export default function TeacherCourses() {
                 <Card className="bg-card/80 backdrop-blur">
                   <CardHeader>
                     <CardTitle>Category Breakdown</CardTitle>
-                    <CardDescription>Your average score per rating dimension</CardDescription>
+                    <CardDescription>Your average score per rating dimension (scaled to 10)</CardDescription>
                   </CardHeader>
                   <CardContent className="space-y-4">
                     {[
-                      { label: "Teaching Quality", value: doc.ratings.avgTeachingQuality, color: "bg-blue-500" },
-                      { label: "Availability", value: doc.ratings.avgAvailability, color: "bg-purple-500" },
-                      { label: "Communication", value: doc.ratings.avgCommunication, color: "bg-pink-500" },
-                      { label: "Knowledge", value: doc.ratings.avgKnowledge, color: "bg-amber-500" },
-                      { label: "Fairness", value: doc.ratings.avgFairness, color: "bg-green-500" },
+                      { label: "Teaching Quality", value: (doc.ratings.avgTeachingQuality||0)*2, color: "bg-blue-500" },
+                      { label: "Availability", value: (doc.ratings.avgAvailability||0)*2, color: "bg-purple-500" },
+                      { label: "Communication", value: (doc.ratings.avgCommunication||0)*2, color: "bg-pink-500" },
+                      { label: "Knowledge", value: (doc.ratings.avgKnowledge||0)*2, color: "bg-amber-500" },
+                      { label: "Fairness", value: (doc.ratings.avgFairness||0)*2, color: "bg-green-500" },
+                      ...(doc.ratings.avgEngagement > 0 ? [
+                        { label: "Engagement", value: doc.ratings.avgEngagement, color: "bg-yellow-500" },
+                        { label: "Helpfulness", value: doc.ratings.avgHelpfulness, color: "bg-rose-500" },
+                        { label: "Course Organization", value: doc.ratings.avgCourseOrganization, color: "bg-teal-500" },
+                      ] : [])
                     ].map(cat => (
                       <div key={cat.label}>
                         <div className="flex justify-between text-sm mb-1">
                           <span>{cat.label}</span>
-                          <span className="font-semibold">{cat.value.toFixed(1)} / 5</span>
+                          <span className="font-semibold">{cat.value.toFixed(1)} / 10</span>
                         </div>
                         <div className="h-2 rounded-full bg-muted overflow-hidden">
                           <motion.div
                             className={`h-full rounded-full ${cat.color}`}
                             initial={{ width: 0 }}
-                            animate={{ width: `${(cat.value / 5) * 100}%` }}
+                            animate={{ width: `${(cat.value / 10) * 100}%` }}
                             transition={{ duration: 0.8, delay: 0.3 }}
                           />
                         </div>

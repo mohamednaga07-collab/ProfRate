@@ -265,14 +265,20 @@
       "availability": "التوفر",
       "communication": "التواصل",
       "knowledge": "المعرفة",
-      "fairness": "الإنصاف"
+      "fairness": "الإنصاف",
+      "engagement": "انخراط الطلاب",
+      "helpfulness": "الدعم والمساعدة",
+      "courseOrganization": "تنظيم المقرر"
     },
     "factorsShort": {
       "teaching": "التدريس",
       "availability": "التوفر",
       "communication": "التواصل",
       "knowledge": "المعرفة",
-      "fairness": "الإنصاف"
+      "fairness": "الإنصاف",
+      "engagement": "الانخراط",
+      "helpfulness": "الدعم",
+      "courseOrganization": "التنظيم"
     }
   },
   "home": {

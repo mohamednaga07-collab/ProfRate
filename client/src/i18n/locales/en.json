@@ -512,14 +512,20 @@
       "availability": "Availability",
       "communication": "Communication",
       "knowledge": "Subject Knowledge",
-      "fairness": "Fairness"
+      "fairness": "Fairness",
+      "engagement": "Engagement",
+      "helpfulness": "Helpfulness",
+      "courseOrganization": "Course Organization"
     },
     "factorsShort": {
       "teaching": "Teaching",
       "availability": "Availability",
       "communication": "Communication",
       "knowledge": "Knowledge",
-      "fairness": "Fairness"
+      "fairness": "Fairness",
+      "engagement": "Engagement",
+      "helpfulness": "Helpfulness",
+      "courseOrganization": "Organization"
     },
     "anonymousCard": {
       "title": "Anonymous Reviews",

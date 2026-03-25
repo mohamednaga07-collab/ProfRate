@@ -46,6 +46,9 @@ export default function Compare() {
       { key: "avgCommunication" as const, label: t("doctorProfile.factors.communication") },
       { key: "avgKnowledge" as const, label: t("doctorProfile.factors.knowledge") },
       { key: "avgFairness" as const, label: t("doctorProfile.factors.fairness") },
+      { key: "avgEngagement" as const, label: t("doctorProfile.factors.engagement", { defaultValue: "Engagement" }) },
+      { key: "avgHelpfulness" as const, label: t("doctorProfile.factors.helpfulness", { defaultValue: "Helpfulness" }) },
+      { key: "avgCourseOrganization" as const, label: t("doctorProfile.factors.courseOrganization", { defaultValue: "Course Organization" }) },
     ],
     [t],
   );
@@ -58,11 +61,24 @@ export default function Compare() {
       | "avgCommunication"
       | "avgKnowledge"
       | "avgFairness"
+      | "avgEngagement"
+      | "avgHelpfulness"
+      | "avgCourseOrganization"
       | "overallRating",
   ) => {
     if (!d?.ratings) return 0;
     const value = (d.ratings as any)[key];
-    return typeof value === "number" && Number.isFinite(value) ? value : 0;
+    const rawVal = typeof value === "number" && Number.isFinite(value) ? value : 0;
+    
+    // Scale legacy 1-5 factors dynamically to the new 1-10 frontend scale everywhere
+    if (["avgTeachingQuality", "avgAvailability", "avgCommunication", "avgKnowledge", "avgFairness"].includes(key)) {
+      return rawVal * 2;
+    }
+    if (key === "overallRating") {
+      const isLegacyOnly = !d.ratings.avgEngagement && !d.ratings.avgHelpfulness && !d.ratings.avgCourseOrganization;
+      return isLegacyOnly ? rawVal * 2 : rawVal;
+    }
+    return rawVal;
   };
 
   const getTotalReviews = (d: DoctorWithRatings | undefined) => {
@@ -174,8 +190,8 @@ export default function Compare() {
                       </div>
                     </div>
                     <div className="flex items-center gap-2">
-                      {isWinner && <Badge className="bg-gradient-to-r from-emerald-500 to-green-600 shadow-sm border-0">{t("compare.winner")}</Badge>}
-                      {isTie && <Badge variant="secondary">{t("compare.tie")}</Badge>}
+                       {isWinner && <Badge className="bg-gradient-to-r from-emerald-500 to-green-600 shadow-sm border-0">{t("compare.winner")}</Badge>}
+                       {isTie && <Badge variant="secondary">{t("compare.tie")}</Badge>}
                     </div>
                   </div>
                 </CardHeader>
@@ -183,7 +199,7 @@ export default function Compare() {
                   <div className="flex items-baseline justify-between gap-4">
                     <div>
                       <div className="text-sm text-muted-foreground">{t("compare.overall")}</div>
-                      <div className="text-3xl font-bold tabular-nums">{overall.toFixed(1)}</div>
+                      <div className="text-3xl font-bold tabular-nums">{overall.toFixed(1)} <span className="text-sm text-muted-foreground font-normal">/ 10</span></div>
                     </div>
                     <div className="text-right">
                       <div className="text-sm text-muted-foreground">{t("compare.totalReviews")}</div>
@@ -194,7 +210,7 @@ export default function Compare() {
                   {d.bio ? <p className="text-sm text-muted-foreground leading-relaxed">{d.bio}</p> : null}
 
                   <div className="space-y-3">
-                    {factors.map((f) => {
+                    {factors.filter(f => getRatingValue(d, f.key) > 0 || totalReviews === 0).map((f) => {
                       const val = getRatingValue(d, f.key);
                       const otherVal = other ? getRatingValue(other, f.key) : 0;
                       const isBest = comparison?.hasAnyReviews && val > otherVal;
@@ -203,11 +219,10 @@ export default function Compare() {
                           <div className="flex items-center justify-between text-sm">
                             <span className="text-muted-foreground">{f.label}</span>
                             <div className="flex items-center gap-2">
-                              <span className="font-semibold tabular-nums">{val.toFixed(1)}</span>
                               {isBest && <CheckCircle className="h-4 w-4 text-emerald-500" />}
                             </div>
                           </div>
-                          <RatingBar label="" value={val} />
+                          <RatingBar label="" value={val} maxValue={10} />
                         </div>
                       );
                     })}

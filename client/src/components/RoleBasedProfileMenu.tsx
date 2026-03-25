@@ -358,19 +358,17 @@ export function RoleBasedProfileMenu({
             transition={{ duration: 0.3, delay: 0.3 }}
             className="py-2"
           >
-            {/* Profile Settings — hidden for admin (they have Activity Log in role menu) */}
-            {userRole !== 'admin' && (
-              <DropdownMenuItem
-                onClick={() => {
-                  navigate("/profile/settings");
-                  setIsOpen(false);
-                }}
-                className="cursor-pointer text-foreground hover:bg-primary/10 px-4 py-2 transition-colors"
-              >
-                <Settings className="h-4 w-4 mr-3" />
-                <span className="text-sm font-medium">{t("profile.settings", { defaultValue: "Profile Settings" })}</span>
-              </DropdownMenuItem>
-            )}
+            {/* Profile Settings — shown for all roles */}
+            <DropdownMenuItem
+              onClick={() => {
+                navigate("/profile/settings");
+                setIsOpen(false);
+              }}
+              className="cursor-pointer text-foreground hover:bg-primary/10 px-4 py-2 transition-colors"
+            >
+              <Settings className="h-4 w-4 mr-3" />
+              <span className="text-sm font-medium">{t("profile.settings", { defaultValue: "Profile Settings" })}</span>
+            </DropdownMenuItem>
             <DropdownMenuItem
               onClick={onLogout}
               className="cursor-pointer text-rose-600 dark:text-rose-400 hover:bg-rose-500/10 px-4 py-2 transition-colors"
