@@ -50,8 +50,8 @@
       "subtitle": "اتخذ قرارات أكاديمية أفضل من خلال مراجعات صادقة من طلاب حقيقيين",
       "cards": {
         "factors": {
-          "title": "تقييم بخمسة معايير",
-          "description": "قيّم الأساتذة حسب جودة التدريس، التوفر، التواصل، المعرفة، والإنصاف لتقييم شامل."
+          "title": "تقييم بثمانية معايير",
+          "description": "قيّم الأساتذة بناءً على 8 محاور: جودة التدريس، التوفر، التواصل، المعرفة، الإنصاف، التفاعل، المساعدة، وتنظيم المقرر."
         },
         "comparison": {
           "title": "مقارنة جنباً إلى جنب",
@@ -321,11 +321,14 @@
       "Lecturer": "محاضر"
     },
     "factors": {
-      "teaching": "ت",
-      "availability": "ت",
-      "communication": "ت",
-      "knowledge": "م",
-      "fairness": "إ"
+      "teaching": "تدريس",
+      "availability": "توفر",
+      "communication": "تواصل",
+      "knowledge": "معرفة",
+      "fairness": "إنصاف",
+      "engagement": "تفاعل",
+      "helpfulness": "مساعدة",
+      "courseOrganization": "تنظيم"
     },
     "professors": {
       "names": {
@@ -359,7 +362,7 @@
       "compareCta": "فتح المقارنة",
       "rateLabel": "تقييم",
       "rateTitle": "تقييم موجه متعدد المعايير",
-      "ratePoint1": "خمسة عوامل مع تلميحات لضمان اتساق الدرجات.",
+      "ratePoint1": "ثمانية معايير مع توضيحات لضمان اتساق درجاتك.",
       "ratePoint2": "أبرز نقاط القوة وخلاصة سريعة.",
       "ratePoint3": "اطّلع على ما لاحظه الزملاء مؤخراً.",
       "rateDesc": "ابق منظماً وسريعاً في آن واحد.",
@@ -431,7 +434,7 @@
     "actions": {
       "rateLabel": "تقييم",
       "rateTitle": "تقييم موجه متعدد المعايير",
-      "rateDesc": "حافظ على اتساق التقييم عبر خمسة معايير موجهة.",
+      "rateDesc": "حافظ على اتساق تقييمك عبر ثمانية معايير موجهة.",
       "rateHint": "مجهول وتستغرق أقل من دقيقة.",
       "rateCta": "ابدأ التقييم",
       "compareLabel": "مقارنة",
@@ -514,14 +517,20 @@
       "availability": "التوفر",
       "communication": "التواصل",
       "knowledge": "معرفة المادة",
-      "fairness": "الإنصاف"
+      "fairness": "الإنصاف",
+      "engagement": "التفاعل",
+      "helpfulness": "المساعدة",
+      "courseOrganization": "تنظيم المقرر"
     },
     "factorsShort": {
       "teaching": "التدريس",
       "availability": "التوفر",
       "communication": "التواصل",
       "knowledge": "المعرفة",
-      "fairness": "الإنصاف"
+      "fairness": "الإنصاف",
+      "engagement": "التفاعل",
+      "helpfulness": "المساعدة",
+      "courseOrganization": "التنظيم"
     },
     "anonymousCard": {
       "title": "مراجعات مجهولة",

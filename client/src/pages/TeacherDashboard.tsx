@@ -447,7 +447,7 @@ export default function TeacherDashboard() {
                         <Bar dataKey="Fairness" name={t("doctorProfile.factorsShort.fairness")} fill="#10b981" radius={[8, 8, 0, 0]} />
                         <Bar dataKey="Engagement" name={t("doctorProfile.factorsShort.engagement")} fill="#ef4444" radius={[8, 8, 0, 0]} />
                         <Bar dataKey="Helpfulness" name={t("doctorProfile.factorsShort.helpfulness")} fill="#0ea5e9" radius={[8, 8, 0, 0]} />
-                        <Bar dataKey="Organization" name={t("doctorProfile.factorsShort.organization")} fill="#84cc16" radius={[8, 8, 0, 0]} />
+                        <Bar dataKey="Organization" name={t("doctorProfile.factorsShort.courseOrganization")} fill="#84cc16" radius={[8, 8, 0, 0]} />
                       </BarChart>
                     </ResponsiveContainer>
                   </CardContent>
@@ -510,7 +510,7 @@ export default function TeacherDashboard() {
                             fullMark: 10
                           },
                           {
-                            category: t("doctorProfile.factorsShort.organization"),
+                            category: t("doctorProfile.factorsShort.courseOrganization"),
                             value: teacherReviews[0].ratings?.avgCourseOrganization ?? 0,
                             fullMark: 10
                           },
@@ -520,24 +520,39 @@ export default function TeacherDashboard() {
                             dataKey="category" 
                             stroke="hsl(var(--muted-foreground))"
                             tick={(props: any) => {
-                              const { x, y, payload, index } = props;
-                              const config = [
-                                { dx: 0, dy: -5, color: "#3b82f6" },       // 1 - Blue
-                                { dx: 10, dy: -5, color: "#8b5cf6" },      // 2 - Purple
-                                { dx: 15, dy: 5, color: "#ec4899" },       // 3 - Pink
-                                { dx: 10, dy: 15, color: "#f59e0b" },      // 4 - Amber
-                                { dx: 0, dy: 15, color: "#10b981" },       // 5 - Green
-                                { dx: -10, dy: 15, color: "#ef4444" },     // 6 - Red
-                                { dx: -15, dy: 5, color: "#0ea5e9" },      // 7 - Sky
-                                { dx: -10, dy: -5, color: "#84cc16" },     // 8 - Lime
+                              const { x, y, payload, index, textAnchor } = props;
+                              const colors = [
+                                "#3b82f6", // 1 - Blue
+                                "#8b5cf6", // 2 - Purple
+                                "#ec4899", // 3 - Pink
+                                "#f59e0b", // 4 - Amber
+                                "#10b981", // 5 - Green
+                                "#ef4444", // 6 - Red
+                                "#0ea5e9", // 7 - Sky
+                                "#84cc16", // 8 - Lime
                               ];
-                              const position = config[index] || { dx: 0, dy: 4, color: "hsl(var(--muted-foreground))" };
+                              const color = colors[index] || "hsl(var(--muted-foreground))";
+                              
+                              // Enhance outwards push for labels to prevent overlap
+                              // Calculate outward vector relative to center
+                              const cx = props.cx || 0;
+                              const cy = props.cy || 0;
+                              const dirX = x - cx;
+                              const dirY = y - cy;
+                              const dist = Math.sqrt(dirX * dirX + dirY * dirY);
+                              
+                              // Push 15px outwards along the direction vector, plus adjust y to visually center with node
+                              const pushDist = 8;
+                              const finalX = x + (dirX / dist) * pushDist;
+                              // Slight vertical fix for top/bottom overlap
+                              const finalY = y + (dirY / dist) * pushDist + (dirY < 0 ? -4 : 4);
+
                               return (
                                 <text 
-                                  x={x + position.dx} 
-                                  y={y + position.dy} 
-                                  textAnchor="middle" 
-                                  fill={position.color}
+                                  x={finalX} 
+                                  y={finalY} 
+                                  textAnchor={textAnchor}
+                                  fill={color}
                                   fontSize={13}
                                   fontWeight={500}
                                 >

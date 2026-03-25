@@ -141,7 +141,35 @@ export default function TeacherCourses() {
                     <ResponsiveContainer width="100%" height={300}>
                       <RadarChart data={radarData}>
                         <PolarGrid stroke="hsl(var(--muted))" />
-                        <PolarAngleAxis dataKey="category" stroke="hsl(var(--muted-foreground))" tick={{ fontSize: 13 }} />
+                        <PolarAngleAxis 
+                          dataKey="category" 
+                          stroke="hsl(var(--muted-foreground))" 
+                          tick={(props: any) => {
+                            const { x, y, payload, textAnchor } = props;
+                            // Calculate outward vector relative to center
+                            const cx = props.cx || 0;
+                            const cy = props.cy || 0;
+                            const dirX = x - cx;
+                            const dirY = y - cy;
+                            const dist = Math.sqrt(dirX * dirX + dirY * dirY);
+                            // Push outwards
+                            const pushDist = 8;
+                            const finalX = x + (dirX / dist) * pushDist;
+                            const finalY = y + (dirY / dist) * pushDist + (dirY < 0 ? -4 : 4);
+                            
+                            return (
+                              <text 
+                                x={finalX} 
+                                y={finalY} 
+                                textAnchor={textAnchor}
+                                fill="hsl(var(--muted-foreground))"
+                                fontSize={13}
+                              >
+                                {payload.value}
+                              </text>
+                            );
+                          }}
+                        />
                         <PolarRadiusAxis angle={90} domain={[0, 10]} tick={false} />
                         <Radar name="Ratings" dataKey="value" stroke="#3b82f6" fill="#3b82f6" fillOpacity={0.55} />
                       </RadarChart>

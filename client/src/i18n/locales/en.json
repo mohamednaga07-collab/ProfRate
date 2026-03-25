@@ -81,7 +81,6 @@
     }
   },
   "auth": {
-    "email": "Email",
     "enterEmail": "Email",
     "chooseUsername": "Username",
     "login": "Login",
@@ -343,7 +342,7 @@
       "compareCta": "Open compare",
       "rateLabel": "Rate",
       "rateTitle": "Guided multi-factor rating",
-      "ratePoint1": "Five factors with tooltips for consistent scores.",
+      "ratePoint1": "8 categories (1–10 scale) with guided sub-questions for consistent, detailed scores.",
       "ratePoint2": "Highlight strengths and a quick takeaway.",
       "ratePoint3": "See what peers recently noticed most.",
       "rateDesc": "Stay structured while staying fast.",
@@ -581,7 +580,6 @@
       "submittedRatings": "Submitted ratings",
       "uptimeStatus": "Uptime status",
       "live": "Live",
-      "systemHealth": "System Health",
       "healthHealthy": "Healthy",
       "healthDegraded": "Degraded",
       "healthDown": "Down",
@@ -774,7 +772,7 @@
   "profile": {
     "personalInfo": "Personal Information",
     "personalInfoDesc": "Information about your account and role.",
-    "username": "Username",
+    "usernameLabel": "Username",
     "email": "Email",
     "role": "Role",
     "settings": "Profile Settings",
