@@ -208,11 +208,19 @@ export function computeAllScores(sub: SubScores) {
 export const insertUserSchema: any = (createInsertSchema(users) as any).omit({ createdAt: true, updatedAt: true });
 export const insertDoctorSchema: any = (createInsertSchema(doctors) as any).omit({ id: true, createdAt: true, updatedAt: true });
 
-// New review schema: accepts subScores object + optional comment
-export const insertReviewSchema: any = z.object({
+export const insertReviewSchema = z.object({
   doctorId: z.number(),
+  teachingQuality: z.number(),
+  availability: z.number(),
+  communication: z.number(),
+  knowledge: z.number(),
+  fairness: z.number(),
+  engagement: z.number(),
+  helpfulness: z.number(),
+  courseOrganization: z.number(),
   subScores: subScoresSchema,
-  comment: z.string().optional(),
+  overallScore: z.number(),
+  comment: z.string().nullable().optional(),
 });
 
 export const insertTeacherPortfolioSchema: any = (createInsertSchema(teacherPortfolios) as any).omit({ id: true, createdAt: true, updatedAt: true });

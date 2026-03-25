@@ -176,6 +176,33 @@ function computeCategoryAvg(scores: Record<string, number>): number {
   return vals.reduce((a, b) => a + b, 0) / vals.length;
 }
 
+// Injected RatingSliderRow to manage ultra-fast local state without lagging the main form
+const RatingSliderRow = ({ q, qKey, initialValue, cat, updateScore }: any) => {
+  const [localVal, setLocalVal] = useState(initialValue);
+  
+  return (
+    <div key={qKey} className="space-y-2">
+      <div className="flex justify-between items-start gap-3">
+        <Label className="text-sm leading-relaxed">{q}</Label>
+        <div className="text-right flex-shrink-0 min-w-[60px]">
+          <span className={`text-2xl font-bold ${getScoreColor(localVal)}`}>{localVal.toFixed(1)}</span>
+          <span className="text-xs text-muted-foreground block whitespace-nowrap">{getScoreLabel(localVal)}</span>
+        </div>
+      </div>
+      <Slider
+        min={1} max={10} step={0.1}
+        value={[localVal]}
+        onValueChange={([v]) => setLocalVal(v)}
+        onValueCommit={([v]) => updateScore(cat.key, qKey, v)}
+        className="w-full"
+      />
+      <div className="flex justify-between text-xs text-muted-foreground">
+        <span>1 — Very Poor</span><span>5 — Fair</span><span>10 — Excellent</span>
+      </div>
+    </div>
+  );
+};
+
 export default function DoctorProfile() {
   const [, params] = useRoute("/doctors/:id");
   const doctorId = params?.id;
@@ -479,24 +506,14 @@ export default function DoctorProfile() {
                         const qKey = `q${qi + 1}`;
                         const val = subScores[cat.key]?.[qKey] ?? 5;
                         return (
-                          <div key={qKey} className="space-y-2">
-                            <div className="flex justify-between items-start gap-3">
-                              <Label className="text-sm leading-relaxed">{q}</Label>
-                              <div className="text-right flex-shrink-0">
-                                <span className={`text-2xl font-bold ${getScoreColor(val)}`}>{val.toFixed(1)}</span>
-                                <span className="text-xs text-muted-foreground block">{getScoreLabel(val)}</span>
-                              </div>
-                            </div>
-                            <Slider
-                              min={1} max={10} step={0.1}
-                              value={[val]}
-                              onValueChange={([v]) => updateScore(cat.key, qKey, v)}
-                              className="w-full"
-                            />
-                            <div className="flex justify-between text-xs text-muted-foreground">
-                              <span>1 — Very Poor</span><span>5 — Fair</span><span>10 — Excellent</span>
-                            </div>
-                          </div>
+                          <RatingSliderRow 
+                            key={qKey} 
+                            q={q} 
+                            qKey={qKey} 
+                            initialValue={val} 
+                            cat={cat} 
+                            updateScore={updateScore} 
+                          />
                         );
                       })}
                     </div>
