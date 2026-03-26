@@ -166,7 +166,7 @@ export default function TeacherCourses() {
                             }
 
                             const dist = Math.sqrt(dirX * dirX + dirY * dirY) || 1;
-                            const pushDist = 3;
+                            const pushDist = 4;
 
                             const finalX = x + (dirX / dist) * pushDist ;
                             const finalY = y + (dirY / dist) * pushDist ;
