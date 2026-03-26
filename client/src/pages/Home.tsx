@@ -274,12 +274,12 @@ export default function Home() {
                     </div>
 
                     <div className="mt-auto relative z-10">
-                      <Button asChild className="w-full justify-between gap-2 bg-background/50 hover:bg-background/80 backdrop-blur border border-border/50 text-foreground group/btn shadow-sm hover:shadow-md transition-all duration-300 h-11 px-5">
-                        <Link href={item.href}>
+                      <Link href={item.href} className="flex w-full">
+                        <Button className="w-full justify-between gap-2 bg-background/50 hover:bg-background/80 backdrop-blur border border-border/50 text-foreground group/btn shadow-sm hover:shadow-md transition-all duration-300 h-11 px-5">
                           <span className="font-bold tracking-tight">{item.cta}</span>
                           <ArrowRight className="h-4 w-4 transition-transform group-hover/btn:translate-x-1" />
-                        </Link>
-                      </Button>
+                        </Button>
+                      </Link>
                     </div>
                   </CardContent>
                 </Card>
@@ -295,12 +295,12 @@ export default function Home() {
               <p className="text-muted-foreground">{t("home.stats.description", { defaultValue: "Get insights into our professor ratings" })}</p>
             </div>
             {user?.role === "student" && (
-              <Button asChild data-testid="button-rate-professor" className="gap-2 bg-gradient-to-r from-amber-500 to-orange-500 text-white hover:from-amber-600 hover:to-orange-600 shadow-md hover:shadow-lg border border-amber-600/20 font-semibold">
-                <Link href="/doctors">
+              <Link href="/doctors" className="inline-block">
+                <Button data-testid="button-rate-professor" className="w-full gap-2 bg-gradient-to-r from-amber-500 to-orange-500 text-white hover:from-amber-600 hover:to-orange-600 shadow-md hover:shadow-lg border border-amber-600/20 font-semibold">
                   <Star className="h-4 w-4" />
-                  {t("home.rateProfessor")}
-                </Link>
-              </Button>
+                  {t("home.stats.rateButton", { defaultValue: "Start Rating" })}
+                </Button>
+              </Link>
             )}
           </div>
 

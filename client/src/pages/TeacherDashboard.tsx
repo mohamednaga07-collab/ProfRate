@@ -540,13 +540,22 @@ export default function TeacherDashboard() {
                               const cy = props.cy || 0;
                               const dirX = x - cx;
                               const dirY = y - cy;
-                              const dist = Math.sqrt(dirX * dirX + dirY * dirY);
                               
-                              // Push 15px outwards along the direction vector, plus adjust y to visually center with node
-                              const pushDist = 8;
-                              // In RTL mode the SVG viewport is mirrored, so negate X push
-                              const rtlFactor = isRTL ? -1 : 1;
-                              const finalX = x + rtlFactor * (dirX / dist) * pushDist;
+                              // In RTL, browers flip 'start' and 'end' meaning for textAnchor.
+                              // So a text anchored at 'start' (right side of string) will shoot leftwards,
+                              // which pushes it INTO the chart on the right side.
+                              // We fix this by swapping start/end in RTL.
+                              let finalAnchor = textAnchor;
+                              if (isRTL) {
+                                if (textAnchor === "start") finalAnchor = "end";
+                                else if (textAnchor === "end") finalAnchor = "start";
+                              }
+
+                              const dist = Math.sqrt(dirX * dirX + dirY * dirY) || 1;
+                              const pushDist = 20;
+
+                              const finalX = x + (dirX / dist) * pushDist + (dirX > 0 ? 5 : -5);
+                              
                               // Slight vertical fix for top/bottom overlap
                               const finalY = y + (dirY / dist) * pushDist + (dirY < 0 ? -4 : 4);
 
@@ -554,7 +563,7 @@ export default function TeacherDashboard() {
                                 <text 
                                   x={finalX} 
                                   y={finalY} 
-                                  textAnchor={textAnchor}
+                                  textAnchor={finalAnchor}
                                   fill={color}
                                   fontSize={13}
                                   fontWeight={500}

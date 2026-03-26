@@ -149,24 +149,33 @@ export default function TeacherCourses() {
                           stroke="hsl(var(--muted-foreground))"
                           tick={(props: any) => {
                             const { x, y, payload, textAnchor } = props;
-                            // SVG x-coordinates in Recharts are NOT flipped by CSS dir=rtl.
                             // The chart center (cx, cy) is always in SVG-space:
                             const cx = props.cx || 0;
                             const cy = props.cy || 0;
                             const dirX = x - cx;
                             const dirY = y - cy;
+
+                            // In RTL, browers flip 'start' and 'end' meaning for textAnchor.
+                            // So a text anchored at 'start' (right side of string) will shoot leftwards,
+                            // which pushes it INTO the chart on the right side.
+                            // We fix this by swapping start/end in RTL.
+                            let finalAnchor = textAnchor;
+                            if (isRTL) {
+                              if (textAnchor === "start") finalAnchor = "end";
+                              else if (textAnchor === "end") finalAnchor = "start";
+                            }
+
                             const dist = Math.sqrt(dirX * dirX + dirY * dirY) || 1;
-                            const pushDist = 10;
-                            // In RTL, the SVG viewport is physically mirrored, so we NEGATE the X push
-                            const rtlFactor = isRTL ? -1 : 1;
-                            const finalX = x + rtlFactor * (dirX / dist) * pushDist;
+                            const pushDist = 20;
+
+                            const finalX = x + (dirX / dist) * pushDist + (dirX > 0 ? 5 : -5);
                             const finalY = y + (dirY / dist) * pushDist + (dirY < 0 ? -4 : 4);
 
                             return (
                               <text
                                 x={finalX}
                                 y={finalY}
-                                textAnchor={textAnchor}
+                                textAnchor={finalAnchor}
                                 fill="hsl(var(--muted-foreground))"
                                 fontSize={13}
                                 fontWeight={500}

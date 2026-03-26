@@ -1036,7 +1036,10 @@ export async function registerRoutes(httpServer: Server, app: Express): Promise<
       if (error.name === "ZodError") {
         return res.status(400).json({ message: "Invalid data", errors: error.errors });
       }
-      res.status(500).json({ message: "Failed to create review" });
+      res.status(500).json({ 
+        message: "Failed to create review", 
+        error: String(error.message || error)
+      });
     }
   });
 

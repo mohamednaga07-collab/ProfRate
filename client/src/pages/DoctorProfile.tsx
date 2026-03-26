@@ -247,7 +247,11 @@ export default function DoctorProfile() {
         setTimeout(() => { window.location.href = "/"; }, 500);
         return;
       }
-      toast({ title: t("doctorProfile.toast.submitFailed"), variant: "destructive" });
+      toast({ 
+        title: t("doctorProfile.toast.submitFailed"), 
+        description: error instanceof Error ? error.message : "An unknown error occurred",
+        variant: "destructive" 
+      });
     },
   });
 
