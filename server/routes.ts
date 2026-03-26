@@ -776,25 +776,51 @@ export async function registerRoutes(httpServer: Server, app: Express): Promise<
       const emailHtml = generateVerificationEmailHtml(username, verificationLink, newUser.profileImageUrl);
       const emailText = `Hi ${username},\n\nThank you for registering! Please verify your email address: ${verificationLink}\n\nOnce verified, you'll be able to log in.`;
       
-      // Send verification email synchronously to ensure it completes before sending response
+      // Send verification email asynchronously to ensure it completes before sending response
       try {
         console.log(`📧 [Registration] Attempting to send verification email to: ${email}`);
-        await sendEmail({
+        
+        // Perform non-blocking email sending to significantly speed up registration
+        sendEmail({
           to: email,
           subject: "Verify Your ProfRate Account",
           html: emailHtml,
           text: emailText,
+        }).then(success => {
+          if (success) {
+            console.log(`✅ [Registration] Verification email sent successfully to ${email}`);
+          } else {
+            console.error(`❌ [Registration] Failed to send verification email to ${email}`);
+          }
+        }).catch((emailError: any) => {
+          console.error(`❌ [Registration] Email error for ${email}:`, emailError.message || emailError);
         });
-        console.log(`✅ [Registration] Verification email sent successfully to ${email}`);
-      } catch (emailError: any) {
-        console.error(`❌ [Registration] Failed to send verification email to ${email}:`, emailError.message || emailError);
+
+      } catch (err: any) {
+        console.error(`❌ [Registration] Setup error for email:`, err);
+      }
+
+      // Automatically log the new user in so they don't have to navigate to login immediately
+      if (req.session) {
+        req.session.userId = newUser.id;
+        try {
+          await new Promise<void>((resolve, reject) => {
+            req.session?.save((err: any) => {
+              if (err) reject(err);
+              else resolve();
+            });
+          });
+          console.log(`📝 Auto-login session set for new user: ${newUser.id}`);
+        } catch (sessionErr) {
+          console.error("❌ Auto-login session save error:", sessionErr);
+        }
       }
 
       // Don't send password to client
       const { password: _, ...userWithoutPassword } = newUser as any;
       res.json({ 
         user: userWithoutPassword,
-        message: "Registration successful. Please check your email to verify your account."
+        message: "Registration successful. You are now logged in! Please check your email to verify your account."
       });
       
       // Request successful, release the guard

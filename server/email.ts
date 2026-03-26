@@ -1,14 +1,37 @@
 import nodemailer from "nodemailer";
+import { google } from "googleapis";
 
 // Email configuration
 const EMAIL_USER = process.env.EMAIL_USER;
 const EMAIL_PASSWORD = (process.env.EMAIL_PASSWORD || "").replace(/\s/g, "");
 const EMAIL_FROM = process.env.EMAIL_FROM || `ProfRate <${EMAIL_USER || 'noreply@profrate.com'}>`;
 
+// Gmail API Configuration (Overrides standard SMTP on restricted hosts like Render)
+const GOOGLE_CLIENT_ID = process.env.GOOGLE_CLIENT_ID;
+const GOOGLE_CLIENT_SECRET = process.env.GOOGLE_CLIENT_SECRET;
+const GOOGLE_REFRESH_TOKEN = process.env.GOOGLE_REFRESH_TOKEN;
+
 // Resend configuration (primary on cloud providers)
 const RESEND_API_KEY = process.env.RESEND_API_KEY;
 const RESEND_FROM = process.env.RESEND_FROM || 'ProfRate <onboarding@resend.dev>';
 const USE_RESEND = !!RESEND_API_KEY;
+
+// Initialize Gmail API client if credentials are present
+let gmailClient: any = null;
+if (GOOGLE_CLIENT_ID && GOOGLE_CLIENT_SECRET && GOOGLE_REFRESH_TOKEN && EMAIL_USER) {
+  try {
+    const oAuth2Client = new google.auth.OAuth2(
+      GOOGLE_CLIENT_ID,
+      GOOGLE_CLIENT_SECRET,
+      "https://developers.google.com/oauthplayground"
+    );
+    oAuth2Client.setCredentials({ refresh_token: GOOGLE_REFRESH_TOKEN });
+    gmailClient = google.gmail({ version: "v1", auth: oAuth2Client });
+    console.log(`[Email Setup] Gmail HTTPS API configured successfully for ${EMAIL_USER}`);
+  } catch (err) {
+    console.error("[Email Setup] Failed to initialize Gmail API client:", err);
+  }
+}
 
 console.log("[Email Setup] Initializing with:");
 console.log(`  EMAIL_USER: ${EMAIL_USER}`);
@@ -16,8 +39,10 @@ console.log(`  Using Resend: ${USE_RESEND}`);
 if (USE_RESEND) {
   console.log(`  Resend API Key: ${RESEND_API_KEY?.substring(0, 5)}...`);
   console.log(`  Resend From: ${RESEND_FROM}`);
+} else if (gmailClient) {
+  console.log(`  Using Gmail REST API (Bypasses SMTP blocks)`);
 } else {
-  console.log(`  ⚠️  RESEND_API_KEY not set - will fall back to Gmail (might fail on Render Free tier)`);
+  console.log(`  ⚠️  Neither Gmail API nor Resend configured - falling back to NodeMailer SMTP (might fail on Render Free tier)`);
 }
 
 // Create Gmail transporter as fallback
@@ -46,10 +71,47 @@ export async function sendEmail(options: EmailOptions): Promise<boolean> {
     console.log(`\n${'='.repeat(60)}`);
     console.log(`[EMAIL SERVICE] Dispatching to: ${options.to}`);
     console.log(`  Subject: ${options.subject}`);
+
+    // 0. Try Gmail HTTPS API FIRST (Bypasses Render SMTP port blocking)
+    if (gmailClient) {
+      console.log(`[GMAIL API] Attempting HTTPS delivery (bypassing SMTP blocks)...`);
+      try {
+        const utf8Subject = `=?utf-8?B?${Buffer.from(options.subject).toString('base64')}?=`;
+        const messageParts = [
+          `From: ${EMAIL_FROM}`,
+          `To: ${options.to}`,
+          'Content-Type: text/html; charset=utf-8',
+          'MIME-Version: 1.0',
+          `Subject: ${utf8Subject}`,
+          '',
+          options.html,
+        ];
+        const message = messageParts.join('\n');
+        
+        // The Gmail API requires a base64url encoded string
+        const encodedMessage = Buffer.from(message)
+          .toString('base64')
+          .replace(/\+/g, '-')
+          .replace(/\//g, '_')
+          .replace(/=+$/, '');
+  
+        const response = await gmailClient.users.messages.send({
+          userId: 'me',
+          requestBody: {
+            raw: encodedMessage,
+          },
+        });
+  
+        console.log(`✅ [GMAIL API] Success! Message ID: ${response.data.id}`);
+        return true;
+      } catch (gmailApiError: any) {
+        console.error(`❌ [GMAIL API] Error:`, gmailApiError.message || gmailApiError);
+      }
+    }
     
-    // 1. Try Resend FIRST (API based, works on Render Free/Cloud)
+    // 1. Try Resend NEXT
     if (USE_RESEND) {
-      console.log(`[RESEND] Attempting delivery...`);
+      console.log(`[RESEND] Attempting Resend API delivery...`);
       try {
         const payload = {
           from: RESEND_FROM,
@@ -88,9 +150,9 @@ export async function sendEmail(options: EmailOptions): Promise<boolean> {
       }
     }
 
-    // 2. Fallback to Gmail SMTP (might be blocked on Render Free)
+    // 2. Fallback to Gmail SMTP (will fail on Render Free tier due to port 587 block)
     if (EMAIL_USER && EMAIL_PASSWORD) {
-      console.log(`[GMAIL] Attempting SMTP fallback...`);
+      console.log(`[GMAIL SMTP] Attempting SMTP fallback...`);
       try {
         const info = await gmailTransporter.sendMail({
           from: EMAIL_FROM,
@@ -100,10 +162,10 @@ export async function sendEmail(options: EmailOptions): Promise<boolean> {
           text: options.text,
         });
 
-        console.log(`✅ [GMAIL] Success! Message ID: ${info.messageId}`);
+        console.log(`✅ [GMAIL SMTP] Success! Message ID: ${info.messageId}`);
         return true;
       } catch (gmailError: any) {
-        console.error(`❌ [GMAIL] SMTP Error:`, gmailError.message || gmailError);
+        console.error(`❌ [GMAIL SMTP] Error:`, gmailError.message || gmailError);
       }
     }
 
