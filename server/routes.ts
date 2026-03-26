@@ -607,7 +607,14 @@ export async function registerRoutes(httpServer: Server, app: Express): Promise<
     console.log(`🔒 Guard active for: ${registrationKey}`);
     
     try {
-      const { password, firstName, lastName, role, recaptchaToken, skipRecaptcha } = req.body;
+      const { password, firstName, lastName, role, recaptchaToken, skipRecaptcha, _hsh } = req.body;
+      
+      // 🍯 Anti-Bot Honeypot Check
+      // Real users never see this field. If it's filled, it's a bot.
+      if (_hsh && String(_hsh).trim().length > 0) {
+        console.warn(`🚨 [SECURITY] Bot honeypot triggered from IP: ${req.ip}. Request silently dropped.`);
+        return res.status(400).json({ message: "Registration validation failed." });
+      }
       
       console.log(`📝 Processing registration for:`, { email, username, role });
 

@@ -6,6 +6,8 @@ import { serveStatic } from "./static";
 import { createServer } from "http";
 import rateLimit from "express-rate-limit";
 import helmet from "helmet";
+import cors from "cors";
+import hpp from "hpp";
 
 const app = express();
 const httpServer = createServer(app);
@@ -31,6 +33,15 @@ declare module "http" {
     rawBody: unknown;
   }
 }
+
+// Strict CORS Policy
+const CORS_ORIGIN = process.env.APP_URL || (process.env.NODE_ENV === "production" ? "https://campus-ratings.onrender.com" : "http://localhost:5000");
+app.use(cors({
+  origin: CORS_ORIGIN,
+  credentials: true, // Allow cookies
+  methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
+  allowedHeaders: ['Content-Type', 'Authorization', 'X-CSRF-Token'],
+}));
 
 // Security headers middleware using Helmet
 app.use(
@@ -111,6 +122,10 @@ app.use(
     extended: false,
   }),
 );
+
+// HTTP Parameter Pollution protection
+// Protects against attackers passing arrays of parameters (e.g., ?user=1&user=2) to exploit logic
+app.use(hpp());
 
 // Rate limiting
 // Rate limiting

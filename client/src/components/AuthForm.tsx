@@ -15,6 +15,7 @@ import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { motion, AnimatePresence } from "framer-motion";
 import { apiRequest, queryClient, prefetchCsrfToken } from "@/lib/queryClient";
 import { useTranslation } from "react-i18next";
+import styles from "./AuthForm.module.css";
 
 interface AuthFormProps {
   onSuccess?: () => void;
@@ -95,6 +96,7 @@ export function AuthForm({ onSuccess, defaultTab = "login" }: AuthFormProps) {
   const [registerUsername, setRegisterUsername] = useState("");
   const [registerPassword, setRegisterPassword] = useState("");
   const [registerPasswordConfirm, setRegisterPasswordConfirm] = useState("");
+  const [registerHoneypot, setRegisterHoneypot] = useState("");
   const [passwordStrength, setPasswordStrength] = useState(0);
   const [validationErrors, setValidationErrors] = useState<string[]>([]);
   const [registerFirstName, setRegisterFirstName] = useState("");
@@ -511,6 +513,7 @@ export function AuthForm({ onSuccess, defaultTab = "login" }: AuthFormProps) {
         role: registerRole,
         recaptchaToken,
         skipRecaptcha: isSessionVerified && !recaptchaToken,
+        _hsh: registerHoneypot,
       });
 
       // apiRequest returns a Response object, we need to parse JSON
@@ -887,6 +890,19 @@ export function AuthForm({ onSuccess, defaultTab = "login" }: AuthFormProps) {
 
               <TabsContent value="register">
                 <form onSubmit={handleRegister} className="space-y-4">
+                  {/* Honeypot field - invisible to real users, but tempting for bots */}
+                  <div className={styles.honeypot} aria-hidden="true">
+                    <Input
+                      type="text"
+                      name="_hsh"
+                      id="_hsh"
+                      tabIndex={-1}
+                      autoComplete="off"
+                      value={registerHoneypot}
+                      onChange={(e) => setRegisterHoneypot(e.target.value)}
+                    />
+                  </div>
+                  
                   <div className="space-y-2">
                     <Label htmlFor="register-email">{t("auth.email", { defaultValue: "Email" })}</Label>
                     <div className="relative">

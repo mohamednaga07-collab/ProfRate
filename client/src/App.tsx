@@ -106,11 +106,11 @@ function Router() {
 
   console.log("🔄 Router render - isAuthenticated:", isAuthenticated, "isLoading:", isLoading, "user:", user?.username);
 
-  // Strict Navigation Security: Intercept popstate (Back/Forward) and reload (F5)
+  // Strict Navigation Security: Intercept popstate (Back/Forward buttons only)
   React.useEffect(() => {
     if (!isAuthenticated) return;
 
-    // 1. Intercept Back/Forward navigation
+    // Intercept Back/Forward navigation (but NOT refresh - that is intentionally allowed)
     const handlePopState = () => {
       console.log("🚨 [SECURITY] Abnormal navigation (popstate) detected. Terminating session...");
       logout();
@@ -122,27 +122,6 @@ function Router() {
     };
 
     window.addEventListener("popstate", handlePopState);
-
-    // 2. Intercept Page Refresh
-    const navEntries = performance.getEntriesByType("navigation") as PerformanceNavigationTiming[];
-    if (navEntries.length > 0 && navEntries[0].type === "reload") {
-      const isSystemReload = sessionStorage.getItem("system-reload") === "true";
-      
-      if (isSystemReload) {
-        console.log("ℹ️ [SECURITY] System-initiated refresh detected. Session preserved.");
-        sessionStorage.removeItem("system-reload");
-      } else {
-        console.log("🚨 [SECURITY] Manual page refresh detected. Terminating session...");
-        setTimeout(() => {
-          logout();
-          toast({
-            title: "Session Terminated",
-            description: "Manual page refreshes are not permitted for security reasons.",
-            variant: "destructive",
-          });
-        }, 100); // Slight delay ensures toast provider is mounted during hard reload
-      }
-    }
 
     return () => {
       window.removeEventListener("popstate", handlePopState);
