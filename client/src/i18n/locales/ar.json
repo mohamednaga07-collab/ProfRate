@@ -843,6 +843,11 @@
       "passwordPlaceholder": "••••••••",
       "submit": "تحديث اسم المستخدم"
     },
+    "roles": {
+      "admin": "مشرف",
+      "teacher": "أستاذ",
+      "student": "طالب"
+    },
     "stats": {
       "ratings": "التقييمات",
       "streak": "الاستمرارية",

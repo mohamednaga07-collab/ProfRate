@@ -808,6 +808,11 @@
     "passwordPlaceholder": "••••••••",
       "submit": "Update Username"
     },
+    "roles": {
+      "admin": "Admin",
+      "teacher": "Teacher",
+      "student": "Student"
+    },
     "stats": {
       "ratings": "Ratings",
       "streak": "Streak",

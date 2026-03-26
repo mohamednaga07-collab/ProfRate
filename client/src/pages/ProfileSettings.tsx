@@ -321,7 +321,7 @@ export default function ProfileSettings() {
                   </h1>
                   <Badge variant={theme.badgeVariant} className="text-white font-semibold">
                     <RoleIcon className="h-3 w-3 mr-1" />
-                    {userRole.charAt(0).toUpperCase() + userRole.slice(1)}
+                    {t(`profile.roles.${userRole}`)}
                   </Badge>
                 </motion.div>
                 <motion.p 
@@ -382,7 +382,7 @@ export default function ProfileSettings() {
                   </Label>
                   <div className="p-3 rounded-lg bg-muted/50 border border-border/50">
                     <Badge variant={theme.badgeVariant} className="font-semibold">
-                      {userRole.charAt(0).toUpperCase() + userRole.slice(1)}
+                      {t(`profile.roles.${userRole}`)}
                     </Badge>
                   </div>
                 </div>
