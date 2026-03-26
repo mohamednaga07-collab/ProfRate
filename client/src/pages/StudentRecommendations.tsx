@@ -5,6 +5,7 @@ import { motion } from "framer-motion";
 import { Zap, Sparkles, ArrowRight } from "lucide-react";
 import { Link } from "wouter";
 import { StarRating } from "@/components/StarRating";
+import { useTranslation } from "react-i18next";
 
 interface Doctor {
   id: number;
@@ -18,6 +19,7 @@ interface Doctor {
 }
 
 export default function StudentRecommendations() {
+  const { t } = useTranslation();
   const { data: doctors = [], isLoading } = useQuery<Doctor[]>({
     queryKey: ["/api/doctors"],
     queryFn: async () => {
@@ -43,8 +45,8 @@ export default function StudentRecommendations() {
               <Zap className="h-6 w-6 text-teal-500" />
             </div>
             <div>
-              <h1 className="text-3xl font-bold">Recommendations</h1>
-              <p className="text-muted-foreground">Top-tier professors matched for you based on community acclaim</p>
+              <h1 className="text-3xl font-bold">{t("student.recommendations.title")}</h1>
+              <p className="text-muted-foreground">{t("student.recommendations.subtitle")}</p>
             </div>
           </div>
         </motion.div>
@@ -57,7 +59,7 @@ export default function StudentRecommendations() {
           <Card className="text-center py-16 border-dashed">
             <CardContent>
               <Sparkles className="h-12 w-12 mx-auto mb-4 text-muted-foreground" />
-              <p className="text-muted-foreground">We need more reviews before we can recommend professors.</p>
+              <p className="text-muted-foreground">{t("student.recommendations.empty")}</p>
             </CardContent>
           </Card>
         ) : (
@@ -82,7 +84,7 @@ export default function StudentRecommendations() {
                       
                       <div className="mt-auto pt-4 border-t flex items-center justify-between">
                         <div>
-                          <p className="text-xs text-muted-foreground font-medium mb-1">Department</p>
+                          <p className="text-xs text-muted-foreground font-medium mb-1">{t("student.recommendations.department")}</p>
                           <p className="text-sm font-semibold">{doc.department}</p>
                         </div>
                         <div className="text-right">
@@ -90,7 +92,7 @@ export default function StudentRecommendations() {
                             <span className="font-bold text-lg leading-none">{doc.ratings?.overallRating.toFixed(1)}</span>
                             <StarRating rating={doc.ratings?.overallRating ?? 0} size="sm" />
                           </div>
-                          <p className="text-xs text-muted-foreground font-medium">{doc.ratings?.totalReviews} verified reviews</p>
+                          <p className="text-xs text-muted-foreground font-medium">{t("student.recommendations.verifiedReviews", { count: doc.ratings?.totalReviews ?? 0 })}</p>
                         </div>
                       </div>
                     </CardContent>

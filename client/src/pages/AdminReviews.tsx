@@ -18,10 +18,10 @@ export default function AdminReviews() {
     <div className="p-8">
       <h1 className="text-2xl font-bold mb-4">{t("admin.titles.reviews")}</h1>
       {isLoading && (
-        <div className="flex items-center gap-2"><Loader2 className="animate-spin" /> Loading reviews...</div>
+        <div className="flex items-center gap-2"><Loader2 className="animate-spin" /> {t("admin.loading.reviews")}</div>
       )}
       {error && (
-        <div className="text-red-500">Error loading reviews: {String(error.message)}</div>
+        <div className="text-red-500">{t("admin.errors.loadingReviews")}: {String(error.message)}</div>
       )}
       {reviews && Array.isArray(reviews) && (
         <table className="min-w-full border rounded-lg overflow-hidden mt-4">

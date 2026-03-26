@@ -4,6 +4,7 @@ import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/com
 import { motion } from "framer-motion";
 import { Activity, BookOpen, Star, User, Shield, Clock } from "lucide-react";
 import { useAuth } from "@/hooks/useAuth";
+import { useTranslation } from "react-i18next";
 
 interface ActivityLog {
   id: number;
@@ -24,15 +25,16 @@ const typeIcon: Record<string, React.ReactNode> = {
   admin_action: <Shield className="h-4 w-4 text-red-500" />,
 };
 
-const typeLabel: Record<string, string> = {
-  login: "Login",
-  review: "Rating Submitted",
-  doctor: "Professor Action",
-  admin: "Admin Action",
-  admin_action: "Admin Action",
-};
+const typeLabel = (t: any): Record<string, string> => ({
+  login: t("admin.activity.types.login"),
+  review: t("admin.activity.types.review"),
+  doctor: t("admin.activity.types.doctor"),
+  admin: t("admin.activity.types.admin"),
+  admin_action: t("admin.activity.types.admin"),
+});
 
 export default function AdminActivityLog() {
+  const { t } = useTranslation();
   const { user } = useAuth();
 
   const { data: logs = [], isLoading } = useQuery<ActivityLog[]>({
@@ -58,8 +60,8 @@ export default function AdminActivityLog() {
               <Activity className="h-6 w-6 text-red-500" />
             </div>
             <div>
-              <h1 className="text-3xl font-bold">Activity Log</h1>
-              <p className="text-muted-foreground">Full audit trail of all platform actions across all users</p>
+              <h1 className="text-3xl font-bold">{t("admin.activity.title")}</h1>
+              <p className="text-muted-foreground">{t("admin.activity.subtitle")}</p>
             </div>
           </div>
         </motion.div>
@@ -68,9 +70,9 @@ export default function AdminActivityLog() {
         <motion.div initial={{ opacity: 0, y: 16 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.1 }}
           className="grid grid-cols-3 gap-4 mb-8">
           {[
-            { label: "Logins", value: totalLogins, color: "text-green-600 dark:text-green-400" },
-            { label: "Ratings Submitted", value: totalReviews, color: "text-amber-600 dark:text-amber-400" },
-            { label: "Admin Actions", value: totalAdmin, color: "text-red-600 dark:text-red-400" },
+            { label: t("admin.activity.labels.logins"), value: totalLogins, color: "text-green-600 dark:text-green-400" },
+            { label: t("admin.activity.labels.ratings"), value: totalReviews, color: "text-amber-600 dark:text-amber-400" },
+            { label: t("admin.activity.labels.adminActions"), value: totalAdmin, color: "text-red-600 dark:text-red-400" },
           ].map((s, i) => (
             <Card key={i} className="bg-card/80 backdrop-blur">
               <CardContent className="pt-4 pb-4 text-center">
@@ -86,9 +88,9 @@ export default function AdminActivityLog() {
           <Card className="bg-card/80 backdrop-blur">
             <CardHeader className="pb-2">
               <CardTitle className="flex items-center gap-2 text-base">
-                <Clock className="h-4 w-4" /> Recent Events
+                <Clock className="h-4 w-4" /> {t("admin.activity.recentEvents")}
               </CardTitle>
-              <CardDescription>Showing latest {logs.length} events</CardDescription>
+              <CardDescription>{t("admin.activity.showingLatest", { count: logs.length })}</CardDescription>
             </CardHeader>
             <CardContent className="p-0">
               {isLoading ? (
@@ -96,7 +98,7 @@ export default function AdminActivityLog() {
                   <div className="h-8 w-8 animate-spin rounded-full border-4 border-primary border-t-transparent" />
                 </div>
               ) : logs.length === 0 ? (
-                <p className="text-center text-muted-foreground py-10">No activity logged yet.</p>
+                <p className="text-center text-muted-foreground py-10">{t("admin.activity.noActivity")}</p>
               ) : (
                 <div className="divide-y">
                   {logs.map((log, i) => (
@@ -113,8 +115,8 @@ export default function AdminActivityLog() {
                       <div className="flex-1 min-w-0">
                         <div className="flex items-center gap-2 flex-wrap">
                           <span className="font-medium text-sm truncate">{log.username}</span>
-                          <span className="text-xs px-1.5 py-0.5 rounded bg-muted text-muted-foreground capitalize">{log.role}</span>
-                          <span className="text-xs text-muted-foreground truncate">{log.action}</span>
+                          <span className="text-xs px-1.5 py-0.5 rounded bg-muted text-muted-foreground capitalize">{t(`roles.${log.role}`)}</span>
+                          <span className="text-xs text-muted-foreground truncate">{t(`admin.activity.actions.${log.action}`, { defaultValue: log.action })}</span>
                         </div>
                       </div>
                       <div className="flex-shrink-0 text-right">

@@ -18,10 +18,10 @@ export default function AdminDoctors() {
     <div className="p-8">
       <h1 className="text-2xl font-bold mb-4">{t("admin.titles.doctors")}</h1>
       {isLoading && (
-        <div className="flex items-center gap-2"><Loader2 className="animate-spin" /> Loading doctors...</div>
+        <div className="flex items-center gap-2"><Loader2 className="animate-spin" /> {t("admin.loading.doctors")}</div>
       )}
       {error && (
-        <div className="text-red-500">Error loading doctors: {String(error.message)}</div>
+        <div className="text-red-500">{t("admin.errors.loadingDoctors")}: {String(error.message)}</div>
       )}
       {doctors && Array.isArray(doctors) && (
         <table className="min-w-full border rounded-lg overflow-hidden mt-4">

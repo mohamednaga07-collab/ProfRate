@@ -271,7 +271,8 @@
       "totalProfessors": "Total Professors",
       "totalReviews": "Total Reviews",
       "avgRating": "Avg Rating",
-      "departments": "Departments"
+      "departments": "Departments",
+      "rateButton": "Start Rating"
     },
     "depts": {
       "all": "All Departments",
@@ -570,6 +571,43 @@
       "export": "Export Data",
       "settings": "Settings"
     },
+    "titles": {
+      "users": "Manage Users",
+      "doctors": "Manage Professors",
+      "reviews": "Manage Reviews",
+      "settings": "System Settings",
+      "analytics": "Platform Analytics"
+    },
+    "analytics": {
+      "subtitle": "High-level growth and participation metrics across the whole application",
+      "growthTrajectory": "Growth Trajectory",
+      "growthDesc": "User registrations and review submissions over time",
+      "vsLastMonth": "% vs last month",
+      "users": "Users",
+      "reviews": "Reviews"
+    },
+    "loading": {
+      "generic": "Loading...",
+      "users": "Loading users...",
+      "doctors": "Loading professors...",
+      "reviews": "Loading reviews..."
+    },
+    "errors": {
+      "loadingUsers": "Error loading users",
+      "loadingDoctors": "Error loading professors",
+      "loadingReviews": "Error loading reviews",
+      "somethingWentWrong": "Something went wrong",
+      "unexpectedError": "We're sorry, but an unexpected error occurred. Please try to reload the page.",
+      "generic": "Something went wrong"
+    },
+    "status": {
+      "active": "Active",
+      "inactive": "Inactive"
+    },
+    "labels": {
+      "selectRole": "Select New Role",
+      "user": "User"
+    },
     "stats": {
       "totalUsers": "Total Users",
       "totalDoctors": "Total Professors",
@@ -580,6 +618,7 @@
       "submittedRatings": "Submitted ratings",
       "uptimeStatus": "Uptime status",
       "live": "Live",
+      "activeUsers": "Active Users",
       "healthHealthy": "Healthy",
       "healthDegraded": "Degraded",
       "healthDown": "Down",
@@ -611,11 +650,33 @@
       "exportData": "Export Data"
     },
     "activity": {
-      "title": "Recent Activity",
+      "title": "Activity Log",
+      "subtitle": "Full audit trail of all platform actions across all users",
       "empty": "No recent activity",
       "byUser": "by {{username}} ({{role}})",
       "topRated": "Top Rated",
-      "reviewsCount": "{{count}} reviews"
+      "recentEvents": "Recent Events",
+      "showingLatest": "Showing latest {{count}} events",
+      "noActivity": "No activity logged yet.",
+      "labels": {
+        "logins": "Logins",
+        "ratings": "Ratings Submitted",
+        "adminActions": "Admin Actions"
+      },
+      "types": {
+        "login": "Login",
+        "review": "Rating Submitted",
+        "doctor": "Professor Action",
+        "admin": "Admin Action"
+      },
+      "actions": {
+        "user_logged_in": "User logged in",
+        "user_registered": "New user registered",
+        "review_submitted": "New review submitted",
+        "doctor_added": "New professor added",
+        "profile_updated": "Profile updated",
+        "role_updated": "Permissions updated"
+      }
     },
     "tabs": {
       "users": "Users",
@@ -644,13 +705,6 @@
         "specialty": "Specialty"
       },
       "editRoleDesc": "Manage user access permissions",
-      "titles": {
-        "users": "Manage Users",
-        "reviews": "Manage Reviews",
-        "doctors": "Manage Doctors",
-        "settings": "System Settings",
-        "analytics": "Dashboard Analytics"
-      },
       "export": {
         "username": "Username",
         "email": "Email",
@@ -763,10 +817,6 @@
       "doctorDeleteFailed": "Failed to delete professor",
       "reviewDeleted": "Review deleted successfully",
       "reviewDeleteFailed": "Failed to delete review"
-    },
-    "errors": {
-      "somethingWentWrong": "Something went wrong",
-      "unexpectedError": "We're sorry, but an unexpected error occurred. Please try to reload the page."
     }
   },
   "profile": {
@@ -840,6 +890,79 @@
       "stats": "Learning Stats",
       "recommendations": "Recommendations",
       "soon": "Coming soon!"
+    },
+    "ratings": {
+      "title": "Recent Ratings",
+      "subtitle": "See what fellow students are saying about their professors",
+      "searchPlaceholder": "Search by professor or course...",
+      "emptyTitle": "No ratings found",
+      "emptyDesc": "Try adjusting your search to find what you're looking for.",
+      "reviewsCount": "{{count}} reviews"
+    },
+    "recommendations": {
+      "title": "Recommendations",
+      "subtitle": "Top-tier professors matched for you based on community acclaim",
+      "empty": "We need more reviews before we can recommend professors.",
+      "department": "Department",
+      "verifiedReviews": "{{count}} verified reviews"
+    },
+    "achievements": {
+      "title": "My Achievements",
+      "subtitle": "Track your earned badges, contributions, and community impact",
+      "stats": {
+        "points": "Total Points",
+        "earned": "Badges Earned",
+        "reviews": "Reviews Given",
+        "logins": "Logins"
+      },
+      "progress": "Badge Progress",
+      "complete": "{{percent}}% complete"
+    },
+    "stats": {
+      "title": "Learning Stats",
+      "subtitle": "Track your academic trajectory and course history",
+      "addCourse": "Add Course",
+      "totalCourses": "Total Courses",
+      "termsTracked": "Terms Tracked",
+      "gradedCourses": "Courses with Grades",
+      "form": {
+        "title": "Add a Course",
+        "desc": "Log a course you're taking or have completed",
+        "name": "Course Name",
+        "code": "Course Code",
+        "term": "Term / Semester",
+        "grade": "Grade",
+        "save": "Save Course",
+        "saving": "Saving...",
+        "cancel": "Cancel"
+      },
+      "emptyTitle": "No courses tracked yet",
+      "emptyDesc": "Add your first course using the button above to start building your academic record."
+    }
+  },
+  "adminDashboard": {
+    "title": "Admin Dashboard",
+    "subtitle": "Manage users, doctors, reviews, and platform configuration",
+    "nav": {
+      "overview": "Overview",
+      "users": "Users",
+      "doctors": "Doctors",
+      "reviews": "Reviews",
+      "analytics": "Analytics",
+      "logs": "Activity Log",
+      "settings": "Settings"
+    },
+    "stats": {
+      "totalUsers": "Total Users",
+      "totalDoctors": "Total Doctors",
+      "totalReviews": "Total Reviews",
+      "systemHealth": "System Health"
+    },
+    "actions": {
+      "addUser": "Add User",
+      "addDoctor": "Add Doctor",
+      "exportData": "Export Data",
+      "viewAll": "View All"
     }
   },
   "teacherCourses": {

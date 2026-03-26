@@ -31,108 +31,17 @@ import { motion, AnimatePresence } from "framer-motion";
 import { cn } from "@/lib/utils";
 
 // Definition of all 8 rating categories with their sub-questions
+// Labels and questions are looked up by key from i18n at render time
 const CATEGORIES = [
-  {
-    key: "teachingQuality",
-    label: "Teaching Quality",
-    icon: BookOpen,
-    color: "text-blue-500",
-    bg: "bg-blue-500/10",
-    border: "border-blue-500/20",
-    questions: [
-      "How clearly did the professor explain complex concepts?",
-      "How effective were the teaching methods and techniques?",
-      "How engaging and stimulating were the class sessions?",
-    ],
-  },
-  {
-    key: "availability",
-    label: "Availability",
-    icon: Clock,
-    color: "text-green-500",
-    bg: "bg-green-500/10",
-    border: "border-green-500/20",
-    questions: [
-      "How accessible was the professor outside of class hours?",
-      "How quickly did the professor respond to questions or emails?",
-    ],
-  },
-  {
-    key: "communication",
-    label: "Communication",
-    icon: MessageCircle,
-    color: "text-purple-500",
-    bg: "bg-purple-500/10",
-    border: "border-purple-500/20",
-    questions: [
-      "How clearly did the professor communicate course expectations?",
-      "How effectively did the professor give feedback on your work?",
-      "How well did the professor listen to student concerns?",
-    ],
-  },
-  {
-    key: "knowledge",
-    label: "Knowledge",
-    icon: Brain,
-    color: "text-orange-500",
-    bg: "bg-orange-500/10",
-    border: "border-orange-500/20",
-    questions: [
-      "How knowledgeable was the professor in the subject matter?",
-      "How well did the professor connect theory to real-world practice?",
-    ],
-  },
-  {
-    key: "fairness",
-    label: "Fairness",
-    icon: Scale,
-    color: "text-red-500",
-    bg: "bg-red-500/10",
-    border: "border-red-500/20",
-    questions: [
-      "How fair was the grading and assessment approach?",
-      "How consistent was the professor in applying rules and policies?",
-      "How unbiased and equal was the treatment of all students?",
-    ],
-  },
-  {
-    key: "engagement",
-    label: "Engagement",
-    icon: Zap,
-    color: "text-yellow-500",
-    bg: "bg-yellow-500/10",
-    border: "border-yellow-500/20",
-    questions: [
-      "How interesting and stimulating were the class sessions overall?",
-      "How much did the professor motivate you to learn the subject?",
-    ],
-  },
-  {
-    key: "helpfulness",
-    label: "Helpfulness",
-    icon: HandHeart,
-    color: "text-pink-500",
-    bg: "bg-pink-500/10",
-    border: "border-pink-500/20",
-    questions: [
-      "How willing was the professor to help struggling students?",
-      "How useful were the office hours and supplementary materials?",
-    ],
-  },
-  {
-    key: "courseOrganization",
-    label: "Course Organization",
-    icon: GraduationCap,
-    color: "text-teal-500",
-    bg: "bg-teal-500/10",
-    border: "border-teal-500/20",
-    questions: [
-      "How well-structured was the course syllabus and outline?",
-      "How organized were the course materials and resources?",
-      "How reasonable was the course workload and pacing?",
-    ],
-  },
-] as const;
+  { key: "teachingQuality", questionCount: 3, icon: BookOpen, color: "text-blue-500", bg: "bg-blue-500/10", border: "border-blue-500/20" },
+  { key: "availability",    questionCount: 2, icon: Clock,      color: "text-green-500",  bg: "bg-green-500/10",  border: "border-green-500/20" },
+  { key: "communication",  questionCount: 3, icon: MessageCircle, color: "text-purple-500", bg: "bg-purple-500/10", border: "border-purple-500/20" },
+  { key: "knowledge",      questionCount: 2, icon: Brain,      color: "text-orange-500", bg: "bg-orange-500/10", border: "border-orange-500/20" },
+  { key: "fairness",       questionCount: 3, icon: Scale,      color: "text-red-500",    bg: "bg-red-500/10",    border: "border-red-500/20" },
+  { key: "engagement",     questionCount: 2, icon: Zap,        color: "text-yellow-500", bg: "bg-yellow-500/10", border: "border-yellow-500/20" },
+  { key: "helpfulness",    questionCount: 2, icon: HandHeart,  color: "text-pink-500",   bg: "bg-pink-500/10",   border: "border-pink-500/20" },
+  { key: "courseOrganization", questionCount: 3, icon: GraduationCap, color: "text-teal-500", bg: "bg-teal-500/10", border: "border-teal-500/20" },
+];
 
 // Group categories into 3 steps
 const STEPS = [
@@ -149,9 +58,9 @@ function makeDefaultSubScores(): SubScores {
   const result: SubScores = {};
   for (const cat of CATEGORIES) {
     result[cat.key] = {};
-    cat.questions.forEach((_, i) => {
+    for (let i = 0; i < cat.questionCount; i++) {
       result[cat.key][`q${i + 1}`] = 5; // default midpoint
-    });
+    }
   }
   return result;
 }
@@ -402,10 +311,10 @@ export default function DoctorProfile() {
                                   const sub = (review.subScores as any)?.[cat.key] ?? {};
                                   const catAvg = computeCategoryAvg(sub);
                                   return (
-                                    <div key={cat.key} className={`text-center p-2 rounded-lg ${cat.bg} border ${cat.border}`}>
+                                   <div key={cat.key} className={`text-center p-2 rounded-lg ${cat.bg} border ${cat.border}`}>
                                       <cat.icon className={`h-4 w-4 mx-auto mb-1 ${cat.color}`} />
                                       <div className={`font-bold text-sm ${getScoreColor(catAvg)}`}>{catAvg.toFixed(1)}</div>
-                                      <div className="text-xs text-muted-foreground truncate">{cat.label}</div>
+                                      <div className="text-xs text-muted-foreground truncate">{t(`doctorProfile.categories.${cat.key}`, { defaultValue: cat.key })}</div>
                                     </div>
                                   );
                                 })}
@@ -489,8 +398,8 @@ export default function DoctorProfile() {
           {/* Step progress bar */}
           <div className="space-y-1 mb-6">
             <div className="flex justify-between text-xs text-muted-foreground font-medium">
-              <span>Step {step + 1} of {totalSteps}</span>
-              <span>{Math.round(progress)}% complete</span>
+              <span>{t("doctorProfile.stepOf", { step: step + 1, total: totalSteps, defaultValue: `Step ${step + 1} of ${totalSteps}` })}</span>
+              <span>{Math.round(progress)}% {t("doctorProfile.complete", { defaultValue: "complete" })}</span>
             </div>
             <Progress value={progress} className="h-2" />
           </div>
@@ -499,14 +408,17 @@ export default function DoctorProfile() {
             {step < STEPS.length ? (
               /* Category question steps */
               <motion.div key={`step-${step}`} initial={{ opacity: 0, x: 20 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: -20 }} transition={{ duration: 0.2 }} className="space-y-6">
-                {currentStepCategories!.map((cat) => (
+                {currentStepCategories!.map((cat) => {
+                  const catLabel = t(`doctorProfile.categories.${cat.key}`, { defaultValue: cat.key });
+                  const catQuestions = (t(`doctorProfile.questions.${cat.key}`, { returnObjects: true }) as string[]);
+                  return (
                   <div key={cat.key} className={`rounded-xl border ${cat.border} ${cat.bg} p-4`}>
                     <div className="flex items-center gap-2 mb-4">
                       <cat.icon className={`h-5 w-5 ${cat.color}`} />
-                      <span className="font-semibold">{cat.label}</span>
+                      <span className="font-semibold">{catLabel}</span>
                     </div>
                     <div className="space-y-5">
-                      {cat.questions.map((q, qi) => {
+                      {catQuestions.map((q, qi) => {
                         const qKey = `q${qi + 1}`;
                         const val = subScores[cat.key]?.[qKey] ?? 5;
                         return (
@@ -522,23 +434,27 @@ export default function DoctorProfile() {
                       })}
                     </div>
                   </div>
-                ))}
-              </motion.div>
+                );
+              })}
+            </motion.div>
             ) : (
               /* Final step: comment + summary */
               <motion.div key="step-summary" initial={{ opacity: 0, x: 20 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: -20 }} transition={{ duration: 0.2 }} className="space-y-5">
                 <div>
                   <Label className="mb-2 block font-semibold">Score Summary</Label>
                   <div className="grid grid-cols-4 gap-2">
-                    {CATEGORIES.map(cat => (
+                    {CATEGORIES.map(cat => {
+                      const catLbl = t(`doctorProfile.categories.${cat.key}`, { defaultValue: cat.key });
+                      return (
                       <div key={cat.key} className={`text-center p-3 rounded-lg ${cat.bg} border ${cat.border}`}>
                         <cat.icon className={`h-4 w-4 mx-auto mb-1 ${cat.color}`} />
                         <div className={`text-lg font-bold ${getScoreColor(catAverages[cat.key])}`}>
                           {catAverages[cat.key].toFixed(1)}
                         </div>
-                        <div className="text-xs text-muted-foreground leading-tight">{cat.label}</div>
+                        <div className="text-xs text-muted-foreground leading-tight">{catLbl}</div>
                       </div>
-                    ))}
+                      );
+                    })}
                   </div>
                   <div className="mt-3 p-3 rounded-xl bg-primary/5 border border-primary/20 flex items-center justify-between">
                     <span className="font-semibold text-sm">Overall Score</span>

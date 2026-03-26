@@ -159,17 +159,17 @@ export default function TeacherCourses() {
                             // So a text anchored at 'start' (right side of string) will shoot leftwards,
                             // which pushes it INTO the chart on the right side.
                             // We fix this by swapping start/end in RTL.
-                            let finalAnchor = textAnchor;
+                            let finalAnchor = textAnchor; if (Math.abs(dirX) < 10) finalAnchor = "middle";
                             if (isRTL) {
                               if (textAnchor === "start") finalAnchor = "end";
                               else if (textAnchor === "end") finalAnchor = "start";
                             }
 
                             const dist = Math.sqrt(dirX * dirX + dirY * dirY) || 1;
-                            const pushDist = 20;
+                            const pushDist = 3;
 
-                            const finalX = x + (dirX / dist) * pushDist + (dirX > 0 ? 5 : -5);
-                            const finalY = y + (dirY / dist) * pushDist + (dirY < 0 ? -4 : 4);
+                            const finalX = x + (dirX / dist) * pushDist ;
+                            const finalY = y + (dirY / dist) * pushDist ;
 
                             return (
                               <text

@@ -103,7 +103,7 @@ export default function AdminUsers() {
       {error && (
         <div className="flex items-center gap-3 p-4 bg-destructive/10 text-destructive rounded-lg border border-destructive/20">
             <AlertCircle className="h-5 w-5" />
-            <span>Error loading users: {String(error.message)}</span>
+            <span>{t("admin.errors.loadingUsers")}: {String(error.message)}</span>
         </div>
       )}
 
@@ -131,7 +131,7 @@ export default function AdminUsers() {
                   <td className="px-6 py-4">
                       <div className="flex items-center gap-2 px-2.5 py-1 rounded-full bg-secondary w-fit text-xs font-medium capitalize">
                           {getRoleIcon(user.role)}
-                          {user.role}
+                          {t(`roles.${user.role}`)}
                       </div>
                   </td>
                   <td className="px-6 py-4">
@@ -140,7 +140,7 @@ export default function AdminUsers() {
                           ? "bg-green-500/10 text-green-600 dark:text-green-400" 
                           : "bg-red-500/10 text-red-600 dark:text-red-400"
                       }`}>
-                          {user.isActive ? "Active" : "Inactive"}
+                          {user.isActive ? t("admin.status.active") : t("admin.status.inactive")}
                       </span>
                   </td>
                   <td className="px-6 py-4 text-right">
@@ -181,7 +181,7 @@ export default function AdminUsers() {
                                     </div>
                                 </div>
                                 <div className="space-y-2">
-                                    <label className="text-sm font-medium">{t("admin.labels.selectRole", { defaultValue: "Select New Role" })}</label>
+                                    <label className="text-sm font-medium">{t("admin.labels.selectRole")}</label>
                                     <Select value={newRole} onValueChange={setNewRole}>
                                         <SelectTrigger>
                                             <SelectValue />
@@ -190,19 +190,19 @@ export default function AdminUsers() {
                                             <SelectItem value="student">
                                                 <div className="flex items-center gap-2">
                                                     <User className="h-4 w-4 text-green-500" />
-                                                    Student
+                                                    {t("roles.student")}
                                                 </div>
                                             </SelectItem>
                                             <SelectItem value="teacher">
                                                 <div className="flex items-center gap-2">
                                                     <GraduationCap className="h-4 w-4 text-blue-500" />
-                                                    Teacher
+                                                    {t("roles.teacher")}
                                                 </div>
                                             </SelectItem>
                                             <SelectItem value="admin">
                                                 <div className="flex items-center gap-2">
                                                     <Shield className="h-4 w-4 text-red-500" />
-                                                    Admin
+                                                    {t("roles.admin")}
                                                 </div>
                                             </SelectItem>
                                         </SelectContent>

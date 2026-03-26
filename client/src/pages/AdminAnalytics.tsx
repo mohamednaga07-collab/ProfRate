@@ -1,5 +1,6 @@
 import { useQuery } from "@tanstack/react-query";
 import { Header } from "@/components/Header";
+import { useTranslation } from "react-i18next";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { motion } from "framer-motion";
 import { BarChart3, Users, Star, ArrowUpRight, Activity } from "lucide-react";
@@ -16,13 +17,14 @@ interface Stats {
 }
 
 export default function AdminAnalytics() {
+  const { t } = useTranslation();
   const { data: stats, isLoading } = useQuery<Stats>({
     queryKey: ["/api/admin/stats"],
     queryFn: async () => {
       const res = await fetch("/api/admin/stats");
       if (!res.ok) throw new Error("Failed");
       return res.json();
-    },
+    }
   });
 
   const growthData = [
@@ -35,10 +37,10 @@ export default function AdminAnalytics() {
   ];
 
   const tiles = [
-    { title: "Total Users",      val: stats?.totalUsers ?? 0,    growth: stats?.usersGrowth ?? 0,   icon: Users,    color: "text-blue-500" },
-    { title: "Total Professors", val: stats?.totalDoctors ?? 0,  growth: stats?.doctorsGrowth ?? 0, icon: Users,    color: "text-purple-500" },
-    { title: "Total Reviews",    val: stats?.totalReviews ?? 0,   growth: stats?.reviewsGrowth ?? 0, icon: Star,     color: "text-amber-500" },
-    { title: "Active Users",     val: stats?.activeUsers ?? 0,    growth: 12,                        icon: Activity, color: "text-green-500" },
+    { title: t("admin.stats.totalUsers"),      val: stats?.totalUsers ?? 0,    growth: stats?.usersGrowth ?? 0,   icon: Users,    color: "text-blue-500" },
+    { title: t("admin.stats.totalDoctors"), val: stats?.totalDoctors ?? 0,  growth: stats?.doctorsGrowth ?? 0, icon: Users,    color: "text-purple-500" },
+    { title: t("admin.stats.totalReviews"),    val: stats?.totalReviews ?? 0,   growth: stats?.reviewsGrowth ?? 0, icon: Star,     color: "text-amber-500" },
+    { title: t("admin.stats.activeUsers"),     val: stats?.activeUsers ?? 0,    growth: 12,                        icon: Activity, color: "text-green-500" },
   ];
 
   return (
@@ -51,8 +53,8 @@ export default function AdminAnalytics() {
               <BarChart3 className="h-6 w-6 text-red-500" />
             </div>
             <div>
-              <h1 className="text-3xl font-bold">Platform Analytics</h1>
-              <p className="text-muted-foreground">High-level growth and participation metrics across the whole application</p>
+              <h1 className="text-3xl font-bold">{t("admin.titles.analytics")}</h1>
+              <p className="text-muted-foreground">{t("admin.analytics.subtitle")}</p>
             </div>
           </div>
         </motion.div>
@@ -74,7 +76,7 @@ export default function AdminAnalytics() {
                           <p className="text-3xl font-bold">{s.val}</p>
                           <div className="flex items-center gap-1 mt-2 text-xs font-medium text-green-600 bg-green-500/10 px-2 py-0.5 rounded-full w-fit">
                             <ArrowUpRight className="h-3 w-3" />
-                            {s.growth.toFixed(1)}% vs last month
+                            {s.growth.toFixed(1)}% {t("admin.analytics.vsLastMonth")}
                           </div>
                         </div>
                         <s.icon className={`h-8 w-8 ${s.color} opacity-80`} />
@@ -88,8 +90,8 @@ export default function AdminAnalytics() {
             <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.4 }}>
               <Card className="bg-card/80 backdrop-blur">
                 <CardHeader>
-                  <CardTitle>Growth Trajectory</CardTitle>
-                  <CardDescription>User registrations and review submissions over time</CardDescription>
+                  <CardTitle>{t("admin.analytics.growthTrajectory")}</CardTitle>
+                  <CardDescription>{t("admin.analytics.growthDesc")}</CardDescription>
                 </CardHeader>
                 <CardContent>
                   <div className="h-[350px] w-full mt-4">
@@ -99,8 +101,8 @@ export default function AdminAnalytics() {
                         <XAxis dataKey="name" stroke="hsl(var(--muted-foreground))" tick={{ fontSize: 13 }} tickLine={false} axisLine={false} />
                         <YAxis stroke="hsl(var(--muted-foreground))" tick={{ fontSize: 13 }} tickLine={false} axisLine={false} />
                         <Tooltip contentStyle={{ backgroundColor: "hsl(var(--card))", borderColor: "hsl(var(--border))", borderRadius: "8px" }} itemStyle={{ fontSize: "14px", fontWeight: 500 }} />
-                        <Line type="monotone" name="Users"   dataKey="users"   stroke="#eab308" strokeWidth={3} dot={{ r: 4, strokeWidth: 2 }} activeDot={{ r: 6 }} />
-                        <Line type="monotone" name="Reviews" dataKey="reviews" stroke="#ec4899" strokeWidth={3} dot={{ r: 4, strokeWidth: 2 }} activeDot={{ r: 6 }} />
+                        <Line type="monotone" name={t("admin.analytics.users")}   dataKey="users"   stroke="#eab308" strokeWidth={3} dot={{ r: 4, strokeWidth: 2 }} activeDot={{ r: 6 }} />
+                        <Line type="monotone" name={t("admin.analytics.reviews")} dataKey="reviews" stroke="#ec4899" strokeWidth={3} dot={{ r: 4, strokeWidth: 2 }} activeDot={{ r: 6 }} />
                       </LineChart>
                     </ResponsiveContainer>
                   </div>

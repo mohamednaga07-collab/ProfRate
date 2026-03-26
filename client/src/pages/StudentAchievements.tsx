@@ -3,6 +3,7 @@ import { Header } from "@/components/Header";
 import { Card, CardContent } from "@/components/ui/card";
 import { motion } from "framer-motion";
 import { Trophy, Lock, Zap, Star } from "lucide-react";
+import { useTranslation } from "react-i18next";
 
 interface Badge {
   id: string;
@@ -33,6 +34,7 @@ const categoryColors: Record<string, string> = {
 };
 
 export default function StudentAchievements() {
+  const { t } = useTranslation();
   const { data, isLoading } = useQuery({
     queryKey: ["/api/student/achievements"],
     queryFn: async () => {
@@ -57,8 +59,8 @@ export default function StudentAchievements() {
               <Trophy className="h-6 w-6 text-amber-500" />
             </div>
             <div>
-              <h1 className="text-3xl font-bold">My Achievements</h1>
-              <p className="text-muted-foreground">Track your earned badges, contributions, and community impact</p>
+              <h1 className="text-3xl font-bold">{t("student.achievements.title")}</h1>
+              <p className="text-muted-foreground">{t("student.achievements.subtitle")}</p>
             </div>
           </div>
         </motion.div>
@@ -73,10 +75,10 @@ export default function StudentAchievements() {
             <motion.div initial={{ opacity: 0, y: 16 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.1 }}
               className="grid grid-cols-2 sm:grid-cols-4 gap-4 mb-10">
               {[
-                { label: "Total Points", value: stats?.points ?? 0, icon: <Zap className="h-5 w-5 text-yellow-500" />, color: "text-yellow-600 dark:text-yellow-400" },
-                { label: "Badges Earned", value: `${stats?.earnedBadges ?? 0}/${stats?.totalBadges ?? 0}`, icon: <Trophy className="h-5 w-5 text-amber-500" />, color: "text-amber-600 dark:text-amber-400" },
-                { label: "Reviews Given", value: stats?.reviewCount ?? 0, icon: <Star className="h-5 w-5 text-purple-500" />, color: "text-purple-600 dark:text-purple-400" },
-                { label: "Logins", value: stats?.loginCount ?? 0, icon: <Zap className="h-5 w-5 text-blue-500" />, color: "text-blue-600 dark:text-blue-400" },
+                { label: t("student.achievements.stats.points"), value: stats?.points ?? 0, icon: <Zap className="h-5 w-5 text-yellow-500" />, color: "text-yellow-600 dark:text-yellow-400" },
+                { label: t("student.achievements.stats.earned"), value: `${stats?.earnedBadges ?? 0}/${stats?.totalBadges ?? 0}`, icon: <Trophy className="h-5 w-5 text-amber-500" />, color: "text-amber-600 dark:text-amber-400" },
+                { label: t("student.achievements.stats.reviews"), value: stats?.reviewCount ?? 0, icon: <Star className="h-5 w-5 text-purple-500" />, color: "text-purple-600 dark:text-purple-400" },
+                { label: t("student.achievements.stats.logins"), value: stats?.loginCount ?? 0, icon: <Zap className="h-5 w-5 text-blue-500" />, color: "text-blue-600 dark:text-blue-400" },
               ].map((s, i) => (
                 <Card key={i} className="bg-card/80 backdrop-blur">
                   <CardContent className="pt-5 pb-4">
@@ -93,8 +95,8 @@ export default function StudentAchievements() {
             {/* Progress Bar */}
             <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ delay: 0.15 }} className="mb-8">
               <div className="flex items-center justify-between mb-2">
-                <span className="text-sm font-medium">Badge Progress</span>
-                <span className="text-sm text-muted-foreground">{earnedPct}% complete</span>
+                <span className="text-sm font-medium">{t("student.achievements.progress")}</span>
+                <span className="text-sm text-muted-foreground">{t("student.achievements.complete", { percent: earnedPct })}</span>
               </div>
               <div className="h-3 rounded-full bg-muted overflow-hidden">
                 <motion.div
@@ -135,7 +137,7 @@ export default function StudentAchievements() {
                           <p className="text-sm text-muted-foreground leading-snug">{badge.description}</p>
                           <span className={`inline-block mt-2 text-xs px-2 py-0.5 rounded-full font-medium capitalize
                             ${badge.earned ? "bg-white/30 text-foreground" : "bg-muted text-muted-foreground"}`}>
-                            {badge.category}
+                            {t(`student.achievements.categories.${badge.category}`, { defaultValue: badge.category })}
                           </span>
                         </div>
                       </div>

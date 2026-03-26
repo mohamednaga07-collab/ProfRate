@@ -6,6 +6,7 @@ import { motion } from "framer-motion";
 import { MessageSquare, Star, TrendingUp, AlertCircle, BookOpen, Award } from "lucide-react";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { StarRating } from "@/components/StarRating";
+import { useTranslation } from "react-i18next";
 
 interface Review {
   id: number;
@@ -29,17 +30,6 @@ interface FeedbackResponse {
   reviews: Review[];
 }
 
-function SentimentTag({ text }: { text: string }) {
-  const lower = text.toLowerCase();
-  const positive = ["great", "excellent", "amazing", "best", "good", "helpful", "clear", "kind", "fair", "awesome", "wonderful", "fantastic", "loved"];
-  const negative = ["bad", "poor", "terrible", "awful", "boring", "hard", "unclear", "rude", "unfair", "worst", "unhelpful"];
-  const isPos = positive.some(w => lower.includes(w));
-  const isNeg = negative.some(w => lower.includes(w));
-  if (isPos) return <span className="text-xs px-2 py-0.5 rounded-full bg-green-500/10 text-green-600 border border-green-200 dark:border-green-800 font-medium">Positive</span>;
-  if (isNeg) return <span className="text-xs px-2 py-0.5 rounded-full bg-red-500/10 text-red-600 border border-red-200 dark:border-red-800 font-medium">Critical</span>;
-  return <span className="text-xs px-2 py-0.5 rounded-full bg-blue-500/10 text-blue-600 border border-blue-200 dark:border-blue-800 font-medium">Neutral</span>;
-}
-
 function getCategoryAvg(catSubScores: Record<string, number> | undefined) {
   if (!catSubScores) return 0;
   const vals = Object.values(catSubScores);
@@ -48,6 +38,7 @@ function getCategoryAvg(catSubScores: Record<string, number> | undefined) {
 
 export default function TeacherFeedback() {
   const { user } = useAuth();
+  const { t } = useTranslation();
 
   const { data, isLoading } = useQuery({
     queryKey: ["/api/teacher/feedback"],
@@ -64,6 +55,17 @@ export default function TeacherFeedback() {
 
   const avgOverall = data?.doctor?.ratings?.overallRating ?? 0;
 
+  function SentimentTag({ text }: { text: string }) {
+    const lower = text.toLowerCase();
+    const positive = ["great", "excellent", "amazing", "best", "good", "helpful", "clear", "kind", "fair", "awesome", "wonderful", "fantastic", "loved"];
+    const negative = ["bad", "poor", "terrible", "awful", "boring", "hard", "unclear", "rude", "unfair", "worst", "unhelpful"];
+    const isPos = positive.some(w => lower.includes(w));
+    const isNeg = negative.some(w => lower.includes(w));
+    if (isPos) return <span className="text-xs px-2 py-0.5 rounded-full bg-green-500/10 text-green-600 border border-green-200 dark:border-green-800 font-medium">{t("teacherFeedback.sentiment.positive")}</span>;
+    if (isNeg) return <span className="text-xs px-2 py-0.5 rounded-full bg-red-500/10 text-red-600 border border-red-200 dark:border-red-800 font-medium">{t("teacherFeedback.sentiment.negative")}</span>;
+    return <span className="text-xs px-2 py-0.5 rounded-full bg-blue-500/10 text-blue-600 border border-blue-200 dark:border-blue-800 font-medium">{t("teacherFeedback.sentiment.neutral")}</span>;
+  }
+
   return (
     <div className="min-h-screen bg-gradient-to-br from-background via-background to-purple-500/5">
       <Header />
@@ -74,8 +76,8 @@ export default function TeacherFeedback() {
               <MessageSquare className="h-6 w-6 text-purple-500" />
             </div>
             <div>
-              <h1 className="text-3xl font-bold">Student Feedback</h1>
-              <p className="text-muted-foreground">Anonymous reviews your students have left for you</p>
+              <h1 className="text-3xl font-bold">{t("teacherFeedback.title")}</h1>
+              <p className="text-muted-foreground">{t("teacherFeedback.subtitle")}</p>
             </div>
           </div>
         </motion.div>
@@ -89,7 +91,7 @@ export default function TeacherFeedback() {
             <Alert className="border-amber-400/40 bg-amber-50 dark:bg-amber-950/20 mb-6">
               <AlertCircle className="h-4 w-4 text-amber-500" />
               <AlertDescription className="text-amber-800 dark:text-amber-200">
-                <strong>No profile linked</strong> — Your account name (<em>{user?.firstName} {user?.lastName}</em>) could not be matched automatically to a doctor profile. Ask an admin to ensure your full name matches your registered professor entry.
+                <strong>{t("teacherFeedback.noProfileLinked")}</strong>
               </AlertDescription>
             </Alert>
           </motion.div>
@@ -97,7 +99,7 @@ export default function TeacherFeedback() {
           <Card className="text-center py-16 border-dashed">
             <CardContent>
               <BookOpen className="h-14 w-14 mx-auto mb-4 text-muted-foreground" />
-              <p className="text-lg text-muted-foreground">No reviews yet for your profile. Check back once students start rating!</p>
+              <p className="text-lg text-muted-foreground">{t("teacherFeedback.noReviews")}</p>
             </CardContent>
           </Card>
         ) : (
@@ -108,7 +110,7 @@ export default function TeacherFeedback() {
               <Card className="bg-gradient-to-br from-purple-500/10 to-purple-600/5 border-purple-200 dark:border-purple-800">
                 <CardContent className="pt-6 flex items-center justify-between">
                   <div>
-                    <p className="text-sm text-muted-foreground">Overall Rating</p>
+                    <p className="text-sm text-muted-foreground">{t("teacherFeedback.overallRating")}</p>
                     <p className="text-3xl font-bold text-purple-600 dark:text-purple-400">
                       {avgOverall > 5 ? `${avgOverall.toFixed(1)} / 10` : `${avgOverall.toFixed(1)} / 5`}
                     </p>
@@ -120,9 +122,9 @@ export default function TeacherFeedback() {
               <Card className="bg-gradient-to-br from-blue-500/10 to-blue-600/5 border-blue-200 dark:border-blue-800">
                 <CardContent className="pt-6 flex items-center justify-between">
                   <div>
-                    <p className="text-sm text-muted-foreground">Total Reviews</p>
+                    <p className="text-sm text-muted-foreground">{t("teacherFeedback.totalReviews")}</p>
                     <p className="text-3xl font-bold text-blue-600 dark:text-blue-400">{reviews.length}</p>
-                    <p className="text-xs text-muted-foreground mt-1">from students</p>
+                    <p className="text-xs text-muted-foreground mt-1">{t("teacherFeedback.fromStudents")}</p>
                   </div>
                   <MessageSquare className="h-10 w-10 text-blue-400/60" />
                 </CardContent>
@@ -130,9 +132,9 @@ export default function TeacherFeedback() {
               <Card className="bg-gradient-to-br from-green-500/10 to-green-600/5 border-green-200 dark:border-green-800">
                 <CardContent className="pt-6 flex items-center justify-between">
                   <div>
-                    <p className="text-sm text-muted-foreground">Written Comments</p>
+                    <p className="text-sm text-muted-foreground">{t("teacherFeedback.writtenComments")}</p>
                     <p className="text-3xl font-bold text-green-600 dark:text-green-400">{commented.length}</p>
-                    <p className="text-xs text-muted-foreground mt-1">{noComment.length} rating-only</p>
+                    <p className="text-xs text-muted-foreground mt-1">{noComment.length} {t("teacherFeedback.ratingOnly")}</p>
                   </div>
                   <TrendingUp className="h-10 w-10 text-green-400/60" />
                 </CardContent>
@@ -143,7 +145,7 @@ export default function TeacherFeedback() {
             {commented.length > 0 && (
               <div className="mb-6">
                 <h2 className="text-xl font-semibold mb-4 flex items-center gap-2">
-                  <MessageSquare className="h-5 w-5 text-primary" /> Written Feedback
+                  <MessageSquare className="h-5 w-5 text-primary" /> {t("teacherFeedback.writtenFeedback")}
                 </h2>
                 <div className="grid gap-4">
                   {commented.map((review, idx) => {
@@ -157,13 +159,13 @@ export default function TeacherFeedback() {
                                 <div className="h-8 w-8 rounded-full bg-primary/10 flex items-center justify-center text-sm font-bold text-primary">
                                   A
                                 </div>
-                                <span className="text-sm text-muted-foreground">Anonymous Student</span>
+                                <span className="text-sm text-muted-foreground">{t("teacherFeedback.anonymousStudent")}</span>
                                 <span className="text-xs text-muted-foreground">
                                   · {new Date(review.createdAt).toLocaleDateString()}
                                 </span>
                               </div>
                               <div className="flex gap-2">
-                                {hasSubScores && <span className="text-xs px-2 py-0.5 rounded-full bg-primary/10 text-primary border border-primary/20 font-medium">Detailed Review</span>}
+                                {hasSubScores && <span className="text-xs px-2 py-0.5 rounded-full bg-primary/10 text-primary border border-primary/20 font-medium">{t("teacherFeedback.detailedReview")}</span>}
                                 {review.comment && <SentimentTag text={review.comment} />}
                               </div>
                             </div>
@@ -172,14 +174,14 @@ export default function TeacherFeedback() {
                             {hasSubScores ? (
                                <div className="grid grid-cols-2 sm:grid-cols-4 lg:grid-cols-8 gap-2 pt-3 border-t">
                                  {[
-                                   { key: "teachingQuality", label: "Teaching", color: "text-blue-500" },
-                                   { key: "availability", label: "Available", color: "text-green-500" },
-                                   { key: "communication", label: "Comms", color: "text-purple-500" },
-                                   { key: "knowledge", label: "Knowledge", color: "text-amber-500" },
-                                   { key: "fairness", label: "Fairness", color: "text-red-500" },
-                                   { key: "engagement", label: "Engage", color: "text-yellow-500" },
-                                   { key: "helpfulness", label: "Helpful", color: "text-pink-500" },
-                                   { key: "courseOrganization", label: "Org", color: "text-teal-500" },
+                                   { key: "teachingQuality", label: t("teacherFeedback.categories.teaching"), color: "text-blue-500" },
+                                   { key: "availability", label: t("teacherFeedback.categories.available"), color: "text-green-500" },
+                                   { key: "communication", label: t("teacherFeedback.categories.comms"), color: "text-purple-500" },
+                                   { key: "knowledge", label: t("teacherFeedback.categories.knowledge"), color: "text-amber-500" },
+                                   { key: "fairness", label: t("teacherFeedback.categories.fairness"), color: "text-red-500" },
+                                   { key: "engagement", label: t("teacherFeedback.categories.engage"), color: "text-yellow-500" },
+                                   { key: "helpfulness", label: t("teacherFeedback.categories.helpful"), color: "text-pink-500" },
+                                   { key: "courseOrganization", label: t("teacherFeedback.categories.org"), color: "text-teal-500" },
                                  ].map(f => (
                                    <div key={f.key} className="text-center p-1 bg-muted/30 rounded-md">
                                      <div className={`text-sm font-bold ${f.color}`}>{getCategoryAvg(review.subScores[f.key]).toFixed(1)}</div>
@@ -190,11 +192,11 @@ export default function TeacherFeedback() {
                             ) : (
                                <div className="grid grid-cols-2 sm:grid-cols-5 gap-2 pt-3 border-t">
                                  {[
-                                   { label: "Teaching", val: review.teachingQuality, color: "text-blue-500" },
-                                   { label: "Availability", val: review.availability, color: "text-purple-500" },
-                                   { label: "Communication", val: review.communication, color: "text-pink-500" },
-                                   { label: "Knowledge", val: review.knowledge, color: "text-amber-500" },
-                                   { label: "Fairness", val: review.fairness, color: "text-green-500" },
+                                   { label: t("teacherFeedback.categories.teaching"), val: review.teachingQuality, color: "text-blue-500" },
+                                   { label: t("teacherFeedback.categories.available"), val: review.availability, color: "text-purple-500" },
+                                   { label: t("teacherFeedback.categories.comms"), val: review.communication, color: "text-pink-500" },
+                                   { label: t("teacherFeedback.categories.knowledge"), val: review.knowledge, color: "text-amber-500" },
+                                   { label: t("teacherFeedback.categories.fairness"), val: review.fairness, color: "text-green-500" },
                                  ].map(f => (
                                    <div key={f.label} className="text-center p-2 bg-muted/30 rounded-md">
                                      <div className={`text-lg font-bold ${f.color}`}>{f.val}/5</div>
@@ -218,9 +220,9 @@ export default function TeacherFeedback() {
                 <CardHeader>
                   <CardTitle className="text-base flex items-center gap-2">
                     <Star className="h-4 w-4 text-amber-500" />
-                    {noComment.length} Rating-Only Reviews
+                    {noComment.length} {t("teacherFeedback.ratingOnlyReviews")}
                   </CardTitle>
-                  <CardDescription>These students left star ratings without written comments</CardDescription>
+                  <CardDescription>{t("teacherFeedback.ratingOnlyDesc")}</CardDescription>
                 </CardHeader>
               </Card>
             )}

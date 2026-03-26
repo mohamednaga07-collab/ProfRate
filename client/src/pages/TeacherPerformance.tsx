@@ -5,9 +5,11 @@ import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/com
 import { motion } from "framer-motion";
 import { TrendingUp, Activity, Target } from "lucide-react";
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from "recharts";
+import { useTranslation } from "react-i18next";
 
 export default function TeacherPerformance() {
   const { user } = useAuth();
+  const { t } = useTranslation();
   
   // Fetch teacher feedback for stats
   const { data, isLoading } = useQuery({
@@ -23,12 +25,12 @@ export default function TeacherPerformance() {
   
   // Generate mock timeline data based on reviews if possible or just mock data
   const chartData = [
-    { name: "Week 1", score: 4.2 },
-    { name: "Week 2", score: 4.4 },
-    { name: "Week 3", score: 4.3 },
-    { name: "Week 4", score: 4.6 },
-    { name: "Week 5", score: 4.8 },
-    { name: "Week 6", score: (data?.doctor?.ratings?.overallRating ?? 4.9) },
+    { name: t("teacherPerformance.week", { defaultValue: "Week 1", n: 1 }), score: 4.2 },
+    { name: t("teacherPerformance.week", { defaultValue: "Week 2", n: 2 }), score: 4.4 },
+    { name: t("teacherPerformance.week", { defaultValue: "Week 3", n: 3 }), score: 4.3 },
+    { name: t("teacherPerformance.week", { defaultValue: "Week 4", n: 4 }), score: 4.6 },
+    { name: t("teacherPerformance.week", { defaultValue: "Week 5", n: 5 }), score: 4.8 },
+    { name: t("teacherPerformance.week", { defaultValue: "Week 6", n: 6 }), score: (data?.doctor?.ratings?.overallRating ?? 4.9) },
   ];
 
   return (
@@ -41,8 +43,8 @@ export default function TeacherPerformance() {
               <TrendingUp className="h-6 w-6 text-blue-500" />
             </div>
             <div>
-              <h1 className="text-3xl font-bold">Performance Analytics</h1>
-              <p className="text-muted-foreground">Detailed breakdown of your academic ratings over time</p>
+              <h1 className="text-3xl font-bold">{t("teacherPerformance.title")}</h1>
+              <p className="text-muted-foreground">{t("teacherPerformance.subtitle")}</p>
             </div>
           </div>
         </motion.div>
@@ -55,7 +57,7 @@ export default function TeacherPerformance() {
           <Card className="text-center py-16 border-dashed">
             <CardContent>
               <Activity className="h-14 w-14 mx-auto mb-4 text-muted-foreground" />
-              <p className="text-lg text-muted-foreground">Your account is not linked to a professor profile yet.</p>
+              <p className="text-lg text-muted-foreground">{t("teacherPerformance.noProfileLinked")}</p>
             </CardContent>
           </Card>
         ) : (
@@ -65,7 +67,7 @@ export default function TeacherPerformance() {
                 <CardContent className="pt-6">
                   <div className="flex items-center justify-between">
                     <div>
-                      <p className="text-sm text-muted-foreground">Trend Direction</p>
+                      <p className="text-sm text-muted-foreground">{t("teacherPerformance.trendDirection")}</p>
                       <p className="text-2xl font-bold text-green-500 mt-1 flex items-center gap-1">
                         +0.3 <TrendingUp className="h-5 w-5" />
                       </p>
@@ -78,7 +80,7 @@ export default function TeacherPerformance() {
                 <CardContent className="pt-6">
                   <div className="flex items-center justify-between">
                     <div>
-                      <p className="text-sm text-muted-foreground">Total Ratings</p>
+                      <p className="text-sm text-muted-foreground">{t("teacherPerformance.totalRatings")}</p>
                       <p className="text-2xl font-bold">{reviews.length}</p>
                     </div>
                     <Activity className="h-8 w-8 text-muted-foreground/30" />
@@ -89,8 +91,8 @@ export default function TeacherPerformance() {
                 <CardContent className="pt-6">
                   <div className="flex items-center justify-between">
                     <div>
-                      <p className="text-sm text-muted-foreground">Top Category</p>
-                      <p className="text-xl font-bold text-primary mt-1">Knowledge</p>
+                      <p className="text-sm text-muted-foreground">{t("teacherPerformance.topCategory")}</p>
+                      <p className="text-xl font-bold text-primary mt-1">{t("teacherFeedback.categories.knowledge")}</p>
                     </div>
                     <Target className="h-8 w-8 text-muted-foreground/30" />
                   </div>
@@ -100,8 +102,8 @@ export default function TeacherPerformance() {
 
             <Card className="bg-card/80 backdrop-blur">
               <CardHeader>
-                <CardTitle>Rating Trajectory</CardTitle>
-                <CardDescription>Your 6-week rolling average overall rating</CardDescription>
+                <CardTitle>{t("teacherPerformance.ratingTrajectory")}</CardTitle>
+                <CardDescription>{t("teacherPerformance.ratingTrajectoryDesc")}</CardDescription>
               </CardHeader>
               <CardContent>
                 <div className="h-[300px] w-full mt-4">

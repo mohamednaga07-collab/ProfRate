@@ -7,6 +7,7 @@ import { Input } from "@/components/ui/input";
 import { motion, AnimatePresence } from "framer-motion";
 import { BookOpen, Plus, Trash2, GraduationCap, Calendar, Hash, Award } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
+import { useTranslation } from "react-i18next";
 
 interface Enrollment {
   id: number;
@@ -32,6 +33,7 @@ function getGradeColor(grade: string | null) {
 }
 
 export default function StudentStats() {
+  const { t } = useTranslation();
   const { toast } = useToast();
   const queryClient = useQueryClient();
   const [showForm, setShowForm] = useState(false);
@@ -62,9 +64,9 @@ export default function StudentStats() {
       queryClient.invalidateQueries({ queryKey: ["/api/student/enrollments"] });
       setForm({ courseName: "", courseCode: "", term: "", grade: "" });
       setShowForm(false);
-      toast({ title: "Course added!", description: "Your academic record has been updated." });
+      toast({ title: t("student.stats.form.saveSuccess", { defaultValue: "Course added!" }), description: t("student.stats.form.saveSuccessDesc", { defaultValue: "Your academic record has been updated." }) });
     },
-    onError: () => toast({ title: "Error", description: "Failed to add course.", variant: "destructive" }),
+    onError: () => toast({ title: t("common.error"), description: t("student.stats.form.saveError"), variant: "destructive" }),
   });
 
   const deleteMutation = useMutation({
@@ -79,7 +81,7 @@ export default function StudentStats() {
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["/api/student/enrollments"] });
-      toast({ title: "Removed", description: "Course removed from your record." });
+      toast({ title: t("common.removed"), description: t("student.stats.form.removeSuccess") });
     },
   });
 
@@ -102,12 +104,12 @@ export default function StudentStats() {
                 <GraduationCap className="h-6 w-6 text-green-500" />
               </div>
               <div>
-                <h1 className="text-3xl font-bold">Learning Stats</h1>
-                <p className="text-muted-foreground">Track your academic trajectory and course history</p>
+                <h1 className="text-3xl font-bold">{t("student.stats.title")}</h1>
+                <p className="text-muted-foreground">{t("student.stats.subtitle")}</p>
               </div>
             </div>
             <Button onClick={() => setShowForm(s => !s)} className="gap-2">
-              <Plus className="h-4 w-4" /> Add Course
+              <Plus className="h-4 w-4" /> {t("student.stats.addCourse")}
             </Button>
           </div>
         </motion.div>
@@ -116,9 +118,9 @@ export default function StudentStats() {
         <motion.div initial={{ opacity: 0, y: 16 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.1 }}
           className="grid grid-cols-2 sm:grid-cols-3 gap-4 mb-8">
           {[
-            { label: "Total Courses", value: enrollments.length, icon: <BookOpen className="h-5 w-5 text-green-500" />, color: "text-green-600 dark:text-green-400" },
-            { label: "Terms Tracked", value: Object.keys(groupedByTerm).filter(k => k !== "No Term Specified").length, icon: <Calendar className="h-5 w-5 text-blue-500" />, color: "text-blue-600 dark:text-blue-400" },
-            { label: "Courses with Grades", value: enrollments.filter(e => e.grade).length, icon: <Award className="h-5 w-5 text-purple-500" />, color: "text-purple-600 dark:text-purple-400" },
+            { label: t("student.stats.totalCourses"), value: enrollments.length, icon: <BookOpen className="h-5 w-5 text-green-500" />, color: "text-green-600 dark:text-green-400" },
+            { label: t("student.stats.termsTracked"), value: Object.keys(groupedByTerm).filter(k => k !== "No Term Specified").length, icon: <Calendar className="h-5 w-5 text-blue-500" />, color: "text-blue-600 dark:text-blue-400" },
+            { label: t("student.stats.gradedCourses"), value: enrollments.filter(e => e.grade).length, icon: <Award className="h-5 w-5 text-purple-500" />, color: "text-purple-600 dark:text-purple-400" },
           ].map((s, i) => (
             <Card key={i} className="bg-card/80 backdrop-blur">
               <CardContent className="pt-5 pb-4">
@@ -142,14 +144,14 @@ export default function StudentStats() {
               <Card className="border-primary/30 bg-card/80 backdrop-blur">
                 <CardHeader className="pb-3">
                   <CardTitle className="text-base flex items-center gap-2">
-                    <Plus className="h-4 w-4" /> Add a Course
+                    <Plus className="h-4 w-4" /> {t("student.stats.form.title")}
                   </CardTitle>
-                  <CardDescription>Log a course you're taking or have completed</CardDescription>
+                  <CardDescription>{t("student.stats.form.desc")}</CardDescription>
                 </CardHeader>
                 <CardContent className="space-y-3">
                   <div className="grid sm:grid-cols-2 gap-3">
                     <div>
-                      <label className="text-xs text-muted-foreground mb-1 block">Course Name *</label>
+                      <label className="text-xs text-muted-foreground mb-1 block">{t("student.stats.form.name")} *</label>
                       <Input
                         value={form.courseName}
                         onChange={e => setForm(f => ({ ...f, courseName: e.target.value }))}
@@ -157,7 +159,7 @@ export default function StudentStats() {
                       />
                     </div>
                     <div>
-                      <label className="text-xs text-muted-foreground mb-1 block">Course Code</label>
+                      <label className="text-xs text-muted-foreground mb-1 block">{t("student.stats.form.code")}</label>
                       <Input
                         value={form.courseCode}
                         onChange={e => setForm(f => ({ ...f, courseCode: e.target.value }))}
@@ -165,7 +167,7 @@ export default function StudentStats() {
                       />
                     </div>
                     <div>
-                      <label className="text-xs text-muted-foreground mb-1 block">Term / Semester</label>
+                      <label className="text-xs text-muted-foreground mb-1 block">{t("student.stats.form.term")}</label>
                       <Input
                         value={form.term}
                         onChange={e => setForm(f => ({ ...f, term: e.target.value }))}
@@ -173,7 +175,7 @@ export default function StudentStats() {
                       />
                     </div>
                     <div>
-                      <label className="text-xs text-muted-foreground mb-1 block">Grade (optional)</label>
+                      <label className="text-xs text-muted-foreground mb-1 block">{t("student.stats.form.grade")} ({t("common.optional", { defaultValue: "optional" })})</label>
                       <Input
                         value={form.grade}
                         onChange={e => setForm(f => ({ ...f, grade: e.target.value }))}
@@ -187,9 +189,9 @@ export default function StudentStats() {
                       onClick={() => addMutation.mutate(form)}
                       disabled={!form.courseName.trim() || addMutation.isPending}
                     >
-                      {addMutation.isPending ? "Saving..." : "Save Course"}
+                      {addMutation.isPending ? t("student.stats.form.saving") : t("student.stats.form.save")}
                     </Button>
-                    <Button variant="ghost" onClick={() => setShowForm(false)}>Cancel</Button>
+                    <Button variant="ghost" onClick={() => setShowForm(false)}>{t("student.stats.form.cancel")}</Button>
                   </div>
                 </CardContent>
               </Card>
@@ -206,8 +208,8 @@ export default function StudentStats() {
           <Card className="text-center py-16 border-dashed">
             <CardContent>
               <GraduationCap className="h-14 w-14 mx-auto mb-4 text-muted-foreground" />
-              <p className="text-lg text-muted-foreground mb-2">No courses tracked yet</p>
-              <p className="text-sm text-muted-foreground">Add your first course using the button above to start building your academic record.</p>
+              <p className="text-lg text-muted-foreground mb-2">{t("student.stats.emptyTitle")}</p>
+              <p className="text-sm text-muted-foreground">{t("student.stats.emptyDesc")}</p>
             </CardContent>
           </Card>
         ) : (
