@@ -557,7 +557,8 @@ export default function TeacherDashboard() {
                               const finalX = x + (dirX / dist) * pushDist ;
                               
                               // Slight vertical fix for top/bottom overlap
-                              const finalY = y + (dirY / dist) * pushDist ;
+                              // Text draws UP from baseline, so we must push bottom labels further down
+                              const finalY = y + (dirY / dist) * pushDist + (dirY > 10 ? 10 : 0);
 
                               return (
                                 <text 

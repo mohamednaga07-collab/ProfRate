@@ -169,7 +169,9 @@ export default function TeacherCourses() {
                             const pushDist = 4;
 
                             const finalX = x + (dirX / dist) * pushDist ;
-                            const finalY = y + (dirY / dist) * pushDist ;
+                            
+                            // Text draws UP from baseline, so we must push bottom labels further down
+                            const finalY = y + (dirY / dist) * pushDist + (dirY > 10 ? 10 : 0);
 
                             return (
                               <text
