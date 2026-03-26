@@ -44,7 +44,10 @@ export class ErrorBoundary extends Component<Props, State> {
                  {this.state.error.toString()}
                </pre>
             )}
-            <Button onClick={() => window.location.reload()}>
+            <Button onClick={() => {
+              sessionStorage.setItem("system-reload", "true");
+              window.location.reload();
+            }}>
               {i18next.t("common.refresh", { defaultValue: "Reload Page" })}
             </Button>
           </div>

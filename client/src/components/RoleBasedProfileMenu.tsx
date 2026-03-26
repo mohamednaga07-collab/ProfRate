@@ -304,7 +304,10 @@ export function RoleBasedProfileMenu({
                       <motion.span className="ml-2 text-xs font-bold" animate={{ color: health === 'healthy' ? '#22c55e' : health === 'degraded' ? '#eab308' : '#ef4444' }}>
                         {healthPercent}%
                       </motion.span>
-                      <button className="ml-2 text-xs underline" onClick={() => window.location.reload()}>{t("common.refresh")}</button>
+                      <button className="ml-2 text-xs underline" onClick={() => {
+                        sessionStorage.setItem("system-reload", "true");
+                        window.location.reload();
+                      }}>{t("common.refresh")}</button>
                     </motion.div>
                     <div className="w-40 h-2 mt-2 bg-gray-200 rounded-full overflow-hidden">
                       <motion.div

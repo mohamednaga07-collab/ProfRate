@@ -126,15 +126,22 @@ function Router() {
     // 2. Intercept Page Refresh
     const navEntries = performance.getEntriesByType("navigation") as PerformanceNavigationTiming[];
     if (navEntries.length > 0 && navEntries[0].type === "reload") {
-      console.log("🚨 [SECURITY] Page refresh detected. Terminating session...");
-      setTimeout(() => {
-        logout();
-        toast({
-          title: "Session Terminated",
-          description: "Page refreshes are not permitted for security reasons.",
-          variant: "destructive",
-        });
-      }, 100); // Slight delay ensures toast provider is mounted during hard reload
+      const isSystemReload = sessionStorage.getItem("system-reload") === "true";
+      
+      if (isSystemReload) {
+        console.log("ℹ️ [SECURITY] System-initiated refresh detected. Session preserved.");
+        sessionStorage.removeItem("system-reload");
+      } else {
+        console.log("🚨 [SECURITY] Manual page refresh detected. Terminating session...");
+        setTimeout(() => {
+          logout();
+          toast({
+            title: "Session Terminated",
+            description: "Manual page refreshes are not permitted for security reasons.",
+            variant: "destructive",
+          });
+        }, 100); // Slight delay ensures toast provider is mounted during hard reload
+      }
     }
 
     return () => {
