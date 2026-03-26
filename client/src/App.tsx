@@ -2,6 +2,7 @@ import { Switch, Route, useLocation } from "wouter";
 import { queryClient } from "./lib/queryClient";
 import { QueryClientProvider } from "@tanstack/react-query";
 import { Toaster } from "@/components/ui/toaster";
+import { useToast } from "@/hooks/use-toast";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { useAuth } from "@/hooks/useAuth";
 import { motion, AnimatePresence } from "framer-motion";
@@ -101,10 +102,45 @@ function Router() {
   const { isAuthenticated, isLoading, user, logout } = useAuth();
   const [location] = useLocation();
   const { t } = useTranslation();
+  const { toast } = useToast();
 
   console.log("🔄 Router render - isAuthenticated:", isAuthenticated, "isLoading:", isLoading, "user:", user?.username);
 
-  // Removed aggressive popstate logout listener to prevent accidental logouts on browser refresh.
+  // Strict Navigation Security: Intercept popstate (Back/Forward) and reload (F5)
+  React.useEffect(() => {
+    if (!isAuthenticated) return;
+
+    // 1. Intercept Back/Forward navigation
+    const handlePopState = () => {
+      console.log("🚨 [SECURITY] Abnormal navigation (popstate) detected. Terminating session...");
+      logout();
+      toast({
+        title: "Abnormal Navigation",
+        description: "For security reasons, your session has been terminated.",
+        variant: "destructive",
+      });
+    };
+
+    window.addEventListener("popstate", handlePopState);
+
+    // 2. Intercept Page Refresh
+    const navEntries = performance.getEntriesByType("navigation") as PerformanceNavigationTiming[];
+    if (navEntries.length > 0 && navEntries[0].type === "reload") {
+      console.log("🚨 [SECURITY] Page refresh detected. Terminating session...");
+      setTimeout(() => {
+        logout();
+        toast({
+          title: "Session Terminated",
+          description: "Page refreshes are not permitted for security reasons.",
+          variant: "destructive",
+        });
+      }, 100); // Slight delay ensures toast provider is mounted during hard reload
+    }
+
+    return () => {
+      window.removeEventListener("popstate", handlePopState);
+    };
+  }, [isAuthenticated, logout, toast]);
 
   if (isLoading) {
     return (
