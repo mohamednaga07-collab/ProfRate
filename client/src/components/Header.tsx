@@ -4,6 +4,7 @@ import { Button } from "@/components/ui/button";
 import { ThemeToggle } from "./ThemeToggle";
 import { LanguageSwitcher } from "./LanguageSwitcher";
 import { RoleBasedProfileMenu } from "./RoleBasedProfileMenu";
+import { NotificationDropdown } from "./NotificationDropdown";
 import { ProfilePictureUpload } from "./ProfilePictureUpload";
 import { useAuth } from "@/hooks/useAuth";
 import { GraduationCap, BarChart3, Home, Star, Search } from "lucide-react";
@@ -90,6 +91,9 @@ export function Header() {
                   {t("nav.compare")}
                 </Link>
               </Button>
+              <div className="ml-1 mr-1">
+                <NotificationDropdown />
+              </div>
             </>
           )}
 

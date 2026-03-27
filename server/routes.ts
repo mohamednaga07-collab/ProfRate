@@ -1351,7 +1351,6 @@ export async function registerRoutes(httpServer: Server, app: Express): Promise<
     }
   });
 
-  // Resend Verification Email Route
   app.post("/api/auth/resend-verification", async (req: any, res) => {
     try {
       const { email } = req.body;
@@ -1395,6 +1394,87 @@ export async function registerRoutes(httpServer: Server, app: Express): Promise<
     } catch (error) {
       console.error("Error resending verification:", error);
       res.status(500).json({ message: "Failed to resend verification email" });
+    }
+  });
+
+  // ==================== NOTIFICATION / MESSAGING ROUTES ====================
+
+  app.get("/api/notifications", async (req: any, res) => {
+    try {
+      const userId = getUserId(req);
+      if (!userId) return res.status(401).json({ message: "Unauthorized" });
+      
+      const messages = await storage.getMessages(userId);
+      // Ensure anonymous senders are hidden
+      const sanitizedMessages = messages.map((msg: any) => {
+        if (msg.isAnonymous) {
+          return { ...msg, senderId: null }; 
+        }
+        return msg;
+      });
+
+      res.json(sanitizedMessages);
+    } catch (error) {
+      console.error("Error fetching notifications:", error);
+      res.status(500).json({ message: "Internal server error" });
+    }
+  });
+
+  app.post("/api/notifications", async (req: any, res) => {
+    try {
+      const userId = getUserId(req);
+      if (!userId) return res.status(401).json({ message: "Unauthorized" });
+
+      const user = await storage.getUser(userId);
+      if (!user) return res.status(404).json({ message: "User not found" });
+
+      const { receiverId, title, content, type, isAnonymous } = req.body;
+      
+      // Validation based on roles
+      if (type === "broadcast" && user.role !== "admin" && user.role !== "teacher") {
+         return res.status(403).json({ message: "Only Admins and Teachers can broadcast" });
+      }
+
+      const msg = await storage.createMessage({
+        senderId: userId,
+        receiverId: type === "broadcast" ? null : receiverId,
+        title,
+        content,
+        type,
+        isAnonymous: isAnonymous === true,
+        isRead: false,
+      });
+
+      res.status(201).json(msg);
+    } catch (error) {
+      console.error("Error sending notification:", error);
+      res.status(500).json({ message: "Failed to send message" });
+    }
+  });
+
+  app.patch("/api/notifications/:id/read", async (req: any, res) => {
+    try {
+      const userId = getUserId(req);
+      if (!userId) return res.status(401).json({ message: "Unauthorized" });
+
+      await storage.markMessageRead(parseInt(req.params.id));
+      res.json({ success: true });
+    } catch (error) {
+      console.error("Error marking notification read:", error);
+      res.status(500).json({ message: "Failed to update notification" });
+    }
+  });
+
+  app.delete("/api/notifications/:id", async (req: any, res) => {
+    try {
+      const userId = getUserId(req);
+      if (!userId) return res.status(401).json({ message: "Unauthorized" });
+
+      await storage.deleteMessage(parseInt(req.params.id));
+      res.json({ success: true });
+    } catch (error) {
+      console.error("Error deleting notification:", error);
+      res.status(500).json({ message: "Failed to delete notification" });
     }
   });
 

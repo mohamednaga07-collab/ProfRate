@@ -18,6 +18,9 @@ import {
   type InsertTeacherPortfolio,
   type StudentEnrollment,
   type InsertStudentEnrollment,
+  messages,
+  type Message,
+  type InsertMessage,
 } from "@shared/schema";
 import { db } from "./db";
 import { eq, desc, sql } from "drizzle-orm";
@@ -96,6 +99,13 @@ export interface IStorage {
 
   // Student activity/achievements
   getStudentActivityLogs(userId: string): Promise<any[]>;
+
+  // Messages and Notifications
+  getMessages(receiverId: string | null): Promise<Message[]>;
+  getSentMessages(senderId: string): Promise<Message[]>;
+  createMessage(data: InsertMessage): Promise<Message>;
+  markMessageRead(id: number): Promise<void>;
+  deleteMessage(id: number): Promise<void>;
 }
 
 export class DatabaseStorage implements IStorage {
@@ -457,6 +467,35 @@ export class DatabaseStorage implements IStorage {
         reviewsGrowth: 0,
       };
     }
+  }
+
+  // Messages and Notifications
+  async getMessages(receiverId: string | null): Promise<Message[]> {
+    if (receiverId) {
+      return await db.select().from(messages).where(
+        sql`${messages.receiverId} = ${receiverId} OR ${messages.receiverId} IS NULL`
+      ).orderBy(desc(messages.createdAt));
+    }
+    return await db.select().from(messages).where(
+      sql`${messages.receiverId} IS NULL`
+    ).orderBy(desc(messages.createdAt));
+  }
+
+  async getSentMessages(senderId: string): Promise<Message[]> {
+     return await db.select().from(messages).where(eq(messages.senderId, senderId)).orderBy(desc(messages.createdAt));
+  }
+
+  async createMessage(data: InsertMessage): Promise<Message> {
+    const [msg] = await db.insert(messages).values(data).returning();
+    return msg;
+  }
+
+  async markMessageRead(id: number): Promise<void> {
+    await db.update(messages).set({ isRead: true }).where(eq(messages.id, id));
+  }
+
+  async deleteMessage(id: number): Promise<void> {
+    await db.delete(messages).where(eq(messages.id, id));
   }
 }
 

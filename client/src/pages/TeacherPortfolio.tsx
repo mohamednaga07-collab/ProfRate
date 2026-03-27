@@ -28,13 +28,14 @@ export default function TeacherPortfolio() {
   const [form, setForm] = useState<Portfolio>({ title: "", philosophy: "", syllabusUrl: "", materials: [] });
   const [newMat, setNewMat] = useState({ title: "", url: "" });
 
-  const { data: portfolio, isLoading } = useQuery<Portfolio | null>({
+  const { data: portfolio, isLoading, isError } = useQuery<Portfolio | null>({
     queryKey: ["/api/teacher/portfolio"],
     queryFn: async () => {
       const res = await fetch("/api/teacher/portfolio");
       if (!res.ok) throw new Error("Failed");
       return res.json();
     },
+    retry: 1, // Only retry once instead of 3 exponential backoffs so it fails faster if down
   });
 
   useEffect(() => {
@@ -92,7 +93,7 @@ export default function TeacherPortfolio() {
             </div>
             <Button
               onClick={() => editing ? saveMutation.mutate(form) : setEditing(true)}
-              disabled={saveMutation.isPending}
+              disabled={saveMutation.isPending || isError}
               className="gap-2"
             >
               {editing ? <><Save className="h-4 w-4" />{t("teacherPortfolio.saveChanges")}</> : <><Edit2 className="h-4 w-4" />{t("teacherPortfolio.editPortfolio")}</>}
@@ -103,6 +104,16 @@ export default function TeacherPortfolio() {
         {isLoading ? (
           <div className="flex items-center justify-center py-24">
             <div className="h-8 w-8 animate-spin rounded-full border-4 border-primary border-t-transparent" />
+          </div>
+        ) : isError ? (
+          <div className="flex flex-col items-center justify-center py-24 text-center">
+            <div className="h-16 w-16 mb-4 rounded-full bg-red-100 dark:bg-red-900/20 flex items-center justify-center">
+              <span className="text-red-500 text-3xl font-bold">!</span>
+            </div>
+            <h2 className="text-xl font-bold mb-2">{t("system.error.title", { defaultValue: "Connection Error" })}</h2>
+            <p className="text-muted-foreground max-w-md">
+              {t("system.error.description", { defaultValue: "The system is currently unavailable. This is usually due to a degraded connection. Please try again later." })}
+            </p>
           </div>
         ) : (
           <div className="space-y-6">

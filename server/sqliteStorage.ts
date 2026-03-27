@@ -425,5 +425,11 @@ export class SqliteStorage implements IStorage {
       return this.db.prepare("SELECT * FROM activity_logs WHERE userId = ? ORDER BY timestamp DESC").all(userId) as any[];
     } catch (e) { return []; }
   }
-}
 
+  // ── Message stubs ──
+  async getMessages(_receiverId: string | null): Promise<any[]> { return []; }
+  async getSentMessages(_senderId: string): Promise<any[]> { return []; }
+  async createMessage(data: any): Promise<any> { return { id: 0, ...data, createdAt: new Date().toISOString() }; }
+  async markMessageRead(_id: number): Promise<void> { return; }
+  async deleteMessage(_id: number): Promise<void> { return; }
+}

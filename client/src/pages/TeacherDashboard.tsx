@@ -12,6 +12,7 @@ import { Alert, AlertDescription } from "@/components/ui/alert";
 import { useTranslation } from "react-i18next";
 import { motion, AnimatePresence } from "framer-motion";
 import styles from "./TeacherDashboard.module.css";
+import { SendMessageDialog } from "@/components/SendMessageDialog";
 
 interface Doctor {
   id: number;
@@ -68,6 +69,7 @@ export default function TeacherDashboard() {
   const [isTransitioning, setIsTransitioning] = useState(false);
   const [lastInteraction, setLastInteraction] = useState(0);
   const [isDragging, setIsDragging] = useState(false);
+  const [isComposeOpen, setIsComposeOpen] = useState(false);
 
   // Robust carousel rotation - high-energy timing
   useEffect(() => {
@@ -714,6 +716,21 @@ export default function TeacherDashboard() {
           </>
         )}
       </main>
+
+      {/* Floating compose button */}
+      <Button
+        className="fixed bottom-6 right-6 rounded-full h-14 w-14 shadow-lg z-50 flex items-center justify-center"
+        onClick={() => setIsComposeOpen(true)}
+        title="Compose Message"
+      >
+        <MessageSquare className="h-6 w-6" />
+      </Button>
+
+      {/* Compose dialog for teacher: broadcast or support request */}
+      <SendMessageDialog
+        open={isComposeOpen}
+        onOpenChange={setIsComposeOpen}
+      />
     </div>
   );
 }

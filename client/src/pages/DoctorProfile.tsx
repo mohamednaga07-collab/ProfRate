@@ -24,10 +24,11 @@ import { useToast } from "@/hooks/use-toast";
 import { queryClient, apiRequest } from "@/lib/queryClient";
 import { isUnauthorizedError } from "@/lib/authUtils";
 import { useTranslation } from "react-i18next";
-import { Star, ArrowLeft, Shield, Calendar, MessageSquare, ChevronRight, ChevronLeft, CheckCircle2, BookOpen, Clock, MessageCircle, Brain, Scale, Zap, HandHeart, GraduationCap } from "lucide-react";
+import { Star, ArrowLeft, Shield, Calendar, MessageSquare, ChevronRight, ChevronLeft, CheckCircle2, BookOpen, Clock, MessageCircle, Brain, Scale, Zap, HandHeart, GraduationCap, Send } from "lucide-react";
 import type { DoctorWithRatings, Review } from "@shared/schema";
 import { useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
+import { SendMessageDialog } from "@/components/SendMessageDialog";
 import { cn } from "@/lib/utils";
 
 // Definition of all 8 rating categories with their sub-questions
@@ -119,6 +120,7 @@ export default function DoctorProfile() {
   const { toast } = useToast();
   const { t } = useTranslation();
   const [isReviewDialogOpen, setIsReviewDialogOpen] = useState(false);
+  const [isMsgDialogOpen, setIsMsgDialogOpen] = useState(false);
   const [step, setStep] = useState(0); // 0-2 for 3 steps, 3 = comment/summary
   const [subScores, setSubScores] = useState<SubScores>(makeDefaultSubScores());
   const [comment, setComment] = useState("");
@@ -264,10 +266,16 @@ export default function DoctorProfile() {
                         </div>
                         {/* Rate button — available only to students */}
                         {user && user.role === "student" && (
-                          <Button data-testid="button-write-review" onClick={() => { resetForm(); setIsReviewDialogOpen(true); }}>
-                            <Star className="h-4 w-4 mr-2" />
-                            {t("doctorProfile.writeReview")}
-                          </Button>
+                          <div className="flex gap-2">
+                            <Button data-testid="button-write-review" onClick={() => { resetForm(); setIsReviewDialogOpen(true); }}>
+                              <Star className="h-4 w-4 mr-2" />
+                              {t("doctorProfile.writeReview")}
+                            </Button>
+                            <Button variant="outline" data-testid="button-anon-message" onClick={() => setIsMsgDialogOpen(true)}>
+                              <Send className="h-4 w-4 mr-2" />
+                              Message Teacher
+                            </Button>
+                          </div>
                         )}
                       </div>
                     </div>
@@ -504,6 +512,18 @@ export default function DoctorProfile() {
           </div>
         </DialogContent>
       </Dialog>
+
+      {/* Anonymous message to teacher — visible to students only */}
+      {user?.role === "student" && doctor && (
+        <SendMessageDialog
+          open={isMsgDialogOpen}
+          onOpenChange={setIsMsgDialogOpen}
+          receiverId={undefined} /* teacher userId unknown — admin routes it */
+          receiverName={doctor.name}
+          forcedType="direct"
+          forceAnonymous={true}
+        />
+      )}
     </div>
   );
 }

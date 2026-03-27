@@ -157,6 +157,32 @@ export const activityLogs = pgTable("activity_logs", {
   timestamp: timestamp("timestamp").defaultNow().notNull(),
 });
 
+// Messages & Notifications
+export const messages = pgTable("messages", {
+  id: integer("id").primaryKey().generatedAlwaysAsIdentity(),
+  senderId: varchar("sender_id").references(() => users.id, { onDelete: "set null" }),
+  receiverId: varchar("receiver_id").references(() => users.id, { onDelete: "cascade" }), // null for global broadcasts
+  title: varchar("title", { length: 255 }).notNull(),
+  content: text("content").notNull(),
+  type: varchar("type", { length: 50 }).notNull(), // 'feedback', 'support', 'direct', 'broadcast'
+  isAnonymous: boolean("is_anonymous").default(false), // true if student sending anonymously
+  isRead: boolean("is_read").default(false),
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+});
+
+export const messagesRelations = relations(messages, ({ one }) => ({
+  sender: one(users, {
+    fields: [messages.senderId],
+    references: [users.id],
+    relationName: "sentMessages"
+  }),
+  receiver: one(users, {
+    fields: [messages.receiverId],
+    references: [users.id],
+    relationName: "receivedMessages"
+  }),
+}));
+
 // ── Rating system helpers ──────────────────────────────────────────────────
 
 export const subScoresSchema = z.object({
@@ -225,6 +251,7 @@ export const insertReviewSchema = z.object({
 
 export const insertTeacherPortfolioSchema: any = (createInsertSchema(teacherPortfolios) as any).omit({ id: true, createdAt: true, updatedAt: true });
 export const insertStudentEnrollmentSchema: any = (createInsertSchema(studentEnrollments) as any).omit({ id: true, createdAt: true });
+export const insertMessageSchema: any = (createInsertSchema(messages) as any).omit({ id: true, createdAt: true });
 
 export type UpsertUser = typeof users.$inferInsert;
 export type User = typeof users.$inferSelect;
@@ -238,6 +265,8 @@ export type TeacherPortfolio = typeof teacherPortfolios.$inferSelect;
 export type InsertTeacherPortfolio = z.infer<typeof insertTeacherPortfolioSchema>;
 export type StudentEnrollment = typeof studentEnrollments.$inferSelect;
 export type InsertStudentEnrollment = z.infer<typeof insertStudentEnrollmentSchema>;
+export type Message = typeof messages.$inferSelect;
+export type InsertMessage = z.infer<typeof insertMessageSchema>;
 
 export type DoctorWithRatings = Doctor & {
   ratings: DoctorRating | null;
