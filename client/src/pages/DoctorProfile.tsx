@@ -410,7 +410,11 @@ export default function DoctorProfile() {
               <motion.div key={`step-${step}`} initial={{ opacity: 0, x: 20 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: -20 }} transition={{ duration: 0.2 }} className="space-y-6">
                 {currentStepCategories!.map((cat) => {
                   const catLabel = t(`doctorProfile.categories.${cat.key}`, { defaultValue: cat.key });
-                  const catQuestions = (t(`doctorProfile.questions.${cat.key}`, { returnObjects: true }) as string[]);
+                  const translatedQuestions = t(`doctorProfile.questions.${cat.key}`, { returnObjects: true });
+                  const catQuestions = Array.isArray(translatedQuestions) 
+                    ? translatedQuestions 
+                    : Array.from({ length: cat.questionCount }).map((_, i) => `Question ${i + 1}`);
+                  
                   return (
                   <div key={cat.key} className={`rounded-xl border ${cat.border} ${cat.bg} p-4`}>
                     <div className="flex items-center gap-2 mb-4">
