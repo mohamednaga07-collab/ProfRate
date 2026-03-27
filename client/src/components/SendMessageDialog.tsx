@@ -14,27 +14,65 @@ import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
 import { useToast } from "@/hooks/use-toast";
 import { queryClient } from "@/lib/queryClient";
-import { Select, SelectTrigger, SelectValue, SelectContent, SelectItem } from "@/components/ui/select";
 import { useAuth } from "@/hooks/useAuth";
+import { Megaphone, Shield, Send, MessageCircle } from "lucide-react";
 
 interface SendMessageDialogProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
-  /** Pre-set the receiver ID if sending a DM to a specific teacher/user */
+  /** Pre-set the receiver ID (e.g. a specific teacher's user ID for DMs) */
   receiverId?: string;
   receiverName?: string;
-  /** Force the message type */
+  /**
+   * Force a specific message type and skip the type picker.
+   * - "direct"           → anonymous student DM to a specific teacher
+   * - "broadcast"        → admin-only broadcast to all users
+   * - "feedback"         → student anonymous feedback sent to admins
+   * - "support_request"  → teacher request sent to admins
+   * - "broadcast_class"  → teacher announcement sent to all students
+   */
   forcedType?: "direct" | "broadcast" | "feedback" | "support_request" | "broadcast_class";
-  /** Require anonymous flag */
   forceAnonymous?: boolean;
 }
 
-const TYPE_LABELS: Record<string, string> = {
-  direct: "Direct Message",
-  broadcast: "Broadcast to Everyone",
-  feedback: "Feedback to Admin",
-  support_request: "Support Request to Admin",
-  broadcast_class: "Announcement to Students",
+interface MessageType {
+  key: string;
+  label: string;
+  description: string;
+  icon: React.ReactNode;
+}
+
+const MESSAGE_TYPES: Record<string, MessageType[]> = {
+  admin: [
+    {
+      key: "broadcast",
+      label: "Platform Announcement",
+      description: "Send a maintenance notice or update to all users",
+      icon: <Megaphone className="h-5 w-5 text-purple-500" />,
+    },
+  ],
+  teacher: [
+    {
+      key: "broadcast_class",
+      label: "Class Announcement",
+      description: "Broadcast a message visible to all your students",
+      icon: <Megaphone className="h-5 w-5 text-blue-500" />,
+    },
+    {
+      key: "support_request",
+      label: "Contact Admin",
+      description: "Send a support request or question to the platform admins",
+      icon: <Shield className="h-5 w-5 text-green-500" />,
+    },
+  ],
+  student: [
+    {
+      key: "feedback",
+      label: "Platform Feedback",
+      description: "Send anonymous feedback to the admins",
+      icon: <MessageCircle className="h-5 w-5 text-amber-500" />,
+    },
+  ],
 };
 
 export function SendMessageDialog({
@@ -49,18 +87,28 @@ export function SendMessageDialog({
   const { user } = useAuth();
   const [title, setTitle] = useState("");
   const [content, setContent] = useState("");
-  const [type, setType] = useState<string>(forcedType || "direct");
+
+  const role = user?.role ?? "student";
+  const availableTypes = forcedType
+    ? [] // Bypassed — uses forcedType directly
+    : MESSAGE_TYPES[role] ?? [];
+
+  const [selectedType, setSelectedType] = useState<string>(
+    forcedType ?? availableTypes[0]?.key ?? "feedback"
+  );
+
+  const activeType = forcedType ?? selectedType;
 
   const sendMutation = useMutation({
     mutationFn: async () => {
       const csrfRes = await fetch("/api/auth/csrf-token");
       const { token } = await csrfRes.json();
       const body: any = {
-        receiverId: receiverId || null,
+        receiverId: receiverId ?? null,
         title,
         content,
-        type,
-        isAnonymous: forceAnonymous,
+        type: activeType,
+        isAnonymous: forceAnonymous || activeType === "direct",
       };
       const res = await fetch("/api/notifications", {
         method: "POST",
@@ -78,64 +126,73 @@ export function SendMessageDialog({
       queryClient.invalidateQueries({ queryKey: ["/api/notifications"] });
     },
     onError: () => {
-      toast({ title: "Send failed", description: "Failed to send message. Please try again.", variant: "destructive" });
+      toast({ title: "Send failed", description: "Failed to send. Please try again.", variant: "destructive" });
     },
   });
 
   const handleSend = (e: React.FormEvent) => {
     e.preventDefault();
     if (!title.trim() || !content.trim()) {
-      toast({ title: "Missing fields", description: "Please enter both a title and a message.", variant: "destructive" });
+      toast({ title: "Missing fields", description: "Please fill in both subject and message.", variant: "destructive" });
       return;
     }
     sendMutation.mutate();
   };
 
-  // Decide which types are available based on role
-  const availableTypes: string[] = forcedType
-    ? [forcedType]
-    : user?.role === "admin"
-    ? ["broadcast", "direct"]
-    : user?.role === "teacher"
-    ? ["broadcast_class", "support_request", "direct"]
-    : ["feedback", "direct"];
+  // The label to show above the form when a forcedType is used
+  const forcedTypeInfo = forcedType
+    ? (Object.values(MESSAGE_TYPES).flat().find(t => t.key === forcedType) ?? {
+        label: forceAnonymous ? "Anonymous Message" : "Message",
+        description: receiverName
+          ? `This message will be sent anonymously to ${receiverName}. They will not know who you are.`
+          : "Send a message.",
+        icon: <Send className="h-5 w-5 text-primary" />,
+      })
+    : null;
 
   return (
-    <Dialog open={open} onOpenChange={onOpenChange}>
+    <Dialog open={open} onOpenChange={onOpenChange} modal={true}>
       <DialogContent className="sm:max-w-md">
         <DialogHeader>
-          <DialogTitle>
-            {forceAnonymous ? "Send Anonymous Message" : "Compose Message"}
+          <DialogTitle className="flex items-center gap-2">
+            {forcedTypeInfo?.icon ?? <Send className="h-5 w-5 text-primary" />}
+            {forcedTypeInfo?.label ?? "Compose Message"}
           </DialogTitle>
           <DialogDescription>
-            {forceAnonymous
-              ? `This message will be sent anonymously to ${receiverName || "the teacher"}. They will not know who you are.`
-              : receiverName
-              ? `Sending to: ${receiverName}`
-              : "Send a message or notification."}
+            {forcedTypeInfo?.description ?? "Choose what kind of message you'd like to send."}
           </DialogDescription>
         </DialogHeader>
-        <form onSubmit={handleSend} className="space-y-4">
-          {!forcedType && availableTypes.length > 1 && (
-            <div className="space-y-1">
-              <Label>Message Type</Label>
-              <Select value={type} onValueChange={setType}>
-                <SelectTrigger>
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent>
-                  {availableTypes.map(t => (
-                    <SelectItem key={t} value={t}>{TYPE_LABELS[t] || t}</SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            </div>
-          )}
+
+        {/* Type picker — only shown when no forcedType */}
+        {!forcedType && availableTypes.length > 1 && (
+          <div className="grid gap-2 pb-1">
+            {availableTypes.map((t) => (
+              <button
+                key={t.key}
+                type="button"
+                onClick={() => setSelectedType(t.key)}
+                className={`flex items-start gap-3 p-3 rounded-lg border text-left transition-all ${
+                  selectedType === t.key
+                    ? "border-primary bg-primary/5 ring-1 ring-primary/30"
+                    : "border-border hover:border-primary/40 hover:bg-muted/50"
+                }`}
+              >
+                <div className="mt-0.5 flex-shrink-0">{t.icon}</div>
+                <div>
+                  <p className="text-sm font-medium leading-none mb-1">{t.label}</p>
+                  <p className="text-xs text-muted-foreground leading-snug">{t.description}</p>
+                </div>
+              </button>
+            ))}
+          </div>
+        )}
+
+        <form onSubmit={handleSend} className="space-y-3">
           <div className="space-y-1">
             <Label htmlFor="msg-title">Subject</Label>
             <Input
               id="msg-title"
-              placeholder="Enter a title..."
+              placeholder="Enter a subject..."
               value={title}
               onChange={e => setTitle(e.target.value)}
               required
@@ -152,9 +209,15 @@ export function SendMessageDialog({
               required
             />
           </div>
+          {(forceAnonymous || activeType === "direct") && (
+            <p className="text-xs text-muted-foreground flex items-center gap-1.5 py-1 px-2 rounded bg-muted/50">
+              🔒 Your identity is kept completely anonymous.
+            </p>
+          )}
           <DialogFooter>
             <Button type="button" variant="ghost" onClick={() => onOpenChange(false)}>Cancel</Button>
-            <Button type="submit" disabled={sendMutation.isPending}>
+            <Button type="submit" disabled={sendMutation.isPending} className="gap-2">
+              <Send className="h-4 w-4" />
               {sendMutation.isPending ? "Sending..." : "Send"}
             </Button>
           </DialogFooter>

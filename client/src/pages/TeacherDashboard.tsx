@@ -323,6 +323,23 @@ export default function TeacherDashboard() {
               initial={{ opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ duration: 0.5, delay: 0.1 }}
+              className="flex items-center justify-between mb-4"
+            >
+              <h2 className="text-lg font-semibold text-muted-foreground tracking-wide uppercase text-xs">Your Performance</h2>
+              <Button
+                variant="outline"
+                size="sm"
+                className="gap-2"
+                onClick={() => setIsComposeOpen(true)}
+              >
+                <MessageSquare className="h-4 w-4" />
+                Compose Message
+              </Button>
+            </motion.div>
+            <motion.div
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.5, delay: 0.1 }}
               className="grid sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-8"
             >
               {teacherReviews[0] && (
@@ -716,15 +733,6 @@ export default function TeacherDashboard() {
           </>
         )}
       </main>
-
-      {/* Floating compose button */}
-      <Button
-        className="fixed bottom-6 right-6 rounded-full h-14 w-14 shadow-lg z-50 flex items-center justify-center"
-        onClick={() => setIsComposeOpen(true)}
-        title="Compose Message"
-      >
-        <MessageSquare className="h-6 w-6" />
-      </Button>
 
       {/* Compose dialog for teacher: broadcast or support request */}
       <SendMessageDialog
