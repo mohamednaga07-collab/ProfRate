@@ -110,6 +110,9 @@ interface Review {
   communication: number;
   knowledge: number;
   fairness: number;
+  engagement: number;
+  helpfulness: number;
+  courseOrganization: number;
   comment?: string;
   createdAt: string;
 }
@@ -962,6 +965,69 @@ export default function AdminDashboard() {
                                   <Trash2 className="h-4 w-4" />
                                 </Button>
                               </div>
+                            </TableCell>
+                          </TableRow>
+                        ))}
+                      </TableBody>
+                    </Table>
+                  </div>
+                </ScrollArea>
+                </CardContent>
+              </Card>
+            </TabsContent>
+
+            {/* Reviews Tab */}
+            <TabsContent value="reviews">
+              <Card>
+                <CardHeader>
+                  <CardTitle>{t("admin.titles.reviews", { defaultValue: "Manage Reviews" })}</CardTitle>
+                  <CardDescription>{t("admin.reviews.subtitle", { defaultValue: "View and moderate all student reviews" })}</CardDescription>
+                </CardHeader>
+                <CardContent>
+                  <ScrollArea className="h-[500px]">
+                    <div className="table-responsive">
+                      <Table>
+                      <TableHeader>
+                        <TableRow>
+                          <TableHead>{t("admin.doctors.table.name", { defaultValue: "Professor" })}</TableHead>
+                          <TableHead>{t("admin.activity.rating", { defaultValue: "Overall Rating" })}</TableHead>
+                          <TableHead>{t("admin.activity.comment", { defaultValue: "Comment" })}</TableHead>
+                          <TableHead>{t("admin.users.table.joined", { defaultValue: "Date" })}</TableHead>
+                          <TableHead className="text-end">{t("admin.users.table.actions", { defaultValue: "Actions" })}</TableHead>
+                        </TableRow>
+                      </TableHeader>
+                      <TableBody>
+                        {reviews?.map((review) => (
+                          <TableRow key={review.id}>
+                            <TableCell className="font-medium">
+                              {t("doctorProfile.doctorPrefix", { defaultValue: "د." })} {t(`home.professors.names.${review.doctorName?.replace(/^Dr\.?\s+/i, "").trim()}`, { defaultValue: review.doctorName?.replace(/^Dr\.?\s+/i, "").trim() })}
+                            </TableCell>
+                            <TableCell>
+                              <div className="flex items-center gap-1">
+                                <span className="font-bold">
+                                  {((review.teachingQuality + review.availability + review.communication + review.knowledge + review.fairness + (review.engagement || 0) + (review.helpfulness || 0) + (review.courseOrganization || 0)) / 8).toFixed(1)}
+                                </span>
+                                <Star className="h-3 w-3 fill-yellow-400 text-yellow-500" />
+                              </div>
+                            </TableCell>
+                            <TableCell className="max-w-[300px]">
+                              <p className="truncate text-sm" title={review.comment || t("doctorProfile.noComment", { defaultValue: "No comment provided" })}>
+                                {review.comment || <span className="text-muted-foreground italic">{t("doctorProfile.noComment", { defaultValue: "No comment provided" })}</span>}
+                              </p>
+                            </TableCell>
+                            <TableCell>{new Date(review.createdAt).toLocaleDateString()}</TableCell>
+                            <TableCell className="text-end">
+                              <Button
+                                variant="destructive"
+                                size="sm"
+                                onClick={() => {
+                                  if (confirm(t("admin.reviews.deleteConfirm", { defaultValue: "Are you sure you want to delete this review?" }))) {
+                                    deleteReview.mutate(review.id);
+                                  }
+                                }}
+                              >
+                                <Trash2 className="h-4 w-4" />
+                              </Button>
                             </TableCell>
                           </TableRow>
                         ))}
