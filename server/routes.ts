@@ -1403,17 +1403,33 @@ export async function registerRoutes(httpServer: Server, app: Express): Promise<
     try {
       const userId = getUserId(req);
       if (!userId) return res.status(401).json({ message: "Unauthorized" });
+
+      const user = await storage.getUser(userId);
+      if (!user) return res.status(401).json({ message: "Unauthorized" });
       
       const messages = await storage.getMessages(userId);
-      // Ensure anonymous senders are hidden
-      const sanitizedMessages = messages.map((msg: any) => {
-        if (msg.isAnonymous) {
-          return { ...msg, senderId: null }; 
-        }
+
+      // Role-based filtering:
+      // - Admins: see feedback, support_request, and broadcasts. NEVER see direct student→teacher DMs
+      // - Teachers: see broadcasts and direct (anonymous student DMs targeted to them)
+      // - Students: see broadcast and broadcast_class announcements from teachers/admins
+      const allowedTypes: Record<string, string[]> = {
+        admin: ["feedback", "support_request", "broadcast"],
+        teacher: ["direct", "broadcast", "broadcast_class"],
+        student: ["broadcast", "broadcast_class"],
+      };
+
+      const allowed = allowedTypes[user.role] ?? ["broadcast"];
+
+      let filtered = messages.filter((msg: any) => allowed.includes(msg.type));
+
+      // Strip sender identity for anonymous messages
+      filtered = filtered.map((msg: any) => {
+        if (msg.isAnonymous) return { ...msg, senderId: null };
         return msg;
       });
 
-      res.json(sanitizedMessages);
+      res.json(filtered);
     } catch (error) {
       console.error("Error fetching notifications:", error);
       res.status(500).json({ message: "Internal server error" });
