@@ -262,8 +262,8 @@ export default function DoctorProfile() {
                             {doctor.ratings?.totalReviews ?? 0} {t("doctorProfile.reviewsCount", { count: doctor.ratings?.totalReviews ?? 0 })}
                           </p>
                         </div>
-                        {/* Rate button — available to all authenticated users */}
-                        {user && (
+                        {/* Rate button — available only to students */}
+                        {user && user.role === "student" && (
                           <Button data-testid="button-write-review" onClick={() => { resetForm(); setIsReviewDialogOpen(true); }}>
                             <Star className="h-4 w-4 mr-2" />
                             {t("doctorProfile.writeReview")}

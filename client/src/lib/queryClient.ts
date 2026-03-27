@@ -39,6 +39,7 @@ export async function apiRequest(
   method: string,
   url: string,
   data?: unknown | undefined,
+  retryCount = 0
 ): Promise<Response> {
   const headers: Record<string, string> = data ? { "Content-Type": "application/json" } : {};
   
@@ -55,6 +56,13 @@ export async function apiRequest(
     body: data ? JSON.stringify(data) : undefined,
     credentials: "include",
   });
+
+  // If CSRF token is invalid/expired, the server returns 403.
+  // We should fetch a fresh token and retry the request exactly once.
+  if (!res.ok && res.status === 403 && retryCount === 0) {
+    csrfToken = null; // Clear cached token
+    return apiRequest(method, url, data, 1); // Retry with a fresh token
+  }
 
   await throwIfResNotOk(res);
   return res;

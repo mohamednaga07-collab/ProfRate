@@ -529,10 +529,10 @@
   "compare": {
     "backToProfessors": "Back to Professors",
     "title": "Compare Professors",
-    "subtitle": "Compare two professors across all 5 rating factors",
+    "subtitle": "Compare two professors across all 8 rating factors",
     "hero": {
       "tag": "Side-by-side",
-      "subtitle": "Compare two professors across all 5 rating factors with visual clarity."
+      "subtitle": "Compare two professors across all 8 rating factors with visual clarity."
     },
     "stats": {
       "avgDiff": "Avg diff",

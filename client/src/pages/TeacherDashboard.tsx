@@ -408,47 +408,58 @@ export default function TeacherDashboard() {
                 animate={{ opacity: 1, x: 0 }}
                 transition={{ duration: 0.5, delay: 0.2 }}
               >
-                <Card className="backdrop-blur bg-card/80">
-                  <CardHeader>
-                    <CardTitle className="flex items-center gap-2">
-                      <BarChart className="h-5 w-5" />
+                <Card className="backdrop-blur bg-gradient-to-br from-card/90 to-card/50 shadow-xl border-primary/10 overflow-hidden h-full relative">
+                  <div className="absolute inset-0 bg-gradient-to-br from-primary/5 via-transparent to-transparent pointer-events-none" />
+                  <CardHeader className="relative z-10">
+                    <CardTitle className="flex items-center gap-2 text-xl">
+                      <BarChart className="h-5 w-5 text-primary" />
                       {t("teacherDashboard.chart.title")}
                     </CardTitle>
                     <CardDescription>{t("teacherDashboard.chart.description")}</CardDescription>
                   </CardHeader>
-                  <CardContent>
-                    <ResponsiveContainer width="100%" height={350}>
-                      <BarChart data={chartData}>
-                        <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--muted))" />
+                  <CardContent className="relative z-10 pb-6">
+                    <ResponsiveContainer width="100%" height={380}>
+                      <BarChart data={chartData} margin={{ top: 20, right: 0, left: -20, bottom: 0 }}>
+                        <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="hsl(var(--border))" opacity={0.5} />
                         <XAxis 
                           dataKey="name" 
                           angle={0} 
                           textAnchor="middle" 
-                          height={80}
+                          height={40}
+                          tickLine={false}
+                          axisLine={false}
                           stroke="hsl(var(--muted-foreground))"
+                          fontWeight={500}
+                          fontSize={12}
                         />
                         <YAxis
                           domain={[0, 10]}
-                          label={{ value: t("teacherDashboard.chart.ratingLabel"), angle: -90, position: "insideLeft" }}
+                          tickLine={false}
+                          axisLine={false}
                           stroke="hsl(var(--muted-foreground))"
+                          fontSize={12}
+                          tickFormatter={(val) => `${val}`}
                         />
                         <Tooltip 
-                          formatter={(value: number) => value.toFixed(2)}
+                          cursor={{ fill: "hsl(var(--accent))", opacity: 0.1, radius: 4 }}
                           contentStyle={{ 
                             backgroundColor: "hsl(var(--card))", 
-                            border: "1px solid hsl(var(--border))",
-                            borderRadius: "8px"
+                            borderColor: "hsl(var(--border))",
+                            borderRadius: "12px",
+                            boxShadow: "0 10px 25px -5px rgba(0,0,0,0.1)",
+                            padding: "12px"
                           }}
+                          itemStyle={{ fontWeight: 500 }}
                         />
-                        <Legend />
-                        <Bar dataKey="Teaching" name={t("doctorProfile.factorsShort.teaching")} fill="#3b82f6" radius={[8, 8, 0, 0]} />
-                        <Bar dataKey="Availability" name={t("doctorProfile.factorsShort.availability")} fill="#8b5cf6" radius={[8, 8, 0, 0]} />
-                        <Bar dataKey="Communication" name={t("doctorProfile.factorsShort.communication")} fill="#ec4899" radius={[8, 8, 0, 0]} />
-                        <Bar dataKey="Knowledge" name={t("doctorProfile.factorsShort.knowledge")} fill="#f59e0b" radius={[8, 8, 0, 0]} />
-                        <Bar dataKey="Fairness" name={t("doctorProfile.factorsShort.fairness")} fill="#10b981" radius={[8, 8, 0, 0]} />
-                        <Bar dataKey="Engagement" name={t("doctorProfile.factorsShort.engagement")} fill="#ef4444" radius={[8, 8, 0, 0]} />
-                        <Bar dataKey="Helpfulness" name={t("doctorProfile.factorsShort.helpfulness")} fill="#0ea5e9" radius={[8, 8, 0, 0]} />
-                        <Bar dataKey="Organization" name={t("doctorProfile.factorsShort.courseOrganization")} fill="#84cc16" radius={[8, 8, 0, 0]} />
+                        <Legend wrapperStyle={{ paddingTop: "20px" }} />
+                        <Bar dataKey="Teaching" name={t("doctorProfile.factorsShort.teaching")} fill="#3b82f6" radius={[6, 6, 0, 0]} maxBarSize={40} />
+                        <Bar dataKey="Availability" name={t("doctorProfile.factorsShort.availability")} fill="#8b5cf6" radius={[6, 6, 0, 0]} maxBarSize={40} />
+                        <Bar dataKey="Communication" name={t("doctorProfile.factorsShort.communication")} fill="#ec4899" radius={[6, 6, 0, 0]} maxBarSize={40} />
+                        <Bar dataKey="Knowledge" name={t("doctorProfile.factorsShort.knowledge")} fill="#f59e0b" radius={[6, 6, 0, 0]} maxBarSize={40} />
+                        <Bar dataKey="Fairness" name={t("doctorProfile.factorsShort.fairness")} fill="#10b981" radius={[6, 6, 0, 0]} maxBarSize={40} />
+                        <Bar dataKey="Engagement" name={t("doctorProfile.factorsShort.engagement")} fill="#ef4444" radius={[6, 6, 0, 0]} maxBarSize={40} />
+                        <Bar dataKey="Helpfulness" name={t("doctorProfile.factorsShort.helpfulness")} fill="#0ea5e9" radius={[6, 6, 0, 0]} maxBarSize={40} />
+                        <Bar dataKey="Organization" name={t("doctorProfile.factorsShort.courseOrganization")} fill="#84cc16" radius={[6, 6, 0, 0]} maxBarSize={40} />
                       </BarChart>
                     </ResponsiveContainer>
                   </CardContent>
@@ -462,18 +473,19 @@ export default function TeacherDashboard() {
                   animate={{ opacity: 1, x: 0 }}
                   transition={{ duration: 0.5, delay: 0.3 }}
                 >
-                  <Card className="backdrop-blur bg-card/80">
-                    <CardHeader>
-                      <CardTitle className="flex items-center gap-2">
-                        <Target className="h-5 w-5" />
+                  <Card className="backdrop-blur bg-gradient-to-bl from-card/90 to-card/50 shadow-xl border-primary/10 overflow-hidden h-full relative">
+                    <div className="absolute inset-0 bg-gradient-to-bl from-primary/5 via-transparent to-transparent pointer-events-none" />
+                    <CardHeader className="relative z-10">
+                      <CardTitle className="flex items-center gap-2 text-xl">
+                        <Target className="h-5 w-5 text-primary" />
                         {t("teacherDashboard.radar.title")}
                       </CardTitle>
                       <CardDescription>
                         {t("teacherDashboard.radar.description")}
                       </CardDescription>
                     </CardHeader>
-                    <CardContent>
-                      <ResponsiveContainer width="100%" height={350}>
+                    <CardContent className="relative z-10 pb-6">
+                      <ResponsiveContainer width="100%" height={380}>
                         <RadarChart data={[
                           {
                             category: t("doctorProfile.factorsShort.teaching"),
@@ -516,7 +528,7 @@ export default function TeacherDashboard() {
                             fullMark: 10
                           },
                         ]}>
-                          <PolarGrid stroke="hsl(var(--muted))" />
+                          <PolarGrid stroke="hsl(var(--border))" />
                           <PolarAngleAxis 
                             dataKey="category" 
                             stroke="hsl(var(--muted-foreground))"
@@ -534,17 +546,11 @@ export default function TeacherDashboard() {
                               ];
                               const color = colors[index] || "hsl(var(--muted-foreground))";
                               
-                              // Enhance outwards push for labels to prevent overlap
-                              // Calculate outward vector relative to center
                               const cx = props.cx || 0;
                               const cy = props.cy || 0;
                               const dirX = x - cx;
                               const dirY = y - cy;
                               
-                              // In RTL, browers flip 'start' and 'end' meaning for textAnchor.
-                              // So a text anchored at 'start' (right side of string) will shoot leftwards,
-                              // which pushes it INTO the chart on the right side.
-                              // We fix this by swapping start/end in RTL.
                               let finalAnchor = textAnchor; if (Math.abs(dirX) < 10) finalAnchor = "middle";
                               if (isRTL) {
                                 if (textAnchor === "start") finalAnchor = "end";
@@ -555,9 +561,6 @@ export default function TeacherDashboard() {
                               const pushDist = 4;
 
                               const finalX = x + (dirX / dist) * pushDist ;
-                              
-                              // Slight vertical fix for top/bottom overlap
-                              // Text draws UP from baseline, so we must push bottom labels further down
                               const finalY = y + (dirY / dist) * pushDist + (dirY > 10 ? 10 : 0);
 
                               return (
@@ -574,13 +577,27 @@ export default function TeacherDashboard() {
                               );
                             }}
                           />
-                          <PolarRadiusAxis angle={90} domain={[0, 10]} stroke="hsl(var(--muted-foreground))" tick={false} />
+                          <PolarRadiusAxis angle={90} domain={[0, 10]} stroke="hsl(var(--border))" tick={false} axisLine={false} />
                           <Radar 
-                            name="Your Ratings" 
+                            name={t("teacherDashboard.radar.title", { defaultValue: "Your Ratings" })}
                             dataKey="value" 
-                            stroke="#3b82f6" 
-                            fill="#3b82f6" 
-                            fillOpacity={0.6} 
+                            stroke="hsl(var(--primary))" 
+                            strokeWidth={3}
+                            fill="hsl(var(--primary))" 
+                            fillOpacity={0.4} 
+                            activeDot={{ r: 6, fill: "hsl(var(--primary))", strokeWidth: 0 }}
+                          />
+                          <Tooltip 
+                            contentStyle={{ 
+                              backgroundColor: "hsl(var(--card))", 
+                              borderColor: "hsl(var(--border))",
+                              borderRadius: "12px",
+                              boxShadow: "0 10px 25px -5px rgba(0,0,0,0.1)"
+                            }}
+                            itemStyle={{
+                              color: "hsl(var(--primary))",
+                              fontWeight: 600
+                            }}
                           />
                         </RadarChart>
                       </ResponsiveContainer>
