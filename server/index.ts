@@ -35,11 +35,26 @@ declare module "http" {
 }
 
 // Strict CORS Policy
-const CORS_ORIGIN = process.env.APP_URL || (process.env.NODE_ENV === "production" ? "https://campus-ratings.onrender.com" : "http://localhost:5000");
+// Allow same-origin requests (Render serves client+API from same host) and block all other external origins
+const ALLOWED_ORIGINS = [
+  process.env.APP_URL,
+  "https://campus-ratings.onrender.com",
+  "http://localhost:5000",
+  "http://localhost:5173",
+].filter(Boolean) as string[];
+
 app.use(cors({
-  origin: CORS_ORIGIN,
+  origin: (origin, callback) => {
+    // Allow requests with no origin (same-origin, server-to-server, mobile apps)
+    if (!origin) return callback(null, true);
+    if (ALLOWED_ORIGINS.some(allowed => origin === allowed || origin.startsWith(allowed))) {
+      return callback(null, true);
+    }
+    console.warn(`[CORS] Blocked cross-origin request from: ${origin}`);
+    return callback(new Error("Cross-origin request blocked by CORS policy"), false);
+  },
   credentials: true, // Allow cookies
-  methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
+  methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS', 'PATCH'],
   allowedHeaders: ['Content-Type', 'Authorization', 'X-CSRF-Token'],
 }));
 
