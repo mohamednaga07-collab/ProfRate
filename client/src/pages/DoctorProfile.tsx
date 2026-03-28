@@ -369,9 +369,9 @@ export default function DoctorProfile() {
                   <RatingBar label={t("doctorProfile.factors.knowledge")} value={doctor.ratings?.avgKnowledge ?? 0} />
                   <RatingBar label={t("doctorProfile.factors.fairness")} value={doctor.ratings?.avgFairness ?? 0} />
                   {(doctor.ratings?.avgEngagement ?? 0) > 0 && <>
-                    <RatingBar label="Engagement (×2)" value={(doctor.ratings?.avgEngagement ?? 0) / 2} />
-                    <RatingBar label="Helpfulness (×2)" value={(doctor.ratings?.avgHelpfulness ?? 0) / 2} />
-                    <RatingBar label="Organization (×2)" value={(doctor.ratings?.avgCourseOrganization ?? 0) / 2} />
+                    <RatingBar label={t("doctorProfile.factors.engagement")} value={doctor.ratings?.avgEngagement ?? 0} maxValue={10} />
+                    <RatingBar label={t("doctorProfile.factors.helpfulness")} value={doctor.ratings?.avgHelpfulness ?? 0} maxValue={10} />
+                    <RatingBar label={t("doctorProfile.factors.courseOrganization")} value={doctor.ratings?.avgCourseOrganization ?? 0} maxValue={10} />
                   </>}
                 </CardContent>
               </Card>

@@ -50,14 +50,19 @@ export default function TeacherCourses() {
   const hasProfile = matched.length > 0;
   const doc = matched[0];
 
+  // All 8 categories are on 1-10 scale in the DB.
+  // Legacy fields (teachingQuality etc.) were stored 1-5 but avgXxx in doctor_ratings
+  // is averaged from those 1-5 values, so we normalise to 1-10 by multiplying *2.
+  const norm5 = (v: number) => (v || 0) * 2;  // 1-5 stored → display as /10
+
   const radarData = doc?.ratings ? [
-    { category: t("doctorProfile.factorsShort.teaching"), value: (doc.ratings.avgTeachingQuality || 0) * 2 },
-    { category: t("doctorProfile.factorsShort.availability"), value: (doc.ratings.avgAvailability || 0) * 2 },
-    { category: t("doctorProfile.factorsShort.communication"), value: (doc.ratings.avgCommunication || 0) * 2 },
-    { category: t("doctorProfile.factorsShort.knowledge"), value: (doc.ratings.avgKnowledge || 0) * 2 },
-    { category: t("doctorProfile.factorsShort.fairness"), value: (doc.ratings.avgFairness || 0) * 2 },
-    { category: t("doctorProfile.factorsShort.engagement"), value: doc.ratings.avgEngagement || 0 },
-    { category: t("doctorProfile.factorsShort.helpfulness"), value: doc.ratings.avgHelpfulness || 0 },
+    { category: t("doctorProfile.factorsShort.teaching"),      value: norm5(doc.ratings.avgTeachingQuality) },
+    { category: t("doctorProfile.factorsShort.availability"),  value: norm5(doc.ratings.avgAvailability) },
+    { category: t("doctorProfile.factorsShort.communication"), value: norm5(doc.ratings.avgCommunication) },
+    { category: t("doctorProfile.factorsShort.knowledge"),     value: norm5(doc.ratings.avgKnowledge) },
+    { category: t("doctorProfile.factorsShort.fairness"),      value: norm5(doc.ratings.avgFairness) },
+    { category: t("doctorProfile.factorsShort.engagement"),        value: doc.ratings.avgEngagement || 0 },
+    { category: t("doctorProfile.factorsShort.helpfulness"),        value: doc.ratings.avgHelpfulness || 0 },
     { category: t("doctorProfile.factorsShort.courseOrganization"), value: doc.ratings.avgCourseOrganization || 0 },
   ].filter(d => d.value > 0) : [];
 
@@ -118,8 +123,8 @@ export default function TeacherCourses() {
                 {[
                   { label: t("teacherCourses.stats.overallRating"), value: doc.ratings.overallRating.toFixed(1), icon: <Star className="h-4 w-4 text-amber-500" />, color: "text-amber-600 dark:text-amber-400" },
                   { label: t("teacherCourses.stats.totalReviews"), value: doc.ratings.totalReviews, icon: <Users className="h-4 w-4 text-blue-500" />, color: "text-blue-600 dark:text-blue-400" },
-                  { label: t("teacherCourses.stats.bestScore"), value: Math.max((doc.ratings.avgTeachingQuality||0)*2, doc.ratings.avgEngagement||0, (doc.ratings.avgCommunication||0)*2).toFixed(1), icon: <TrendingUp className="h-4 w-4 text-green-500" />, color: "text-green-600 dark:text-green-400" },
-                  { label: t("teacherCourses.stats.availability"), value: `${((doc.ratings.avgAvailability||0) * 20).toFixed(0)}%`, icon: <BarChart3 className="h-4 w-4 text-purple-500" />, color: "text-purple-600 dark:text-purple-400" },
+                  { label: t("teacherCourses.stats.bestScore"), value: Math.max(norm5(doc.ratings.avgTeachingQuality), norm5(doc.ratings.avgAvailability), norm5(doc.ratings.avgCommunication), norm5(doc.ratings.avgKnowledge), norm5(doc.ratings.avgFairness), doc.ratings.avgEngagement||0, doc.ratings.avgHelpfulness||0, doc.ratings.avgCourseOrganization||0).toFixed(1), icon: <TrendingUp className="h-4 w-4 text-green-500" />, color: "text-green-600 dark:text-green-400" },
+                  { label: t("teacherCourses.stats.availability"), value: `${(norm5(doc.ratings.avgAvailability) * 10).toFixed(0)}%`, icon: <BarChart3 className="h-4 w-4 text-purple-500" />, color: "text-purple-600 dark:text-purple-400" },
                 ].map((s, i) => (
                   <Card key={i} className="bg-card/80 backdrop-blur">
                     <CardContent className="pt-4 pb-4">
@@ -206,15 +211,15 @@ export default function TeacherCourses() {
                   </CardHeader>
                   <CardContent className="space-y-4">
                     {[
-                      { label: t("doctorProfile.factors.teachingQuality"), value: (doc.ratings.avgTeachingQuality||0)*2, color: "bg-blue-500" },
-                      { label: t("doctorProfile.factors.availability"), value: (doc.ratings.avgAvailability||0)*2, color: "bg-purple-500" },
-                      { label: t("doctorProfile.factors.communication"), value: (doc.ratings.avgCommunication||0)*2, color: "bg-pink-500" },
-                      { label: t("doctorProfile.factors.knowledge"), value: (doc.ratings.avgKnowledge||0)*2, color: "bg-amber-500" },
-                      { label: t("doctorProfile.factors.fairness"), value: (doc.ratings.avgFairness||0)*2, color: "bg-green-500" },
+                      { label: t("doctorProfile.factors.teachingQuality"),    value: norm5(doc.ratings.avgTeachingQuality),   color: "bg-blue-500" },
+                      { label: t("doctorProfile.factors.availability"),          value: norm5(doc.ratings.avgAvailability),       color: "bg-purple-500" },
+                      { label: t("doctorProfile.factors.communication"),        value: norm5(doc.ratings.avgCommunication),     color: "bg-pink-500" },
+                      { label: t("doctorProfile.factors.knowledge"),             value: norm5(doc.ratings.avgKnowledge),          color: "bg-amber-500" },
+                      { label: t("doctorProfile.factors.fairness"),              value: norm5(doc.ratings.avgFairness),           color: "bg-green-500" },
                       ...(doc.ratings.avgEngagement > 0 ? [
-                        { label: t("doctorProfile.factors.engagement"), value: doc.ratings.avgEngagement, color: "bg-yellow-500" },
-                        { label: t("doctorProfile.factors.helpfulness"), value: doc.ratings.avgHelpfulness, color: "bg-rose-500" },
-                        { label: t("doctorProfile.factors.courseOrganization"), value: doc.ratings.avgCourseOrganization, color: "bg-teal-500" },
+                        { label: t("doctorProfile.factors.engagement"),        value: doc.ratings.avgEngagement,        color: "bg-yellow-500" },
+                        { label: t("doctorProfile.factors.helpfulness"),       value: doc.ratings.avgHelpfulness,       color: "bg-rose-500" },
+                        { label: t("doctorProfile.factors.courseOrganization"),value: doc.ratings.avgCourseOrganization, color: "bg-teal-500" },
                       ] : [])
                     ].map(cat => (
                       <div key={cat.label}>
