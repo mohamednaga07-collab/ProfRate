@@ -447,7 +447,7 @@ export async function registerRoutes(httpServer: Server, app: Express): Promise<
       }
 
       // --- SINGLE SESSION ENFORCEMENT ---
-      if (user.activeSessionId && process.env.DATABASE_URL) {
+      if (user.activeSessionId && user.activeSessionId !== req.sessionID && process.env.DATABASE_URL) {
         // Only enforce array if connected to postgres, as sqlite memory doesn't track this properly
         try {
           // Check if the marked session still actively exists in store
@@ -1935,8 +1935,12 @@ export async function registerRoutes(httpServer: Server, app: Express): Promise<
 
       const user = await storage.getUser(userId);
       if (!user) {
-        console.log('📸 [Upload] User not found in database');
-        return res.status(404).json({ message: "User not found" });
+        console.log('📸 [Upload] User not found in database (stale session)');
+        if (req.session) {
+          req.session.destroy(() => {});
+        }
+        res.clearCookie("connect.sid");
+        return res.status(401).json({ message: "Session expired, please log in again" });
       }
 
       console.log('📸 [Upload] User found:', user.username);
@@ -2170,10 +2174,14 @@ export async function registerRoutes(httpServer: Server, app: Express): Promise<
     try {
       const userId = getUserId(req)!;
       const logs = await storage.getStudentActivityLogs(userId);
+      
+      // Fetch rating history & actual reviews to compute metrics
+      const myReviews = await storage.getReviewsByReviewer(userId);
+      const allDoctors = await storage.getAllDoctors();
 
       const loginCount = logs.filter(l => l.type === "login").length;
-      const reviewCount = logs.filter(l => l.type === "review").length;
-      const totalActions = logs.length;
+      const reviewCount = myReviews.length;
+      const totalActions = logs.length + reviewCount;
 
       const badges = [
         {
@@ -2243,11 +2251,8 @@ export async function registerRoutes(httpServer: Server, app: Express): Promise<
       ];
 
       const earnedCount = badges.filter(b => b.earned).length;
-      const points = loginCount * 5 + reviewCount * 20 + (earnedCount * 50);
-
-      // Fetch rating history & compute cooldowns
-      const myReviews = await storage.getReviewsByReviewer(userId);
-      const allDoctors = await storage.getAllDoctors();
+      // Assign actual weight to their contributions
+      const points = loginCount * 5 + reviewCount * 25 + (earnedCount * 50);
       
       const ratingsHistory = myReviews.map(r => {
         const doc = allDoctors.find(d => d.id === r.doctorId);

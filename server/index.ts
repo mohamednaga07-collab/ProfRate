@@ -146,12 +146,13 @@ app.use(hpp());
 // Rate limiting
 // Rate limiting
 const isDev = String(process.env.NODE_ENV).trim() === "development";
+// Global API rate limiter - relaxed to prevent normal SPA usage from hitting limits
 const limiter = rateLimit({
   windowMs: 15 * 60 * 1000, // 15 minutes
-  max: 100, // Limit each IP to 100 requests per windowMs
+  max: 1000, // Limit each IP to 1000 requests per 15 minutes
   standardHeaders: true,
   legacyHeaders: false,
-  message: { message: "Too many requests, please try again later." },
+  message: { message: "Rate limit exceeded. Please wait a few minutes before trying again." },
 });
 
 // Apply rate limiting to API routes only in production

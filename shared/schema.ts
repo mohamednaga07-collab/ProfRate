@@ -242,6 +242,7 @@ export const insertDoctorSchema: any = (createInsertSchema(doctors) as any).omit
 
 export const insertReviewSchema = z.object({
   doctorId: z.number(),
+  reviewerId: z.string().nullable().optional(),
   teachingQuality: z.number(),
   availability: z.number(),
   communication: z.number(),
