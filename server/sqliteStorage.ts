@@ -109,6 +109,9 @@ export class SqliteStorage implements IStorage {
       if (!cols.some((c: any) => c.name === "verificationToken")) {
         this.db.exec("ALTER TABLE users ADD COLUMN verificationToken TEXT");
       }
+      if (!cols.some((c: any) => c.name === "activeSessionId")) {
+        this.db.exec("ALTER TABLE users ADD COLUMN activeSessionId TEXT");
+      }
 
       // doctor_ratings new columns
       const drCols = this.db.prepare("PRAGMA table_info(doctor_ratings)").all() as any[];
@@ -138,6 +141,12 @@ export class SqliteStorage implements IStorage {
       }
       if (!rCols.some((c: any) => c.name === "subScores")) {
         this.db.exec("ALTER TABLE reviews ADD COLUMN subScores TEXT"); // stored as JSON string
+      }
+      if (!rCols.some((c: any) => c.name === "reviewerId")) {
+        this.db.exec("ALTER TABLE reviews ADD COLUMN reviewerId INTEGER");
+      }
+      if (!rCols.some((c: any) => c.name === "lastEditedAt")) {
+        this.db.exec("ALTER TABLE reviews ADD COLUMN lastEditedAt TEXT");
       }
     } catch (e) {
       console.error("Failed to ensure new schema columns:", e);
@@ -432,4 +441,12 @@ export class SqliteStorage implements IStorage {
   async createMessage(data: any): Promise<any> { return { id: 0, ...data, createdAt: new Date().toISOString() }; }
   async markMessageRead(_id: number): Promise<void> { return; }
   async deleteMessage(_id: number): Promise<void> { return; }
+
+  // ── Session management stubs ──
+  async setUserActiveSession(_userId: string, _sessionId: string | null): Promise<void> { return; }
+
+  // ── Review ownership stubs ──
+  async getReviewByReviewerAndDoctor(_reviewerId: string, _doctorId: number): Promise<any> { return undefined; }
+  async updateReview(id: number, data: any): Promise<any> { return { id, ...data }; }
+  async getReviewsByReviewer(_reviewerId: string): Promise<any[]> { return []; }
 }

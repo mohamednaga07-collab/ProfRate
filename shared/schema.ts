@@ -43,6 +43,8 @@ export const users = pgTable("users", {
   resetTokenExpiry: timestamp("reset_token_expiry"),
   emailVerified: boolean("email_verified").default(false),
   verificationToken: varchar("verification_token", { length: 255 }),
+  /** Tracks the express-session SID of the single active session (null = no active session) */
+  activeSessionId: varchar("active_session_id", { length: 255 }),
   createdAt: timestamp("created_at").defaultNow(),
   updatedAt: timestamp("updated_at").defaultNow(),
 });
@@ -64,6 +66,10 @@ export const doctors = pgTable("doctors", {
 export const reviews = pgTable("reviews", {
   id: integer("id").primaryKey().generatedAlwaysAsIdentity(),
   doctorId: integer("doctor_id").notNull().references(() => doctors.id, { onDelete: "cascade" }),
+  /** The student user ID who submitted this review (null on legacy reviews) */
+  reviewerId: varchar("reviewer_id").references(() => users.id, { onDelete: "set null" }),
+  /** Timestamp of the last edit — used for the 24h edit cooldown */
+  lastEditedAt: timestamp("last_edited_at"),
   // Legacy 1-5 category columns (kept for backward compat, filled from subScores/2 for new reviews)
   teachingQuality: integer("teaching_quality").notNull(),
   availability: integer("availability").notNull(),

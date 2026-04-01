@@ -106,6 +106,14 @@ export interface IStorage {
   createMessage(data: InsertMessage): Promise<Message>;
   markMessageRead(id: number): Promise<void>;
   deleteMessage(id: number): Promise<void>;
+
+  // Session management (single-session enforcement)
+  setUserActiveSession(userId: string, sessionId: string | null): Promise<void>;
+
+  // Review ownership
+  getReviewByReviewerAndDoctor(reviewerId: string, doctorId: number): Promise<Review | undefined>;
+  updateReview(id: number, data: Partial<Review>): Promise<Review>;
+  getReviewsByReviewer(reviewerId: string): Promise<Review[]>;
 }
 
 export class DatabaseStorage implements IStorage {
@@ -496,6 +504,37 @@ export class DatabaseStorage implements IStorage {
 
   async deleteMessage(id: number): Promise<void> {
     await db.delete(messages).where(eq(messages.id, id));
+  }
+
+  // ── Session management ─────────────────────────────────────────────────
+  async setUserActiveSession(userId: string, sessionId: string | null): Promise<void> {
+    await db.update(users).set({ activeSessionId: sessionId }).where(eq(users.id, userId));
+  }
+
+  // ── Review ownership ───────────────────────────────────────────────────
+  async getReviewByReviewerAndDoctor(reviewerId: string, doctorId: number): Promise<Review | undefined> {
+    const [review] = await db
+      .select()
+      .from(reviews)
+      .where(sql`${reviews.reviewerId} = ${reviewerId} AND ${reviews.doctorId} = ${doctorId}`);
+    return review;
+  }
+
+  async updateReview(id: number, data: Partial<Review>): Promise<Review> {
+    const [updated] = await db
+      .update(reviews)
+      .set({ ...data, lastEditedAt: new Date() })
+      .where(eq(reviews.id, id))
+      .returning();
+    return updated;
+  }
+
+  async getReviewsByReviewer(reviewerId: string): Promise<Review[]> {
+    return db
+      .select()
+      .from(reviews)
+      .where(eq(reviews.reviewerId, reviewerId))
+      .orderBy(desc(reviews.createdAt));
   }
 }
 

@@ -497,6 +497,54 @@
       "helpfulness": "Helpfulness",
       "courseOrganization": "Course Organization"
     },
+    "categories": {
+      "teachingQuality": "Teaching Quality",
+      "availability": "Availability",
+      "communication": "Communication",
+      "knowledge": "Subject Knowledge",
+      "fairness": "Fairness",
+      "engagement": "Engagement",
+      "helpfulness": "Helpfulness",
+      "courseOrganization": "Course Organization"
+    },
+    "questions": {
+      "teachingQuality": [
+        "How clearly does the professor explain complex topics?",
+        "How effective are the lectures and teaching methods?",
+        "How well does the professor inspire students to learn?"
+      ],
+      "availability": [
+        "How accessible is the professor outside of class?",
+        "Are office hours held regularly and effectively?"
+      ],
+      "communication": [
+        "How responsive is the professor to questions?",
+        "Is the professor respectful and approachable?",
+        "How well are course expectations communicated?"
+      ],
+      "knowledge": [
+        "Does the professor demonstrate depth of knowledge?",
+        "Are the materials taught up-to-date and relevant?"
+      ],
+      "fairness": [
+        "Are grading policies clear and fairly applied?",
+        "Are exams and assignments reflective of the course material?",
+        "Does the professor handle student concerns fairly?"
+      ],
+      "engagement": [
+        "Does the professor encourage active participation?",
+        "Are the lectures engaging and interesting?"
+      ],
+      "helpfulness": [
+        "How willing is the professor to help struggling students?",
+        "Does the professor provide constructive feedback?"
+      ],
+      "courseOrganization": [
+        "Is the syllabus clear and followed?",
+        "Are course materials well-organized and accessible?",
+        "Are assignments and deadlines reasonably spaced?"
+      ]
+    },
     "factorsShort": {
       "teaching": "Teaching",
       "availability": "Availability",

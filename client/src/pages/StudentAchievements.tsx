@@ -24,6 +24,15 @@ interface AchievementData {
     totalActions: number;
     points: number;
   };
+  ratingsHistory?: {
+    id: number;
+    doctorId: number;
+    doctorName: string;
+    department: string;
+    reviewedAt: string;
+    lastEditedAt: string | null;
+    nextAllowedAt: string;
+  }[];
 }
 
 const categoryColors: Record<string, string> = {
@@ -155,6 +164,57 @@ export default function StudentAchievements() {
                 </motion.div>
               ))}
             </div>
+            
+            {/* Rating Activity Section */}
+            {data?.ratingsHistory && data.ratingsHistory.length > 0 && (
+              <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.5 }} className="mt-12">
+                <div className="flex items-center gap-3 mb-6">
+                  <Star className="h-6 w-6 text-primary" />
+                  <h2 className="text-2xl font-bold">Your Rating Track Record</h2>
+                </div>
+                
+                <div className="grid sm:grid-cols-2 gap-4">
+                  {data.ratingsHistory.map((rating) => {
+                    const nextAllowed = new Date(rating.nextAllowedAt);
+                    const now = new Date();
+                    const isCooldown = now < nextAllowed;
+                    
+                    let cooldownText = "";
+                    if (isCooldown) {
+                      const diffHours = Math.floor((nextAllowed.getTime() - now.getTime()) / (1000 * 60 * 60));
+                      const diffMins = Math.floor(((nextAllowed.getTime() - now.getTime()) % (1000 * 60 * 60)) / (1000 * 60));
+                      cooldownText = `${diffHours}h ${diffMins}m until next edit allowed`;
+                    }
+                    
+                    return (
+                      <Card key={rating.id} className="bg-card/50 overflow-hidden border-border/50">
+                        <CardContent className="p-4 flex justify-between items-center sm:items-start flex-col sm:flex-row gap-4">
+                          <div>
+                            <h3 className="font-semibold">{rating.doctorName}</h3>
+                            <p className="text-xs text-muted-foreground">{rating.department}</p>
+                            <p className="text-xs text-muted-foreground mt-1">Reviewed on {new Date(rating.reviewedAt).toLocaleDateString()}</p>
+                          </div>
+                          
+                          <div className={`px-3 py-1.5 rounded-full text-xs font-medium flex items-center shrink-0 ${isCooldown ? 'bg-amber-500/10 text-amber-500 border border-amber-500/20' : 'bg-green-500/10 text-green-500 border border-green-500/20'}`}>
+                            {isCooldown ? (
+                              <>
+                                <Lock className="h-3 w-3 mr-1.5" />
+                                {cooldownText}
+                              </>
+                            ) : (
+                              <>
+                                <Zap className="h-3 w-3 mr-1.5" />
+                                Ready to Update
+                              </>
+                            )}
+                          </div>
+                        </CardContent>
+                      </Card>
+                    );
+                  })}
+                </div>
+              </motion.div>
+            )}
           </>
         )}
       </main>

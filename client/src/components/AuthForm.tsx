@@ -15,6 +15,7 @@ import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { motion, AnimatePresence } from "framer-motion";
 import { apiRequest, queryClient, prefetchCsrfToken } from "@/lib/queryClient";
 import { useTranslation } from "react-i18next";
+import { ActiveSessionModal } from "./ActiveSessionModal";
 import styles from "./AuthForm.module.css";
 
 interface AuthFormProps {
@@ -28,6 +29,7 @@ export function AuthForm({ onSuccess, defaultTab = "login" }: AuthFormProps) {
   const { toast } = useToast();
   const [isLoading, setIsLoading] = useState(false);
   const [activeTab, setActiveTab] = useState(defaultTab);
+  const [showActiveSessionModal, setShowActiveSessionModal] = useState(false);
 
   // Sync activeTab with defaultTab prop when it changes (e.g. navigation /login <-> /register)
   useEffect(() => {
@@ -405,6 +407,14 @@ export function AuthForm({ onSuccess, defaultTab = "login" }: AuthFormProps) {
 
       const errorMessage = error?.message || "";
       console.log("📝 Error message:", errorMessage);
+
+      // Check for session conflict (409)
+      if (error?.response?.status === 409 || error?.code === "SESSION_CONFLICT" || errorMessage.includes("already in use")) {
+        console.log("🔒 Session conflict detected");
+        setShowActiveSessionModal(true);
+        setIsLoading(false);
+        return;
+      }
 
       // Check for user not found errors (invalid username or password)
       if (/invalid username or password|username.*found|cannot be found|check your username or create/i.test(errorMessage) || error?.response?.status === 401) {
@@ -1159,6 +1169,10 @@ export function AuthForm({ onSuccess, defaultTab = "login" }: AuthFormProps) {
           </motion.div>
         )}
       </AnimatePresence>
+      <ActiveSessionModal 
+        isOpen={showActiveSessionModal} 
+        onClose={() => setShowActiveSessionModal(false)} 
+      />
     </motion.div>
   );
 }

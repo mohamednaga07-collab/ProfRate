@@ -92,8 +92,17 @@ export function getSession() {
     pruneSessionInterval: 60 * 15, // Prune expired sessions every 15 min
   });
 
+  const sessionSecret = process.env.SESSION_SECRET;
+  if (!sessionSecret) {
+    if (process.env.NODE_ENV === "production") {
+      console.error("🚨 CRITICAL: SESSION_SECRET is not set in production. Using a fallback will make sessions vulnerable.");
+    } else {
+      console.warn("⚠️ SESSION_SECRET is not set. Using fallback for development.");
+    }
+  }
+
   return session({
-    secret: process.env.SESSION_SECRET!,
+    secret: sessionSecret || "dev-secret-change-in-production",
     store: sessionStore,
     resave: false,
     saveUninitialized: false,

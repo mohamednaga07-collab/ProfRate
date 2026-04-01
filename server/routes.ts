@@ -1,8 +1,10 @@
 import type { Express } from "express";
 import { type Server } from "http";
 import { storage } from "./storage";
+import { db } from "./db";
+import { eq } from "drizzle-orm";
 import { setupAuth, isAuthenticated } from "./antigravityAuth";
-import { insertDoctorSchema, insertReviewSchema, subScoresSchema, computeAllScores } from "@shared/schema";
+import { insertDoctorSchema, insertReviewSchema, subScoresSchema, computeAllScores, session } from "@shared/schema";
 import { hashPassword, verifyPassword, validatePasswordStrength, sanitizeUsername, isValidUsername, isValidEmail, recordLoginAttempt, isAccountLocked, getLockoutTimeRemaining, clearLoginAttempts, generateCsrfToken, validateCsrfToken, clearCsrfToken, validateInputLength, validateFormInputs, MAX_INPUT_LENGTHS, validateCsrfHeader, sanitizeHtmlContent, loginLimiter, registerLimiter } from "./auth";
 import { randomUUID } from "crypto";
 import crypto from "crypto";
@@ -444,6 +446,29 @@ export async function registerRoutes(httpServer: Server, app: Express): Promise<
         return res.status(401).json({ message: secureErrorMessage });
       }
 
+      // --- SINGLE SESSION ENFORCEMENT ---
+      if (user.activeSessionId && process.env.DATABASE_URL) {
+        // Only enforce array if connected to postgres, as sqlite memory doesn't track this properly
+        try {
+          // Check if the marked session still actively exists in store
+          const [activeSession] = await db.select().from(session).where(eq(session.sid, user.activeSessionId));
+          // Make sure session hasn't expired in DB
+          if (activeSession && new Date(activeSession.expire) > new Date()) {
+            console.warn(`🛑 Login rejected: User ${username} is already logged in on another device.`);
+            return res.status(409).json({ 
+              message: "Account already in use. Please log out from your other device first.",
+              code: "SESSION_CONFLICT"
+            });
+          } else {
+             // Session expired or doesn't exist anymore, allow overriding
+             console.log(`♻️ Previous session for ${username} was stale or expired. Overriding.`);     
+          }
+        } catch (dbErr) {
+          console.error("Error checking active session state:", dbErr);
+          // Failsafe: if we can't check, assume it's stale and allow overriding
+        }
+      }
+
       // Set session and save it
       if (req.session) {
         req.session.userId = user.id;
@@ -454,12 +479,19 @@ export async function registerRoutes(httpServer: Server, app: Express): Promise<
         
         // Ensure session is saved before responding
         await new Promise<void>((resolve, reject) => {
-          req.session?.save((err: any) => {
+          req.session?.save(async (err: any) => {
             if (err) {
               console.error("❌ Session save error:", err);
               reject(err);
             } else {
               console.log("✅ Session saved successfully");
+              try {
+                // Link this session to the user in database
+                await storage.setUserActiveSession(user.id, req.sessionID || null);
+                console.log(`🔒 Single-session locked for user ${user.id} with SID ${req.sessionID}`);
+              } catch (e) {
+                console.error("Failed to set user active session:", e);
+              }
               resolve();
             }
           });
@@ -499,14 +531,27 @@ export async function registerRoutes(httpServer: Server, app: Express): Promise<
   });
 
   // Logout Endpoint - Properly destroy session
-  app.post("/api/auth/logout", (req, res) => {
+  app.post("/api/auth/logout", async (req, res) => {
     if (req.session) {
-      req.session.destroy(err => {
+      const userId = req.session.userId;
+      
+      req.session.destroy(async (err) => {
         if (err) {
           console.error("Logout error:", err);
           return res.status(500).json({ message: "Logout failed" });
         }
         res.clearCookie("connect.sid");
+        
+        // Clear active session tracking
+        if (userId) {
+          try {
+            await storage.setUserActiveSession(userId, null);
+            console.log(`🔓 Unlocked single-session for user ${userId}`);
+          } catch (e) {
+             console.error("Failed to clear user active session:", e);
+          }
+        }
+        
         return res.json({ message: "Logged out successfully" });
       });
     } else {
@@ -1030,9 +1075,21 @@ export async function registerRoutes(httpServer: Server, app: Express): Promise<
         return res.status(401).json({ message: "Unauthorized" });
       }
 
+      // 1. Role Check: Only students can review
+      const user = await storage.getUser(userId);
+      if (!user || user.role !== "student") {
+        return res.status(403).json({ message: "Only students can submit reviews" });
+      }
+
       const doctorId = parseInt(req.params.id);
       if (isNaN(doctorId)) {
         return res.status(400).json({ message: "Invalid doctor ID" });
+      }
+
+      // 2. Duplicate Check: One review per doctor per student
+      const existingReview = await storage.getReviewByReviewerAndDoctor(userId, doctorId);
+      if (existingReview) {
+        return res.status(409).json({ message: "You have already reviewed this professor. You can update your existing review instead." });
       }
 
       // Sanitize optional comment
@@ -1040,12 +1097,13 @@ export async function registerRoutes(httpServer: Server, app: Express): Promise<
         req.body.comment = sanitizeHtmlContent(req.body.comment);
       }
 
-      // Parse and validate the new subScores payload (using top-level import)
+      // Parse and validate the new subScores payload
       const subScoresParsed = subScoresSchema.parse(req.body.subScores);
       const computed = computeAllScores(subScoresParsed);
 
       const review = await storage.createReview({
         doctorId,
+        reviewerId: userId,
         // Legacy 1-5 columns (backward compat)
         teachingQuality: computed.teachingQuality,
         availability:    computed.availability,
@@ -1070,6 +1128,75 @@ export async function registerRoutes(httpServer: Server, app: Express): Promise<
         message: "Failed to create review", 
         error: String(error.message || error)
       });
+    }
+  });
+
+  // GET my review for a specific doctor
+  app.get("/api/reviews/my/:doctorId", isAuthenticated, async (req: any, res) => {
+    try {
+      const userId = getUserId(req);
+      if (!userId) return res.status(401).json({ message: "Unauthorized" });
+
+      const doctorId = parseInt(req.params.doctorId);
+      if (isNaN(doctorId)) return res.status(400).json({ message: "Invalid doctor ID" });
+
+      const review = await storage.getReviewByReviewerAndDoctor(userId, doctorId);
+      res.json(review || null); // Return null if not reviewed yet
+    } catch (err) {
+      console.error("Error fetching my review:", err);
+      res.status(500).json({ message: "Server error" });
+    }
+  });
+
+  // UPDATE an existing review
+  app.put("/api/doctors/:doctorId/reviews/:reviewId", isAuthenticated, validateCsrfHeader, async (req: any, res) => {
+    try {
+      const userId = getUserId(req);
+      if (!userId) return res.status(401).json({ message: "Unauthorized" });
+
+      const doctorId = parseInt(req.params.doctorId);
+      const reviewId = parseInt(req.params.reviewId);
+      if (isNaN(doctorId) || isNaN(reviewId)) return res.status(400).json({ message: "Invalid IDs" });
+
+      // Verify ownership
+      const existingReview = await storage.getReviewByReviewerAndDoctor(userId, doctorId);
+      if (!existingReview || existingReview.id !== reviewId) {
+        return res.status(403).json({ message: "You don't have permission to edit this review" });
+      }
+
+      // 24-hour edit cooldown
+      const lastEdited = existingReview.lastEditedAt || existingReview.createdAt;
+      const hoursSinceEdit = (Date.now() - new Date(lastEdited!).getTime()) / (1000 * 60 * 60);
+      if (hoursSinceEdit < 24) {
+        return res.status(429).json({ 
+          message: `You can only update your review once every 24 hours.`,
+          nextAllowedAt: new Date(new Date(lastEdited!).getTime() + 24 * 60 * 60 * 1000).toISOString()
+        });
+      }
+
+      // Parse payload
+      if (req.body.comment) req.body.comment = sanitizeHtmlContent(req.body.comment);
+      const subScoresParsed = subScoresSchema.parse(req.body.subScores);
+      const computed = computeAllScores(subScoresParsed);
+
+      const updated = await storage.updateReview(reviewId, {
+        teachingQuality: computed.teachingQuality,
+        availability: computed.availability,
+        communication: computed.communication,
+        knowledge: computed.knowledge,
+        fairness: computed.fairness,
+        engagement: computed.engagement,
+        helpfulness: computed.helpfulness,
+        courseOrganization: computed.courseOrganization,
+        subScores: subScoresParsed,
+        overallScore: computed.overallScore,
+        comment: req.body.comment || null,
+      });
+
+      res.json(updated);
+    } catch (error: any) {
+      console.error("Error updating review:", error);
+      res.status(500).json({ message: error.message || "Failed to update review" });
     }
   });
 
@@ -2098,6 +2225,14 @@ export async function registerRoutes(httpServer: Server, app: Express): Promise<
           category: "contribution",
         },
         {
+          id: "consistent_critic",
+          title: "Consistent Critic",
+          description: "Reviewed 3 different professors",
+          icon: "🎓",
+          earned: reviewCount >= 3,
+          category: "contribution",
+        },
+        {
           id: "community_builder",
           title: "Community Builder",
           description: "Accumulated 30+ total platform interactions",
@@ -2110,6 +2245,26 @@ export async function registerRoutes(httpServer: Server, app: Express): Promise<
       const earnedCount = badges.filter(b => b.earned).length;
       const points = loginCount * 5 + reviewCount * 20 + (earnedCount * 50);
 
+      // Fetch rating history & compute cooldowns
+      const myReviews = await storage.getReviewsByReviewer(userId);
+      const allDoctors = await storage.getAllDoctors();
+      
+      const ratingsHistory = myReviews.map(r => {
+        const doc = allDoctors.find(d => d.id === r.doctorId);
+        const lastEdited = r.lastEditedAt || r.createdAt;
+        const nextAllowedAt = new Date(new Date(lastEdited!).getTime() + 24 * 60 * 60 * 1000).toISOString();
+        
+        return {
+          id: r.id,
+          doctorId: r.doctorId,
+          doctorName: doc?.name || "Unknown Professor",
+          department: doc?.department || "",
+          reviewedAt: r.createdAt,
+          lastEditedAt: r.lastEditedAt,
+          nextAllowedAt,
+        };
+      });
+
       res.json({
         badges,
         stats: {
@@ -2120,6 +2275,7 @@ export async function registerRoutes(httpServer: Server, app: Express): Promise<
           totalActions,
           points,
         },
+        ratingsHistory,
       });
     } catch (err) {
       console.error("Error computing achievements:", err);

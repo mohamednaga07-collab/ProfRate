@@ -133,18 +133,34 @@ export default function DoctorProfile() {
     queryKey: ["/api/doctors", doctorId, "reviews"],
   });
 
+  const { data: myReview, isLoading: myReviewLoading } = useQuery<Review | null>({
+    queryKey: ["/api/doctors", doctorId, "my-review"],
+    queryFn: async () => {
+      const res = await fetch(`/api/reviews/my/${doctorId}`);
+      if (!res.ok) throw new Error("Failed to fetch");
+      return res.json();
+    },
+    enabled: !!user && user.role === "student",
+  });
+
   const submitReviewMutation = useMutation({
     mutationFn: async () => {
-      return apiRequest("POST", `/api/doctors/${doctorId}/reviews`, {
+      const payload = {
         subScores,
         comment: comment || undefined,
-      });
+      };
+      
+      if (myReview?.id) {
+        return apiRequest("PUT", `/api/doctors/${doctorId}/reviews/${myReview.id}`, payload);
+      }
+      return apiRequest("POST", `/api/doctors/${doctorId}/reviews`, payload);
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["/api/doctors", doctorId] });
       queryClient.invalidateQueries({ queryKey: ["/api/doctors", doctorId, "reviews"] });
+      queryClient.invalidateQueries({ queryKey: ["/api/doctors", doctorId, "my-review"] });
       queryClient.invalidateQueries({ queryKey: ["/api/doctors"] });
-      toast({ title: t("doctorProfile.toast.reviewSubmitted") });
+      toast({ title: myReview ? "Review updated successfully" : t("doctorProfile.toast.reviewSubmitted") });
       setIsReviewDialogOpen(false);
       resetForm();
     },
@@ -174,7 +190,18 @@ export default function DoctorProfile() {
 
   const handleOpen = (open: boolean) => {
     setIsReviewDialogOpen(open);
-    if (!open) resetForm();
+    if (!open) {
+      resetForm();
+    } else if (myReview) {
+      // Pre-fill form
+      if (myReview.subScores) {
+         setSubScores(myReview.subScores as SubScores);
+      }
+      if (myReview.comment) {
+         setComment(myReview.comment);
+      }
+      setStep(0);
+    }
   };
 
   const updateScore = (cat: string, q: string, val: number) => {
@@ -266,11 +293,20 @@ export default function DoctorProfile() {
                         </div>
                         {/* Rate button — available only to students */}
                         {user && user.role === "student" && (
-                          <div className="flex gap-2">
-                            <Button data-testid="button-write-review" onClick={() => { resetForm(); setIsReviewDialogOpen(true); }}>
-                              <Star className="h-4 w-4 mr-2" />
-                              {t("doctorProfile.writeReview")}
-                            </Button>
+                          <div className="flex flex-col sm:flex-row gap-2">
+                            {myReviewLoading ? (
+                               <Skeleton className="h-10 w-32" />
+                            ) : myReview ? (
+                              <Button data-testid="button-write-review" onClick={() => handleOpen(true)}>
+                                <Star className="h-4 w-4 mr-2" />
+                                Update Your Review
+                              </Button>
+                            ) : (
+                              <Button data-testid="button-write-review" onClick={() => handleOpen(true)}>
+                                <Star className="h-4 w-4 mr-2" />
+                                {t("doctorProfile.writeReview")}
+                              </Button>
+                            )}
                             <Button variant="outline" data-testid="button-anon-message" onClick={() => setIsMsgDialogOpen(true)}>
                               <Send className="h-4 w-4 mr-2" />
                               Message Teacher
