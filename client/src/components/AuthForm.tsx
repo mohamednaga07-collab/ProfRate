@@ -10,7 +10,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Avatar, AvatarImage, AvatarFallback } from "@/components/ui/avatar";
 import { useToast } from "@/hooks/use-toast";
-import { GraduationCap, User, Lock, UserCircle, Mail, AlertCircle, CheckCircle2, Sparkles, ArrowRight } from "lucide-react";
+import { GraduationCap, User, Lock, UserCircle, Mail, AlertCircle, CheckCircle2, Sparkles, ArrowRight, Eye, EyeOff } from "lucide-react";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { motion, AnimatePresence } from "framer-motion";
 import { apiRequest, queryClient, prefetchCsrfToken } from "@/lib/queryClient";
@@ -39,6 +39,9 @@ export function AuthForm({ onSuccess, defaultTab = "login" }: AuthFormProps) {
   const [isDarkMode, setIsDarkMode] = useState(false);
   const [isSessionVerified, setIsSessionVerified] = useState(false);
   const [registrationCooldown, setRegistrationCooldown] = useState(false);
+  const [showLoginPassword, setShowLoginPassword] = useState(false);
+  const [showRegisterPassword, setShowRegisterPassword] = useState(false);
+  const [showRegisterPasswordConfirm, setShowRegisterPasswordConfirm] = useState(false);
   const authCardRef = useRef<HTMLDivElement>(null);
 
   const recaptchaEnabled = import.meta.env.VITE_RECAPTCHA_ENABLED === "true";
@@ -798,14 +801,22 @@ export function AuthForm({ onSuccess, defaultTab = "login" }: AuthFormProps) {
                       <Lock className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
                       <Input
                         id="login-password"
-                        type="password"
+                        type={showLoginPassword ? "text" : "password"}
                         placeholder={t("auth.placeholders.password")}
                         value={loginPassword}
                         onChange={(e) => setLoginPassword(e.target.value)}
-                        className="pl-10"
+                        className="pl-10 pr-10"
                         required
                         disabled={isLoading}
                       />
+                      <button
+                        type="button"
+                        onClick={() => setShowLoginPassword((s) => !s)}
+                        className="absolute right-3 top-3 p-1 text-muted-foreground"
+                        aria-label={showLoginPassword ? t("auth.hidePassword", { defaultValue: "Hide password" }) : t("auth.showPassword", { defaultValue: "Show password" })}
+                      >
+                        {showLoginPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+                      </button>
                     </div>
                   </div>
 
@@ -979,15 +990,23 @@ export function AuthForm({ onSuccess, defaultTab = "login" }: AuthFormProps) {
                       <Lock className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
                       <Input
                         id="register-password"
-                        type="password"
+                        type={showRegisterPassword ? "text" : "password"}
                         placeholder={t("auth.placeholders.choosePassword")}
                         value={registerPassword}
                         onChange={handlePasswordChange}
-                        className="pl-10"
+                        className="pl-10 pr-10"
                         required
                         disabled={isLoading}
                         minLength={8}
                       />
+                      <button
+                        type="button"
+                        onClick={() => setShowRegisterPassword((s) => !s)}
+                        className="absolute right-3 top-3 p-1 text-muted-foreground"
+                        aria-label={showRegisterPassword ? t("auth.hidePassword", { defaultValue: "Hide password" }) : t("auth.showPassword", { defaultValue: "Show password" })}
+                      >
+                        {showRegisterPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+                      </button>
                     </div>
 
                     {/* Password Strength Meter */}
@@ -1020,11 +1039,11 @@ export function AuthForm({ onSuccess, defaultTab = "login" }: AuthFormProps) {
                       <Lock className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
                       <Input
                         id="register-password-confirm"
-                        type="password"
+                        type={showRegisterPasswordConfirm ? "text" : "password"}
                         placeholder={t("auth.placeholders.confirmPassword")}
                         value={registerPasswordConfirm}
                         onChange={(e) => setRegisterPasswordConfirm(e.target.value)}
-                        className={`pl-10 ${registerPasswordConfirm && registerPassword !== registerPasswordConfirm
+                        className={`pl-10 pr-10 ${registerPasswordConfirm && registerPassword !== registerPasswordConfirm
                           ? "border-red-500"
                           : registerPasswordConfirm && registerPassword === registerPasswordConfirm
                             ? "border-green-500"
@@ -1034,6 +1053,14 @@ export function AuthForm({ onSuccess, defaultTab = "login" }: AuthFormProps) {
                         disabled={isLoading}
                         minLength={8}
                       />
+                      <button
+                        type="button"
+                        onClick={() => setShowRegisterPasswordConfirm((s) => !s)}
+                        className="absolute right-3 top-3 p-1 text-muted-foreground"
+                        aria-label={showRegisterPasswordConfirm ? t("auth.hidePassword", { defaultValue: "Hide password" }) : t("auth.showPassword", { defaultValue: "Show password" })}
+                      >
+                        {showRegisterPasswordConfirm ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+                      </button>
                     </div>
                     {registerPasswordConfirm && registerPassword !== registerPasswordConfirm && (
                       <p className="text-sm text-red-500">{t("auth.validation.passwordsDontMatch")}</p>
