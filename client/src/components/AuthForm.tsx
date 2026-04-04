@@ -515,6 +515,10 @@ export function AuthForm({ onSuccess, defaultTab = "login" }: AuthFormProps) {
 
     try {
       console.log("Attempting registration with email:", registerEmail, "username:", registerUsername);
+      // Do NOT send the client-side honeypot value. Keep the honeypot input
+      // in the DOM to catch naive bots, but omit it from the request so
+      // browser autofill / password managers can't trigger the server-side
+      // bot-detection accidentally.
       const responseObj: any = await apiRequest("POST", "/api/auth/register", {
         email: registerEmail,
         username: registerUsername,
@@ -524,7 +528,6 @@ export function AuthForm({ onSuccess, defaultTab = "login" }: AuthFormProps) {
         role: registerRole,
         recaptchaToken,
         skipRecaptcha: isSessionVerified && !recaptchaToken,
-        _hsh: registerHoneypot,
       });
 
       // apiRequest returns a Response object, we need to parse JSON
@@ -553,6 +556,7 @@ export function AuthForm({ onSuccess, defaultTab = "login" }: AuthFormProps) {
             setRegisterPasswordConfirm("");
             setRegisterFirstName("");
             setRegisterLastName("");
+            setRegisterHoneypot("");
             setRecaptchaToken(null);
             if (recaptchaRef.current) recaptchaRef.current.reset();
           }, 300);
