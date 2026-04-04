@@ -38,6 +38,7 @@ export function AuthForm({ onSuccess, defaultTab = "login" }: AuthFormProps) {
   const [registrationSuccess, setRegistrationSuccess] = useState(false);
   const [isDarkMode, setIsDarkMode] = useState(false);
   const [isSessionVerified, setIsSessionVerified] = useState(false);
+  const [registrationCooldown, setRegistrationCooldown] = useState(false);
   const authCardRef = useRef<HTMLDivElement>(null);
 
   const recaptchaEnabled = import.meta.env.VITE_RECAPTCHA_ENABLED === "true";
@@ -564,18 +565,38 @@ export function AuthForm({ onSuccess, defaultTab = "login" }: AuthFormProps) {
     } catch (error: any) {
       console.error("Registration error:", error);
 
-      let errorTitle = t("auth.errors.registrationFailed");
-      let errorDescription = error.message || t("auth.errors.generic");
+      const status = error?.status || error?.response?.status;
+      const serverMsg = (error?.responseJson && error.responseJson.message) || error?.message || t("auth.errors.generic");
 
-       if (error.message.includes("already exists")) {
+      let errorTitle = t("auth.errors.registrationFailed");
+      let errorDescription = serverMsg;
+
+      // 429 -> registration already in progress (server-side guard)
+      if (status === 429 || (typeof serverMsg === "string" && serverMsg.toLowerCase().includes("already in progress"))) {
+        errorTitle = t("auth.errors.registrationInProgressTitle", { defaultValue: "Registration In Progress" });
+        errorDescription = serverMsg || "Registration is already in progress. Please wait a moment.";
+
+        // Short local cooldown to improve UX and prevent immediate retries
+        try {
+          setRegistrationCooldown(true);
+          setTimeout(() => setRegistrationCooldown(false), 3000);
+        } catch {}
+
+      } else if (typeof serverMsg === "string" && serverMsg.toLowerCase().includes("already exists")) {
         errorTitle = t("auth.errors.usernameTaken");
         errorDescription = t("auth.errors.usernameTakenDesc", { username: registerUsername });
-      } else if (error.message.includes("reCAPTCHA")) {
+      } else if (typeof serverMsg === "string" && serverMsg.toLowerCase().includes("recaptcha")) {
         errorTitle = t("auth.errors.recaptchaFailed");
         errorDescription = t("auth.errors.recaptchaFailedDesc");
-      } else if (error.message.includes("password")) {
+      } else if (typeof serverMsg === "string" && serverMsg.toLowerCase().includes("password")) {
         errorTitle = t("auth.errors.passwordTooWeak");
         errorDescription = t("auth.errors.passwordTooWeakDesc");
+      } else if (status === 400 && error?.responseJson?.feedback) {
+        // Show server-side password feedback if provided
+        errorTitle = t("auth.errors.passwordTooWeak");
+        errorDescription = Array.isArray(error.responseJson.feedback)
+          ? error.responseJson.feedback.join(" ")
+          : (error.responseJson.feedback || errorDescription);
       }
 
       toast({
@@ -1087,7 +1108,7 @@ export function AuthForm({ onSuccess, defaultTab = "login" }: AuthFormProps) {
                   <Button
                     type="submit"
                     className="w-full font-semibold"
-                    disabled={isLoading || !canSubmitRegister()}
+                    disabled={isLoading || registrationCooldown || !canSubmitRegister()}
                   >
                     {isLoading ? (
                       <>

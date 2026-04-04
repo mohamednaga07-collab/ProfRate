@@ -654,7 +654,9 @@ export async function registerRoutes(httpServer: Server, app: Express): Promise<
     const registrationKey = `${username.toLowerCase()}:${email?.toLowerCase()}`;
     if (pendingRegistrations.has(registrationKey)) {
       console.warn(`🛑 Duplicate registration attempt blocked for: ${registrationKey}`);
-      return res.status(429).json({ message: "Registration is already in progress. Please wait a moment." });
+      // Inform clients how long to wait before retrying
+      res.setHeader("Retry-After", "3");
+      return res.status(429).json({ message: "Registration is already in progress. Please wait a moment.", retryAfter: 3 });
     }
     
     // Track this attempt to block simultaneous ones
@@ -884,16 +886,13 @@ export async function registerRoutes(httpServer: Server, app: Express): Promise<
         user: userWithoutPassword,
         message: "Registration successful. You are now logged in! Please check your email to verify your account."
       });
-      
-      // Request successful, release the guard
-      pendingRegistrations.delete(registrationKey);
-      console.log(`🔓 Guard released for: ${registrationKey} (SUCCESS)`);
     } catch (error) {
-      // Request failed, release the guard
-      pendingRegistrations.delete(registrationKey);
-      console.log(`🔓 Guard released for: ${registrationKey} (ERROR)`);
       console.error("Error during registration:", error);
       res.status(500).json({ message: "Registration failed" });
+    } finally {
+      // Request finished (success, error, or early return), release the guard ALWAYS
+      pendingRegistrations.delete(registrationKey);
+      console.log(`🔓 Guard released for: ${registrationKey}`);
     }
   });
 

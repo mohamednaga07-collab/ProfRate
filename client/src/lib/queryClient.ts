@@ -20,18 +20,27 @@ async function getCsrfToken() {
 async function throwIfResNotOk(res: Response) {
   if (!res.ok) {
     let errorMessage = res.statusText;
+    let parsedJson: any = undefined;
+    let textBody: string | undefined = undefined;
     try {
       const contentType = res.headers.get("content-type");
       if (contentType && contentType.includes("application/json")) {
-        const json = await res.json();
-        errorMessage = json.error ? `${json.message}: ${json.error}` : (json.message || errorMessage);
+        parsedJson = await res.json();
+        errorMessage = parsedJson.error ? `${parsedJson.message}: ${parsedJson.error}` : (parsedJson.message || errorMessage);
       } else {
-        errorMessage = (await res.text()) || errorMessage;
+        textBody = await res.text();
+        errorMessage = textBody || errorMessage;
       }
     } catch (e) {
-      // If parsing fails, use statusText
+      // If parsing fails, fall back to statusText
     }
-    throw new Error(errorMessage);
+
+    const err: any = new Error(errorMessage);
+    // Attach useful details so callers can make smarter UI decisions
+    err.status = res.status;
+    err.responseJson = parsedJson;
+    err.responseText = textBody;
+    throw err;
   }
 }
 
