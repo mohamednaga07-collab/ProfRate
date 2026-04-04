@@ -11,7 +11,7 @@ import { useToast } from "@/hooks/use-toast";
 import { Loader2, User, Mail, Shield, Camera, Lock, BookOpen, Star, Eye, EyeOff } from "lucide-react";
 import { useTranslation } from "react-i18next";
 import { apiRequest, queryClient } from "@/lib/queryClient";
-import { motion } from "framer-motion";
+import { motion, AnimatePresence } from "framer-motion";
 
 // Role-based theme configuration
 const roleThemes = {
@@ -443,10 +443,20 @@ export default function ProfileSettings() {
                      <button
                        type="button"
                        onClick={() => setShowConfirmPassword((s) => !s)}
-                       className="absolute right-3 top-3 p-1 text-muted-foreground"
+                       className="absolute right-3 top-3 p-1 text-muted-foreground hover:text-primary transition-colors"
                        aria-label={showConfirmPassword ? t("auth.hidePassword", { defaultValue: "Hide password" }) : t("auth.showPassword", { defaultValue: "Show password" })}
                      >
-                       {showConfirmPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+                       <AnimatePresence mode="wait" initial={false}>
+                         <motion.div
+                           key={showConfirmPassword ? "hide" : "show"}
+                           initial={{ opacity: 0, scale: 0.8 }}
+                           animate={{ opacity: 1, scale: 1 }}
+                           exit={{ opacity: 0, scale: 0.8 }}
+                           transition={{ duration: 0.15 }}
+                         >
+                           {showConfirmPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+                         </motion.div>
+                       </AnimatePresence>
                      </button>
                    </div>
                  </div>

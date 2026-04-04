@@ -812,10 +812,20 @@ export function AuthForm({ onSuccess, defaultTab = "login" }: AuthFormProps) {
                       <button
                         type="button"
                         onClick={() => setShowLoginPassword((s) => !s)}
-                        className="absolute right-3 top-3 p-1 text-muted-foreground"
+                        className="absolute right-3 top-3 p-1 text-muted-foreground hover:text-primary transition-colors"
                         aria-label={showLoginPassword ? t("auth.hidePassword", { defaultValue: "Hide password" }) : t("auth.showPassword", { defaultValue: "Show password" })}
                       >
-                        {showLoginPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+                        <AnimatePresence mode="wait" initial={false}>
+                          <motion.div
+                            key={showLoginPassword ? "hide" : "show"}
+                            initial={{ opacity: 0, scale: 0.8 }}
+                            animate={{ opacity: 1, scale: 1 }}
+                            exit={{ opacity: 0, scale: 0.8 }}
+                            transition={{ duration: 0.15 }}
+                          >
+                            {showLoginPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+                          </motion.div>
+                        </AnimatePresence>
                       </button>
                     </div>
                   </div>
@@ -1002,10 +1012,20 @@ export function AuthForm({ onSuccess, defaultTab = "login" }: AuthFormProps) {
                       <button
                         type="button"
                         onClick={() => setShowRegisterPassword((s) => !s)}
-                        className="absolute right-3 top-3 p-1 text-muted-foreground"
+                        className="absolute right-3 top-3 p-1 text-muted-foreground hover:text-primary transition-colors"
                         aria-label={showRegisterPassword ? t("auth.hidePassword", { defaultValue: "Hide password" }) : t("auth.showPassword", { defaultValue: "Show password" })}
                       >
-                        {showRegisterPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+                        <AnimatePresence mode="wait" initial={false}>
+                          <motion.div
+                            key={showRegisterPassword ? "hide" : "show"}
+                            initial={{ opacity: 0, scale: 0.8 }}
+                            animate={{ opacity: 1, scale: 1 }}
+                            exit={{ opacity: 0, scale: 0.8 }}
+                            transition={{ duration: 0.15 }}
+                          >
+                            {showRegisterPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+                          </motion.div>
+                        </AnimatePresence>
                       </button>
                     </div>
 
@@ -1056,10 +1076,20 @@ export function AuthForm({ onSuccess, defaultTab = "login" }: AuthFormProps) {
                       <button
                         type="button"
                         onClick={() => setShowRegisterPasswordConfirm((s) => !s)}
-                        className="absolute right-3 top-3 p-1 text-muted-foreground"
+                        className="absolute right-3 top-3 p-1 text-muted-foreground hover:text-primary transition-colors"
                         aria-label={showRegisterPasswordConfirm ? t("auth.hidePassword", { defaultValue: "Hide password" }) : t("auth.showPassword", { defaultValue: "Show password" })}
                       >
-                        {showRegisterPasswordConfirm ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+                        <AnimatePresence mode="wait" initial={false}>
+                          <motion.div
+                            key={showRegisterPasswordConfirm ? "hide" : "show"}
+                            initial={{ opacity: 0, scale: 0.8 }}
+                            animate={{ opacity: 1, scale: 1 }}
+                            exit={{ opacity: 0, scale: 0.8 }}
+                            transition={{ duration: 0.15 }}
+                          >
+                            {showRegisterPasswordConfirm ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+                          </motion.div>
+                        </AnimatePresence>
                       </button>
                     </div>
                     {registerPasswordConfirm && registerPassword !== registerPasswordConfirm && (

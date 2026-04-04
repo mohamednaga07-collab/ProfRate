@@ -7,7 +7,7 @@ import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Header } from "@/components/Header";
 import { ArrowLeft, CheckCircle, AlertCircle, Eye, EyeOff } from "lucide-react";
 import { useTranslation } from "react-i18next";
-import { motion } from "framer-motion";
+import { motion, AnimatePresence } from "framer-motion";
 import ReCAPTCHA from "react-google-recaptcha";
 import { apiRequest } from "@/lib/queryClient";
 
@@ -82,10 +82,20 @@ export default function ResetPassword() {
                     <button
                       type="button"
                       onClick={() => setShowNewPassword((s) => !s)}
-                      className="absolute right-3 top-3 p-1 text-muted-foreground"
+                      className="absolute right-3 top-3 p-1 text-muted-foreground hover:text-primary transition-colors"
                       aria-label={showNewPassword ? t("auth.hidePassword", { defaultValue: "Hide password" }) : t("auth.showPassword", { defaultValue: "Show password" })}
                     >
-                      {showNewPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+                      <AnimatePresence mode="wait" initial={false}>
+                        <motion.div
+                          key={showNewPassword ? "hide" : "show"}
+                          initial={{ opacity: 0, scale: 0.8 }}
+                          animate={{ opacity: 1, scale: 1 }}
+                          exit={{ opacity: 0, scale: 0.8 }}
+                          transition={{ duration: 0.15 }}
+                        >
+                          {showNewPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+                        </motion.div>
+                      </AnimatePresence>
                     </button>
                   </div>
                   <Button type="submit" className="w-full" disabled={isLoading}>{isLoading ? "..." : t("auth.resetPassword")}</Button>

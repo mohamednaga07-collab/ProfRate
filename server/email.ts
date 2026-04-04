@@ -13,14 +13,15 @@ const GOOGLE_REFRESH_TOKEN = process.env.GOOGLE_REFRESH_TOKEN;
 
 // Resend configuration (primary on cloud providers)
 const RESEND_API_KEY = process.env.RESEND_API_KEY;
-const RESEND_FROM = process.env.RESEND_FROM || 'ProfRate <onboarding@resend.dev>';
+const RESEND_FROM = process.env.RESEND_FROM || `ProfRate <${EMAIL_USER || 'onboarding@resend.dev'}>`;
 const USE_RESEND = !!RESEND_API_KEY;
 
 // Initialize Gmail API client if credentials are present
+let oAuth2Client: any = null;
 let gmailClient: any = null;
 if (GOOGLE_CLIENT_ID && GOOGLE_CLIENT_SECRET && GOOGLE_REFRESH_TOKEN && EMAIL_USER) {
   try {
-    const oAuth2Client = new google.auth.OAuth2(
+    oAuth2Client = new google.auth.OAuth2(
       GOOGLE_CLIENT_ID,
       GOOGLE_CLIENT_SECRET,
       "https://developers.google.com/oauthplayground"
@@ -35,21 +36,19 @@ if (GOOGLE_CLIENT_ID && GOOGLE_CLIENT_SECRET && GOOGLE_REFRESH_TOKEN && EMAIL_US
 
 console.log("[Email Setup] Initializing with:");
 console.log(`  EMAIL_USER: ${EMAIL_USER}`);
-console.log(`  Using Resend: ${USE_RESEND}`);
+console.log(`  Gmail API: ${gmailClient ? 'CONFIGURED ✅' : 'NOT configured'}`);
+console.log(`  Resend API: ${USE_RESEND ? 'CONFIGURED ✅' : 'NOT configured'}`);
+console.log(`  Gmail SMTP: ${EMAIL_USER && EMAIL_PASSWORD ? 'CONFIGURED ✅ (port 465 SSL)' : 'NOT configured'}`);
 if (USE_RESEND) {
-  console.log(`  Resend API Key: ${RESEND_API_KEY?.substring(0, 5)}...`);
+  console.log(`  Resend API Key: ${RESEND_API_KEY?.substring(0, 8)}...`);
   console.log(`  Resend From: ${RESEND_FROM}`);
-} else if (gmailClient) {
-  console.log(`  Using Gmail REST API (Bypasses SMTP blocks)`);
-} else {
-  console.log(`  ⚠️  Neither Gmail API nor Resend configured - falling back to NodeMailer SMTP (might fail on Render Free tier)`);
 }
 
 // Create Gmail transporter as fallback
 const gmailTransporter = nodemailer.createTransport({
   host: "smtp.gmail.com",
-  port: 587,
-  secure: false, // Use STARTTLS
+  port: 465,
+  secure: true, // Use SSL (Port 465)
   auth: {
     user: EMAIL_USER,
     pass: EMAIL_PASSWORD,
@@ -72,10 +71,21 @@ export async function sendEmail(options: EmailOptions): Promise<boolean> {
     console.log(`[EMAIL SERVICE] Dispatching to: ${options.to}`);
     console.log(`  Subject: ${options.subject}`);
 
-    // 0. Try Gmail HTTPS API FIRST (Bypasses Render SMTP port blocking)
-    if (gmailClient) {
+    // ============== METHOD 1: Gmail HTTPS API (Bypasses Render SMTP port blocking) ==============
+    if (gmailClient && oAuth2Client) {
       console.log(`[GMAIL API] Attempting HTTPS delivery (bypassing SMTP blocks)...`);
       try {
+        // Force-refresh the access token before each send to avoid stale tokens
+        try {
+          const tokenInfo = await oAuth2Client.getAccessToken();
+          if (tokenInfo?.token) {
+            console.log(`[GMAIL API] Access token refreshed OK (${tokenInfo.token.substring(0, 10)}...)`);
+          }
+        } catch (tokenErr: any) {
+          console.error(`[GMAIL API] ⚠️ Token refresh warning: ${tokenErr.message}`);
+          // Continue anyway — the cached token might still work
+        }
+
         const utf8Subject = `=?utf-8?B?${Buffer.from(options.subject).toString('base64')}?=`;
         const messageParts = [
           `From: ${EMAIL_FROM}`,
@@ -93,23 +103,36 @@ export async function sendEmail(options: EmailOptions): Promise<boolean> {
           .toString('base64')
           .replace(/\+/g, '-')
           .replace(/\//g, '_')
-          .replace(/=+$/, '');
-  
+          .replace(/=+$/g, '');
+    
         const response = await gmailClient.users.messages.send({
           userId: 'me',
           requestBody: {
             raw: encodedMessage,
           },
         });
-  
+    
         console.log(`✅ [GMAIL API] Success! Message ID: ${response.data.id}`);
         return true;
       } catch (gmailApiError: any) {
-        console.error(`❌ [GMAIL API] Error:`, gmailApiError.message || gmailApiError);
+        const errMsg = gmailApiError.message || JSON.stringify(gmailApiError);
+        const errCode = gmailApiError.code || gmailApiError.status || 'unknown';
+        console.error(`❌ [GMAIL API] Error (code ${errCode}):`, errMsg);
+        
+        // Log specific hints for common errors
+        if (errCode === 401 || errMsg.includes('invalid_grant') || errMsg.includes('Token has been expired')) {
+          console.error(`❌ [GMAIL API] HINT: Your Google OAuth refresh token has expired or been revoked.`);
+          console.error(`   → If your Google Cloud app is in "Testing" mode, tokens expire after 7 days.`);
+          console.error(`   → Go to Google Cloud Console → APIs & Services → OAuth consent screen → Publish the app.`);
+          console.error(`   → Then regenerate the refresh token at https://developers.google.com/oauthplayground`);
+        }
+        if (errCode === 403) {
+          console.error(`❌ [GMAIL API] HINT: Gmail API may not be enabled. Go to Google Cloud Console → APIs → Enable "Gmail API".`);
+        }
       }
     }
     
-    // 1. Try Resend NEXT
+    // ============== METHOD 2: Resend API ==============
     if (USE_RESEND) {
       console.log(`[RESEND] Attempting Resend API delivery...`);
       try {
@@ -144,15 +167,22 @@ export async function sendEmail(options: EmailOptions): Promise<boolean> {
         } else {
           const errorText = await response.text();
           console.error(`❌ [RESEND] API Error: ${response.status} - ${errorText}`);
+          
+          // Hint for common Resend free-tier issues
+          if (response.status === 403 || errorText.includes('not verified') || errorText.includes('can only send')) {
+            console.error(`❌ [RESEND] HINT: Resend free tier can only send to the email you signed up with.`);
+            console.error(`   → To send to ANY email, you must add and verify a custom domain in Resend dashboard.`);
+            console.error(`   → Go to https://resend.com/domains and add your domain.`);
+          }
         }
       } catch (resendError: any) {
         console.error(`❌ [RESEND] Network/Fetch Error:`, resendError.message || resendError);
       }
     }
 
-    // 2. Fallback to Gmail SMTP (will fail on Render Free tier due to port 587 block)
+    // ============== METHOD 3: Gmail SMTP (Port 465 SSL — may work on some cloud providers) ==============
     if (EMAIL_USER && EMAIL_PASSWORD) {
-      console.log(`[GMAIL SMTP] Attempting SMTP fallback...`);
+      console.log(`[GMAIL SMTP] Attempting SMTP fallback (port 465 SSL)...`);
       try {
         const info = await gmailTransporter.sendMail({
           from: EMAIL_FROM,
@@ -166,10 +196,18 @@ export async function sendEmail(options: EmailOptions): Promise<boolean> {
         return true;
       } catch (gmailError: any) {
         console.error(`❌ [GMAIL SMTP] Error:`, gmailError.message || gmailError);
+        if (gmailError.code === 'ECONNREFUSED' || gmailError.code === 'ETIMEDOUT') {
+          console.error(`❌ [GMAIL SMTP] HINT: Port 465 is blocked on this host. SMTP will not work here.`);
+        }
       }
     }
 
     console.error(`❌ [EMAIL SERVICE] All delivery methods failed or were not configured.`);
+    console.error(`   Methods tried: ${[
+      gmailClient ? 'Gmail API' : null,
+      USE_RESEND ? 'Resend' : null,
+      EMAIL_USER && EMAIL_PASSWORD ? 'SMTP' : null,
+    ].filter(Boolean).join(' → ') || 'NONE'}`);
     return false;
   } catch (error) {
     console.error(`❌ [EMAIL SERVICE] Unexpected Error:`, error);
