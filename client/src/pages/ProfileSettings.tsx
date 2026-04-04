@@ -8,7 +8,7 @@ import { Label } from "@/components/ui/label";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
 import { useToast } from "@/hooks/use-toast";
-import { Loader2, User, Mail, Shield, Camera, Lock, BookOpen, Star } from "lucide-react";
+import { Loader2, User, Mail, Shield, Camera, Lock, BookOpen, Star, Eye, EyeOff } from "lucide-react";
 import { useTranslation } from "react-i18next";
 import { apiRequest, queryClient } from "@/lib/queryClient";
 import { motion } from "framer-motion";
@@ -66,6 +66,7 @@ export default function ProfileSettings() {
   const [newUsername, setNewUsername] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
   const [isChangingUsername, setIsChangingUsername] = useState(false);
+  const [showConfirmPassword, setShowConfirmPassword] = useState(false);
 
   const compressImage = (base64Str: string, maxWidth = 800, maxHeight = 800): Promise<string> => {
     return new Promise((resolve) => {
@@ -433,12 +434,20 @@ export default function ProfileSettings() {
                      <Lock className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
                      <Input 
                         id="confirm-pass"
-                        type="password"
+                        type={showConfirmPassword ? "text" : "password"}
                         value={confirmPassword} 
                         onChange={(e) => setConfirmPassword(e.target.value)} 
                         placeholder={t("profile.changeUsername.passwordPlaceholder", { defaultValue: "Enter current password" })}
-                        className="pl-10 bg-background"
+                        className="pl-10 pr-10 bg-background"
                      />
+                     <button
+                       type="button"
+                       onClick={() => setShowConfirmPassword((s) => !s)}
+                       className="absolute right-3 top-3 p-1 text-muted-foreground"
+                       aria-label={showConfirmPassword ? t("auth.hidePassword", { defaultValue: "Hide password" }) : t("auth.showPassword", { defaultValue: "Show password" })}
+                     >
+                       {showConfirmPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+                     </button>
                    </div>
                  </div>
                  <Button 

@@ -5,7 +5,7 @@ import { Input } from "@/components/ui/input";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Header } from "@/components/Header";
-import { ArrowLeft, CheckCircle, AlertCircle } from "lucide-react";
+import { ArrowLeft, CheckCircle, AlertCircle, Eye, EyeOff } from "lucide-react";
 import { useTranslation } from "react-i18next";
 import { motion } from "framer-motion";
 import ReCAPTCHA from "react-google-recaptcha";
@@ -21,6 +21,7 @@ export default function ResetPassword() {
   const [error, setError] = useState("");
   const [isDarkMode, setIsDarkMode] = useState(false);
   const [isSessionVerified, setIsSessionVerified] = useState(false);
+  const [showNewPassword, setShowNewPassword] = useState(false);
   const recaptchaRef = useRef<ReCAPTCHA>(null);
 
   useEffect(() => {
@@ -69,7 +70,24 @@ export default function ResetPassword() {
               ) : (
                 <form onSubmit={handleSubmit} className="space-y-4">
                   {error && <Alert variant="destructive"><AlertCircle className="h-4 w-4" /><AlertDescription>{error}</AlertDescription></Alert>}
-                  <Input type="password" value={newPassword} onChange={(e) => setNewPassword(e.target.value)} placeholder="New Password" required />
+                  <div className="relative">
+                    <Input
+                      type={showNewPassword ? "text" : "password"}
+                      value={newPassword}
+                      onChange={(e) => setNewPassword(e.target.value)}
+                      placeholder="New Password"
+                      required
+                      className="pr-10"
+                    />
+                    <button
+                      type="button"
+                      onClick={() => setShowNewPassword((s) => !s)}
+                      className="absolute right-3 top-3 p-1 text-muted-foreground"
+                      aria-label={showNewPassword ? t("auth.hidePassword", { defaultValue: "Hide password" }) : t("auth.showPassword", { defaultValue: "Show password" })}
+                    >
+                      {showNewPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+                    </button>
+                  </div>
                   <Button type="submit" className="w-full" disabled={isLoading}>{isLoading ? "..." : t("auth.resetPassword")}</Button>
                 </form>
               )}
