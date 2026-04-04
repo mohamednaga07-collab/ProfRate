@@ -1,5 +1,6 @@
 import { useState } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
+import { apiRequest } from "@/lib/queryClient";
 import { Header } from "@/components/Header";
 import { Button } from "@/components/ui/button";
 import {
@@ -73,12 +74,7 @@ export default function TeacherCourses() {
 
   const createClassMutation = useMutation({
     mutationFn: async (newClass: Partial<TeacherClass>) => {
-      const res = await fetch("/api/teacher/classes", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(newClass),
-      });
-      if (!res.ok) throw new Error("Failed to create class");
+      const res = await apiRequest("POST", "/api/teacher/classes", newClass);
       return res.json();
     },
     onSuccess: () => {
@@ -92,12 +88,7 @@ export default function TeacherCourses() {
   const updateClassMutation = useMutation({
     mutationFn: async (updatedClass: Partial<TeacherClass> & { id: number }) => {
       const { id, ...data } = updatedClass;
-      const res = await fetch(`/api/teacher/classes/${id}`, {
-        method: "PUT",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(data),
-      });
-      if (!res.ok) throw new Error("Failed to update class");
+      const res = await apiRequest("PUT", `/api/teacher/classes/${id}`, data);
       return res.json();
     },
     onSuccess: () => {
@@ -110,8 +101,7 @@ export default function TeacherCourses() {
 
   const deleteClassMutation = useMutation({
     mutationFn: async (id: number) => {
-      const res = await fetch(`/api/teacher/classes/${id}`, { method: "DELETE" });
-      if (!res.ok) throw new Error("Failed to delete class");
+      await apiRequest("DELETE", `/api/teacher/classes/${id}`);
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["/api/teacher/classes"] });

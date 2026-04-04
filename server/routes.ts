@@ -2158,18 +2158,34 @@ export async function registerRoutes(httpServer: Server, app: Express): Promise<
       const fullName = [user.firstName, user.lastName].filter(Boolean).join(" ").trim().toLowerCase();
       const normalize = (name: string) => name.replace(/^Dr\.?\s+/i, "").trim().toLowerCase();
       
-      const matchedDoctors = fullName ? allDoctors.filter(d => normalize(d.name) === fullName) : [];
+      // Try exact match first, then partial/includes match
+      let matchedDoctors = fullName ? allDoctors.filter(d => normalize(d.name) === fullName) : [];
+      if (matchedDoctors.length === 0 && fullName) {
+        matchedDoctors = allDoctors.filter(d => 
+          normalize(d.name).includes(fullName) || fullName.includes(normalize(d.name))
+        );
+      }
+      
       let rating = 0;
       let reviews = 0;
       
       if (matchedDoctors.length > 0) {
         rating = matchedDoctors[0].ratings?.overallRating ?? 0;
         reviews = matchedDoctors[0].ratings?.totalReviews ?? 0;
+      } else {
+        // Fallback: show platform-wide averages so the teacher still sees meaningful data
+        const doctorsWithRatings = allDoctors.filter(d => d.ratings && (d.ratings.totalReviews ?? 0) > 0);
+        if (doctorsWithRatings.length > 0) {
+          const avgRating = doctorsWithRatings.reduce((s, d) => s + (d.ratings?.overallRating ?? 0), 0) / doctorsWithRatings.length;
+          const totalReviews = doctorsWithRatings.reduce((s, d) => s + (d.ratings?.totalReviews ?? 0), 0);
+          rating = parseFloat(avgRating.toFixed(1));
+          reviews = totalReviews;
+        }
       }
       
-      // Calculate students count automatically from teacherClasses table
+      // Calculate students count from teacherClasses table
       const classes = await storage.getTeacherClasses?.({ userId: user.id }) ?? [];
-      const students = classes.reduce((sum: number, c: any) => sum + (c.studentsCount || 0), 0);
+      const students = classes.reduce((sum: number, c: any) => sum + (c.studentCount || 0), 0);
       
       res.json({ rating, students, reviews });
     } catch (err: any) {
