@@ -423,6 +423,12 @@ export class SqliteStorage implements IStorage {
   async getTeacherPortfolio(_userId: string): Promise<any> { return null; }
   async upsertTeacherPortfolio(data: any): Promise<any> { return data; }
 
+  // ── Teacher class stubs ──
+  async getTeacherClasses(_filters: { userId: string }): Promise<any[]> { return []; }
+  async createTeacherClass(data: any): Promise<any> { return { id: 0, ...data }; }
+  async updateTeacherClass(id: number, data: any): Promise<any> { return { id, ...data }; }
+  async deleteTeacherClass(_id: number): Promise<void> { return; }
+
   // ── Student enrollment stubs ──
   async getStudentEnrollments(_userId: string): Promise<any[]> { return []; }
   async createStudentEnrollment(data: any): Promise<any> { return { id: 0, ...data, createdAt: new Date().toISOString() }; }

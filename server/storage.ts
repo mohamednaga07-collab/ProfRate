@@ -21,6 +21,9 @@ import {
   messages,
   type Message,
   type InsertMessage,
+  teacherClasses,
+  type TeacherClass,
+  type InsertTeacherClass,
 } from "@shared/schema";
 import { db } from "./db";
 import { eq, desc, sql } from "drizzle-orm";
@@ -91,6 +94,12 @@ export interface IStorage {
   // Teacher portfolio
   getTeacherPortfolio(userId: string): Promise<TeacherPortfolio | undefined>;
   upsertTeacherPortfolio(data: InsertTeacherPortfolio): Promise<TeacherPortfolio>;
+
+  // Teacher classes
+  getTeacherClasses(filters: { userId: string }): Promise<TeacherClass[]>;
+  createTeacherClass(data: InsertTeacherClass): Promise<TeacherClass>;
+  updateTeacherClass(id: number, data: Partial<InsertTeacherClass>): Promise<TeacherClass>;
+  deleteTeacherClass(id: number): Promise<void>;
 
   // Student enrollments
   getStudentEnrollments(userId: string): Promise<StudentEnrollment[]>;
@@ -475,6 +484,25 @@ export class DatabaseStorage implements IStorage {
         reviewsGrowth: 0,
       };
     }
+  }
+
+  // Teacher classes
+  async getTeacherClasses(filters: { userId: string }): Promise<TeacherClass[]> {
+    return await db.select().from(teacherClasses).where(eq(teacherClasses.userId, filters.userId));
+  }
+
+  async createTeacherClass(data: InsertTeacherClass): Promise<TeacherClass> {
+    const [cls] = await db.insert(teacherClasses).values(data).returning();
+    return cls;
+  }
+
+  async updateTeacherClass(id: number, data: Partial<InsertTeacherClass>): Promise<TeacherClass> {
+    const [updated] = await db.update(teacherClasses).set(data).where(eq(teacherClasses.id, id)).returning();
+    return updated;
+  }
+
+  async deleteTeacherClass(id: number): Promise<void> {
+    await db.delete(teacherClasses).where(eq(teacherClasses.id, id));
   }
 
   // Messages and Notifications

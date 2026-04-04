@@ -163,11 +163,26 @@ export const activityLogs = pgTable("activity_logs", {
   timestamp: timestamp("timestamp").defaultNow().notNull(),
 });
 
+// Teacher Classes / Timetable
+export const teacherClasses = pgTable("teacher_classes", {
+  id: integer("id").primaryKey().generatedAlwaysAsIdentity(),
+  userId: varchar("user_id").notNull().references(() => users.id, { onDelete: "cascade" }),
+  courseName: varchar("course_name", { length: 200 }).notNull(),
+  courseCode: varchar("course_code", { length: 50 }),
+  schedule: varchar("schedule", { length: 200 }), // e.g. "Mon/Wed 10:00 AM"
+  roomInfo: varchar("room_info", { length: 100 }),
+  studentsCount: integer("students_count").default(0),
+  tasks: jsonb("tasks").default([]), // array of { title, completed }
+  createdAt: timestamp("created_at").defaultNow(),
+  updatedAt: timestamp("updated_at").defaultNow(),
+});
+
 // Messages & Notifications
 export const messages = pgTable("messages", {
   id: integer("id").primaryKey().generatedAlwaysAsIdentity(),
   senderId: varchar("sender_id").references(() => users.id, { onDelete: "set null" }),
   receiverId: varchar("receiver_id").references(() => users.id, { onDelete: "cascade" }), // null for global broadcasts
+  targetDoctorId: integer("target_doctor_id"), // to lock messages to a specific doctor's linked teacher
   title: varchar("title", { length: 255 }).notNull(),
   content: text("content").notNull(),
   type: varchar("type", { length: 50 }).notNull(), // 'feedback', 'support', 'direct', 'broadcast'
@@ -259,6 +274,7 @@ export const insertReviewSchema = z.object({
 export const insertTeacherPortfolioSchema: any = (createInsertSchema(teacherPortfolios) as any).omit({ id: true, createdAt: true, updatedAt: true });
 export const insertStudentEnrollmentSchema: any = (createInsertSchema(studentEnrollments) as any).omit({ id: true, createdAt: true });
 export const insertMessageSchema: any = (createInsertSchema(messages) as any).omit({ id: true, createdAt: true });
+export const insertTeacherClassSchema: any = (createInsertSchema(teacherClasses) as any).omit({ id: true, createdAt: true, updatedAt: true });
 
 export type UpsertUser = typeof users.$inferInsert;
 export type User = typeof users.$inferSelect;
@@ -274,6 +290,8 @@ export type StudentEnrollment = typeof studentEnrollments.$inferSelect;
 export type InsertStudentEnrollment = z.infer<typeof insertStudentEnrollmentSchema>;
 export type Message = typeof messages.$inferSelect;
 export type InsertMessage = z.infer<typeof insertMessageSchema>;
+export type TeacherClass = typeof teacherClasses.$inferSelect;
+export type InsertTeacherClass = z.infer<typeof insertTeacherClassSchema>;
 
 export type DoctorWithRatings = Doctor & {
   ratings: DoctorRating | null;

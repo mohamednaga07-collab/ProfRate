@@ -49,6 +49,12 @@ export function RoleBasedProfileMenu({
     refetchInterval: userRole === "admin" ? 2000 : false, // Poll every 2s for live updates
   });
 
+  // Fetch teacher stats for live data 
+  const { data: teacherStats } = useQuery<{ rating: number; students: number; reviews: number }>({
+    queryKey: ["/api/teacher/stats"],
+    enabled: userRole === "teacher",
+  });
+
   // Health indicator state
   const [health, setHealth] = useState<'healthy' | 'degraded' | 'down'>('healthy');
   const [healthPercent, setHealthPercent] = useState(100);
@@ -243,15 +249,15 @@ export function RoleBasedProfileMenu({
                 <>
                   <div className="bg-gradient-to-br from-blue-500/10 to-blue-600/10 rounded-lg p-2 border border-blue-500/20 text-center">
                     <p className="text-xs text-muted-foreground">{t("profile.stats.rating")}</p>
-                    <p className="font-bold text-blue-600">4.8</p>
+                    <p className="font-bold text-blue-600">{teacherStats?.rating?.toFixed(1) ?? "0.0"}</p>
                   </div>
                   <div className="bg-gradient-to-br from-purple-500/10 to-purple-600/10 rounded-lg p-2 border border-purple-500/20 text-center">
                     <p className="text-xs text-muted-foreground">{t("profile.stats.students")}</p>
-                    <p className="font-bold text-purple-600">240</p>
+                    <p className="font-bold text-purple-600">{teacherStats?.students ?? 0}</p>
                   </div>
                   <div className="bg-gradient-to-br from-orange-500/10 to-orange-600/10 rounded-lg p-2 border border-orange-500/20 text-center">
                     <p className="text-xs text-muted-foreground">{t("profile.stats.reviews")}</p>
-                    <p className="font-bold text-orange-600">85</p>
+                    <p className="font-bold text-orange-600">{teacherStats?.reviews ?? 0}</p>
                   </div>
                 </>
               )}

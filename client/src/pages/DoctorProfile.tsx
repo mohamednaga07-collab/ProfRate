@@ -556,6 +556,7 @@ export default function DoctorProfile() {
           onOpenChange={setIsMsgDialogOpen}
           receiverId={undefined} /* teacher userId unknown — admin routes it */
           receiverName={doctor.name}
+          targetDoctorId={doctor.id}
           forcedType="direct"
           forceAnonymous={true}
         />

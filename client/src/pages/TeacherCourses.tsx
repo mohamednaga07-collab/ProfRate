@@ -1,248 +1,323 @@
-import { useQuery } from "@tanstack/react-query";
+import { useState } from "react";
+import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { Header } from "@/components/Header";
-import { useAuth } from "@/hooks/useAuth";
+import { Button } from "@/components/ui/button";
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from "@/components/ui/table";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { motion } from "framer-motion";
-import { BookOpen, Users, Star, TrendingUp, BarChart3, AlertCircle } from "lucide-react";
-import { Alert, AlertDescription } from "@/components/ui/alert";
-import { StarRating } from "@/components/StarRating";
-import { RadarChart, PolarGrid, PolarAngleAxis, PolarRadiusAxis, Radar, ResponsiveContainer } from "recharts";
+import { Input } from "@/components/ui/input";
+import { useAuth } from "@/hooks/useAuth";
+import { useLocation } from "wouter";
+import { useToast } from "@/hooks/use-toast";
 import { useTranslation } from "react-i18next";
+import { Loader2, Plus, Edit, Trash2, Calendar, Clock, MapPin, Users, BookOpen } from "lucide-react";
+import { format } from "date-fns";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+  DialogTrigger,
+} from "@/components/ui/dialog";
+import { Label } from "@/components/ui/label";
 
-interface DoctorRatings {
-  avgTeachingQuality: number;
-  avgAvailability: number;
-  avgCommunication: number;
-  avgKnowledge: number;
-  avgFairness: number;
-  avgEngagement: number;
-  avgHelpfulness: number;
-  avgCourseOrganization: number;
-  overallRating: number;
-  totalReviews: number;
-}
-
-interface DoctorWithRatings {
+type TeacherClass = {
   id: number;
-  name: string;
-  department: string;
-  title: string;
-  ratings: DoctorRatings | null;
-}
+  userId: string;
+  courseName: string;
+  courseCode: string | null;
+  dayOfWeek: number; // 0-6
+  startTime: string; // HH:mm
+  endTime: string; // HH:mm
+  room: string | null;
+  studentCount: number | null;
+  createdAt: string;
+};
 
 export default function TeacherCourses() {
   const { user } = useAuth();
+  const [, navigate] = useLocation();
   const { t, i18n } = useTranslation();
   const isRTL = i18n.language === "ar";
+  const { toast } = useToast();
+  const queryClient = useQueryClient();
 
-  const { data: doctors = [], isLoading } = useQuery<DoctorWithRatings[]>({
-    queryKey: ["/api/doctors"],
-    queryFn: async () => {
-      const res = await fetch("/api/doctors");
-      if (!res.ok) throw new Error("Failed");
-      return res.json();
-    },
+  const [isDialogOpen, setIsDialogOpen] = useState(false);
+  const [editingId, setEditingId] = useState<number | null>(null);
+  
+  // Form State
+  const [courseName, setCourseName] = useState("");
+  const [courseCode, setCourseCode] = useState("");
+  const [dayOfWeek, setDayOfWeek] = useState("1");
+  const [startTime, setStartTime] = useState("09:00");
+  const [endTime, setEndTime] = useState("10:30");
+  const [room, setRoom] = useState("");
+  const [studentCount, setStudentCount] = useState("");
+
+  if (!user || user.role !== "teacher") {
+    navigate("/");
+    return null;
+  }
+
+  const { data: classes = [], isLoading } = useQuery<TeacherClass[]>({
+    queryKey: ["/api/teacher/classes"],
   });
 
-  const fullName = [user?.firstName, user?.lastName].filter(Boolean).join(" ").trim().toLowerCase();
-  const normalize = (name: string) => name.replace(/^Dr\.?\s+/i, "").trim().toLowerCase();
-  const matched = fullName ? doctors.filter(d => normalize(d.name) === fullName) : [];
-  const hasProfile = matched.length > 0;
-  const doc = matched[0];
+  const createClassMutation = useMutation({
+    mutationFn: async (newClass: Partial<TeacherClass>) => {
+      const res = await fetch("/api/teacher/classes", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(newClass),
+      });
+      if (!res.ok) throw new Error("Failed to create class");
+      return res.json();
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["/api/teacher/classes"] });
+      toast({ title: t("common.success"), description: "Class added successfully." });
+      resetForm();
+    },
+    onError: () => toast({ title: "Error", description: "Could not add class.", variant: "destructive" })
+  });
 
-  // All 8 categories are on 1-10 scale in the DB.
-  // Legacy fields (teachingQuality etc.) were stored 1-5 but avgXxx in doctor_ratings
-  // is averaged from those 1-5 values, so we normalise to 1-10 by multiplying *2.
-  const norm5 = (v: number) => (v || 0) * 2;  // 1-5 stored → display as /10
+  const updateClassMutation = useMutation({
+    mutationFn: async (updatedClass: Partial<TeacherClass> & { id: number }) => {
+      const { id, ...data } = updatedClass;
+      const res = await fetch(`/api/teacher/classes/${id}`, {
+        method: "PUT",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(data),
+      });
+      if (!res.ok) throw new Error("Failed to update class");
+      return res.json();
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["/api/teacher/classes"] });
+      toast({ title: t("common.success"), description: "Class updated successfully." });
+      resetForm();
+    },
+    onError: () => toast({ title: "Error", description: "Could not update class.", variant: "destructive" })
+  });
 
-  const radarData = doc?.ratings ? [
-    { category: t("doctorProfile.factorsShort.teaching"),      value: norm5(doc.ratings.avgTeachingQuality) },
-    { category: t("doctorProfile.factorsShort.availability"),  value: norm5(doc.ratings.avgAvailability) },
-    { category: t("doctorProfile.factorsShort.communication"), value: norm5(doc.ratings.avgCommunication) },
-    { category: t("doctorProfile.factorsShort.knowledge"),     value: norm5(doc.ratings.avgKnowledge) },
-    { category: t("doctorProfile.factorsShort.fairness"),      value: norm5(doc.ratings.avgFairness) },
-    { category: t("doctorProfile.factorsShort.engagement"),        value: doc.ratings.avgEngagement || 0 },
-    { category: t("doctorProfile.factorsShort.helpfulness"),        value: doc.ratings.avgHelpfulness || 0 },
-    { category: t("doctorProfile.factorsShort.courseOrganization"), value: doc.ratings.avgCourseOrganization || 0 },
-  ].filter(d => d.value > 0) : [];
+  const deleteClassMutation = useMutation({
+    mutationFn: async (id: number) => {
+      const res = await fetch(`/api/teacher/classes/${id}`, { method: "DELETE" });
+      if (!res.ok) throw new Error("Failed to delete class");
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["/api/teacher/classes"] });
+      toast({ title: t("common.success"), description: "Class deleted successfully." });
+    },
+    onError: () => toast({ title: "Error", description: "Could not delete class.", variant: "destructive" })
+  });
+
+  const resetForm = () => {
+    setCourseName(""); setCourseCode(""); setDayOfWeek("1");
+    setStartTime("09:00"); setEndTime("10:30"); setRoom(""); setStudentCount("");
+    setEditingId(null);
+    setIsDialogOpen(false);
+  };
+
+  const openEdit = (cls: TeacherClass) => {
+    setEditingId(cls.id);
+    setCourseName(cls.courseName);
+    setCourseCode(cls.courseCode || "");
+    setDayOfWeek(cls.dayOfWeek.toString());
+    setStartTime(cls.startTime);
+    setEndTime(cls.endTime);
+    setRoom(cls.room || "");
+    setStudentCount(cls.studentCount?.toString() || "");
+    setIsDialogOpen(true);
+  };
+
+  const handleSave = () => {
+    const data = {
+      courseName,
+      courseCode: courseCode || null,
+      dayOfWeek: parseInt(dayOfWeek),
+      startTime,
+      endTime,
+      room: room || null,
+      studentCount: studentCount ? parseInt(studentCount) : null,
+    };
+    if (editingId) {
+      updateClassMutation.mutate({ id: editingId, ...data });
+    } else {
+      createClassMutation.mutate(data);
+    }
+  };
+
+  const days = ["Sunday", "Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday"];
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-background via-background to-blue-500/5">
+    <div className="min-h-screen bg-background">
       <Header />
-      <main className="container mx-auto px-4 py-8 max-w-4xl">
-        <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} className="mb-8">
-          <div className="flex items-center gap-3">
-            <div className="p-3 rounded-xl bg-blue-500/10 border border-blue-200 dark:border-blue-800">
-              <BookOpen className="h-6 w-6 text-blue-500" />
-            </div>
-            <div>
-              <h1 className="text-3xl font-bold">{t("teacherCourses.title")}</h1>
-              <p className="text-muted-foreground">{t("teacherCourses.subtitle")}</p>
-            </div>
+      <main className="container mx-auto px-4 py-8 max-w-5xl">
+        <div className="flex flex-col md:flex-row justify-between items-start md:items-center mb-8 gap-4">
+          <div>
+            <h1 className="text-3xl font-bold flex items-center gap-2">
+              <Calendar className="h-8 w-8 text-primary" />
+              Campus Management
+            </h1>
+            <p className="text-muted-foreground mt-1">Manage your courses, sections, and timetables</p>
           </div>
-        </motion.div>
-
-        {isLoading ? (
-          <div className="flex justify-center py-24">
-            <div className="h-8 w-8 animate-spin rounded-full border-4 border-primary border-t-transparent" />
-          </div>
-        ) : !hasProfile ? (
-          <Alert className="border-amber-400/40 bg-amber-50 dark:bg-amber-950/20">
-            <AlertCircle className="h-4 w-4 text-amber-500" />
-            <AlertDescription className="text-amber-800 dark:text-amber-200">
-              <strong>{t("teacherCourses.noProfile.title")}</strong> — {t("teacherCourses.noProfile.description", { name: `${user?.firstName} ${user?.lastName}` })}
-            </AlertDescription>
-          </Alert>
-        ) : (
-          <div className="space-y-6">
-            {/* Profile Card */}
-            <motion.div initial={{ opacity: 0, y: 16 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.1 }}>
-              <Card className="bg-gradient-to-br from-blue-500/10 to-blue-600/5 border-blue-200 dark:border-blue-800">
-                <CardContent className="pt-6">
-                  <div className="flex items-center gap-4 flex-wrap">
-                    <div className="h-16 w-16 rounded-full bg-blue-500/20 flex items-center justify-center">
-                      <BookOpen className="h-8 w-8 text-blue-500" />
-                    </div>
-                    <div>
-                      <h2 className="text-2xl font-bold">{doc.name}</h2>
-                      <p className="text-muted-foreground">{doc.title} · {doc.department}</p>
-                      <div className="flex items-center gap-2 mt-1">
-                        <StarRating rating={doc.ratings?.overallRating ?? 0} size="sm" />
-                        <span className="text-sm text-muted-foreground">({doc.ratings?.totalReviews ?? 0} {t("teacherCourses.reviews")})</span>
-                      </div>
-                    </div>
+          <Dialog open={isDialogOpen} onOpenChange={(open) => { setIsDialogOpen(open); if (!open) resetForm(); }}>
+            <DialogTrigger asChild>
+              <Button className="gap-2">
+                <Plus className="h-4 w-4" /> Add Class
+              </Button>
+            </DialogTrigger>
+            <DialogContent className="sm:max-w-[425px]" dir={isRTL ? "rtl" : "ltr"}>
+              <DialogHeader>
+                <DialogTitle>{editingId ? "Edit Class" : "Add New Class"}</DialogTitle>
+                <DialogDescription>
+                  Enter the course scheduling details below.
+                </DialogDescription>
+              </DialogHeader>
+              <div className="grid gap-4 py-4">
+                <div className="grid gap-2">
+                  <Label>Course Name *</Label>
+                  <Input value={courseName} onChange={(e) => setCourseName(e.target.value)} placeholder="e.g. Data Structures" />
+                </div>
+                <div className="grid grid-cols-2 gap-4">
+                  <div className="grid gap-2">
+                    <Label>Course Code</Label>
+                    <Input value={courseCode} onChange={(e) => setCourseCode(e.target.value)} placeholder="CS201" />
                   </div>
-                </CardContent>
-              </Card>
-            </motion.div>
+                  <div className="grid gap-2">
+                    <Label>Room / Hall</Label>
+                    <Input value={room} onChange={(e) => setRoom(e.target.value)} placeholder="Hall A" />
+                  </div>
+                </div>
+                <div className="grid grid-cols-3 gap-4">
+                  <div className="grid gap-2 col-span-3">
+                    <Label>Day of Week</Label>
+                    <select 
+                      value={dayOfWeek} 
+                      onChange={(e) => setDayOfWeek(e.target.value)}
+                      className="flex h-10 w-full items-center justify-between rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2"
+                    >
+                      {days.map((d, i) => (
+                        <option key={i} value={i}>{d}</option>
+                      ))}
+                    </select>
+                  </div>
+                  <div className="grid gap-2">
+                    <Label>Start Time</Label>
+                    <Input type="time" value={startTime} onChange={(e) => setStartTime(e.target.value)} />
+                  </div>
+                  <div className="grid gap-2">
+                    <Label>End Time</Label>
+                    <Input type="time" value={endTime} onChange={(e) => setEndTime(e.target.value)} />
+                  </div>
+                  <div className="grid gap-2">
+                    <Label>Students</Label>
+                    <Input type="number" value={studentCount} onChange={(e) => setStudentCount(e.target.value)} placeholder="0" />
+                  </div>
+                </div>
+              </div>
+              <DialogFooter>
+                <Button variant="outline" onClick={resetForm}>Cancel</Button>
+                <Button onClick={handleSave} disabled={!courseName || !startTime || !endTime || createClassMutation.isPending || updateClassMutation.isPending}>
+                  {(createClassMutation.isPending || updateClassMutation.isPending) ? <Loader2 className="h-4 w-4 animate-spin mr-2"/> : null}
+                  Save
+                </Button>
+              </DialogFooter>
+            </DialogContent>
+          </Dialog>
+        </div>
 
-            {/* Stat Tiles */}
-            {doc.ratings && (
-              <motion.div initial={{ opacity: 0, y: 16 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.15 }}
-                className="grid grid-cols-2 sm:grid-cols-4 gap-4">
-                {[
-                  { label: t("teacherCourses.stats.overallRating"), value: doc.ratings.overallRating.toFixed(1), icon: <Star className="h-4 w-4 text-amber-500" />, color: "text-amber-600 dark:text-amber-400" },
-                  { label: t("teacherCourses.stats.totalReviews"), value: doc.ratings.totalReviews, icon: <Users className="h-4 w-4 text-blue-500" />, color: "text-blue-600 dark:text-blue-400" },
-                  { label: t("teacherCourses.stats.bestScore"), value: Math.max(norm5(doc.ratings.avgTeachingQuality), norm5(doc.ratings.avgAvailability), norm5(doc.ratings.avgCommunication), norm5(doc.ratings.avgKnowledge), norm5(doc.ratings.avgFairness), doc.ratings.avgEngagement||0, doc.ratings.avgHelpfulness||0, doc.ratings.avgCourseOrganization||0).toFixed(1), icon: <TrendingUp className="h-4 w-4 text-green-500" />, color: "text-green-600 dark:text-green-400" },
-                  { label: t("teacherCourses.stats.availability"), value: `${(norm5(doc.ratings.avgAvailability) * 10).toFixed(0)}%`, icon: <BarChart3 className="h-4 w-4 text-purple-500" />, color: "text-purple-600 dark:text-purple-400" },
-                ].map((s, i) => (
-                  <Card key={i} className="bg-card/80 backdrop-blur">
-                    <CardContent className="pt-4 pb-4">
-                      <div className="mb-1">{s.icon}</div>
-                      <p className={`text-2xl font-bold ${s.color}`}>{s.value}</p>
-                      <p className="text-xs text-muted-foreground mt-1">{s.label}</p>
-                    </CardContent>
-                  </Card>
-                ))}
-              </motion.div>
-            )}
-
-            {/* Radar Chart */}
-            {radarData.length > 0 && (
-              <motion.div initial={{ opacity: 0, y: 16 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.2 }}>
-                <Card className="bg-card/80 backdrop-blur">
-                  <CardHeader>
-                    <CardTitle className="flex items-center gap-2"><BarChart3 className="h-5 w-5" /> {t("teacherCourses.radar.title")}</CardTitle>
-                    <CardDescription>{t("teacherCourses.radar.subtitle", { count: radarData.length })}</CardDescription>
-                  </CardHeader>
-                  <CardContent>
-                    <ResponsiveContainer width="100%" height={300}>
-                      <RadarChart data={radarData}>
-                        <PolarGrid stroke="hsl(var(--muted))" />
-                        <PolarAngleAxis
-                          dataKey="category"
-                          stroke="hsl(var(--muted-foreground))"
-                          tick={(props: any) => {
-                            const { x, y, payload, textAnchor } = props;
-                            // The chart center (cx, cy) is always in SVG-space:
-                            const cx = props.cx || 0;
-                            const cy = props.cy || 0;
-                            const dirX = x - cx;
-                            const dirY = y - cy;
-
-                            // In RTL, browers flip 'start' and 'end' meaning for textAnchor.
-                            // So a text anchored at 'start' (right side of string) will shoot leftwards,
-                            // which pushes it INTO the chart on the right side.
-                            // We fix this by swapping start/end in RTL.
-                            let finalAnchor = textAnchor; if (Math.abs(dirX) < 10) finalAnchor = "middle";
-                            if (isRTL) {
-                              if (textAnchor === "start") finalAnchor = "end";
-                              else if (textAnchor === "end") finalAnchor = "start";
+        <Card>
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2 text-xl">
+              <BookOpen className="h-5 w-5 text-primary" />
+              My Timetable
+            </CardTitle>
+            <CardDescription>Your weekly scheduled classes</CardDescription>
+          </CardHeader>
+          <CardContent>
+            {isLoading ? (
+              <div className="flex justify-center py-8"><Loader2 className="h-8 w-8 animate-spin text-primary" /></div>
+            ) : classes.length === 0 ? (
+              <div className="text-center py-12">
+                <Calendar className="h-12 w-12 text-muted-foreground mx-auto mb-4 opacity-50" />
+                <h3 className="text-lg font-medium">No classes scheduled</h3>
+                <p className="text-muted-foreground mt-1 mb-4">You haven't added any courses to your timetable yet.</p>
+                <Button variant="outline" onClick={() => setIsDialogOpen(true)}>Add your first class</Button>
+              </div>
+            ) : (
+              <div className="rounded-md border">
+                <Table>
+                  <TableHeader>
+                    <TableRow>
+                      <TableHead>Course</TableHead>
+                      <TableHead>Day & Time</TableHead>
+                      <TableHead>Room</TableHead>
+                      <TableHead>Students</TableHead>
+                      <TableHead className="text-right">Actions</TableHead>
+                    </TableRow>
+                  </TableHeader>
+                  <TableBody>
+                    {/* Grouping by day or just simple sorting by day/time */}
+                    {classes.sort((a, b) => a.dayOfWeek === b.dayOfWeek ? a.startTime.localeCompare(b.startTime) : a.dayOfWeek - b.dayOfWeek).map((cls) => (
+                      <TableRow key={cls.id}>
+                        <TableCell>
+                          <div className="font-medium">{cls.courseName}</div>
+                          {cls.courseCode && <div className="text-xs text-muted-foreground">{cls.courseCode}</div>}
+                        </TableCell>
+                        <TableCell>
+                          <div className="flex items-center gap-1.5 font-medium">
+                            <Clock className="h-3.5 w-3.5 text-muted-foreground" />
+                            {days[cls.dayOfWeek]}
+                          </div>
+                          <div className="text-xs text-muted-foreground ml-5">{cls.startTime} - {cls.endTime}</div>
+                        </TableCell>
+                        <TableCell>
+                          <div className="flex items-center gap-1.5">
+                            <MapPin className="h-3.5 w-3.5 text-muted-foreground" />
+                            {cls.room || "TBA"}
+                          </div>
+                        </TableCell>
+                        <TableCell>
+                          <div className="flex items-center gap-1.5">
+                            <Users className="h-3.5 w-3.5 text-muted-foreground" />
+                            {cls.studentCount || "N/A"}
+                          </div>
+                        </TableCell>
+                        <TableCell className="text-right">
+                          <Button variant="ghost" size="icon" onClick={() => openEdit(cls)}>
+                            <Edit className="h-4 w-4 text-blue-500" />
+                          </Button>
+                          <Button 
+                            variant="ghost" 
+                            size="icon" 
+                            onClick={() => {
+                              if(confirm("Are you sure you want to delete this class?")) deleteClassMutation.mutate(cls.id);
+                            }}
+                          >
+                            {deleteClassMutation.isPending && deleteClassMutation.variables === cls.id ? 
+                              <Loader2 className="h-4 w-4 animate-spin text-red-500" /> : 
+                              <Trash2 className="h-4 w-4 text-red-500" />
                             }
-
-                            const dist = Math.sqrt(dirX * dirX + dirY * dirY) || 1;
-                            const pushDist = 4;
-
-                            const finalX = x + (dirX / dist) * pushDist ;
-                            
-                            // Text draws UP from baseline, so we must push bottom labels further down
-                            const finalY = y + (dirY / dist) * pushDist + (dirY > 10 ? 10 : 0);
-
-                            return (
-                              <text
-                                x={finalX}
-                                y={finalY}
-                                textAnchor={finalAnchor}
-                                fill="hsl(var(--muted-foreground))"
-                                fontSize={13}
-                                fontWeight={500}
-                              >
-                                {payload.value}
-                              </text>
-                            );
-                          }}
-                        />
-                        <PolarRadiusAxis angle={90} domain={[0, 10]} tick={false} />
-                        <Radar name={t("teacherCourses.radar.dataLabel")} dataKey="value" stroke="#3b82f6" fill="#3b82f6" fillOpacity={0.55} />
-                      </RadarChart>
-                    </ResponsiveContainer>
-                  </CardContent>
-                </Card>
-              </motion.div>
-            )}
-
-            {/* Per-Category Breakdown */}
-            {doc.ratings && (
-              <motion.div initial={{ opacity: 0, y: 16 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.25 }}>
-                <Card className="bg-card/80 backdrop-blur">
-                  <CardHeader>
-                    <CardTitle>{t("teacherCourses.breakdown.title")}</CardTitle>
-                    <CardDescription>{t("teacherCourses.breakdown.subtitle")}</CardDescription>
-                  </CardHeader>
-                  <CardContent className="space-y-4">
-                    {[
-                      { label: t("doctorProfile.factors.teachingQuality"),    value: norm5(doc.ratings.avgTeachingQuality),   color: "bg-blue-500" },
-                      { label: t("doctorProfile.factors.availability"),          value: norm5(doc.ratings.avgAvailability),       color: "bg-purple-500" },
-                      { label: t("doctorProfile.factors.communication"),        value: norm5(doc.ratings.avgCommunication),     color: "bg-pink-500" },
-                      { label: t("doctorProfile.factors.knowledge"),             value: norm5(doc.ratings.avgKnowledge),          color: "bg-amber-500" },
-                      { label: t("doctorProfile.factors.fairness"),              value: norm5(doc.ratings.avgFairness),           color: "bg-green-500" },
-                      ...(doc.ratings.avgEngagement > 0 ? [
-                        { label: t("doctorProfile.factors.engagement"),        value: doc.ratings.avgEngagement,        color: "bg-yellow-500" },
-                        { label: t("doctorProfile.factors.helpfulness"),       value: doc.ratings.avgHelpfulness,       color: "bg-rose-500" },
-                        { label: t("doctorProfile.factors.courseOrganization"),value: doc.ratings.avgCourseOrganization, color: "bg-teal-500" },
-                      ] : [])
-                    ].map(cat => (
-                      <div key={cat.label}>
-                        <div className="flex justify-between text-sm mb-1">
-                          <span>{cat.label}</span>
-                          <span className="font-semibold">{cat.value.toFixed(1)} / 10</span>
-                        </div>
-                        <div className="h-2 rounded-full bg-muted overflow-hidden">
-                          <motion.div
-                            className={`h-full rounded-full ${cat.color}`}
-                            initial={{ width: 0 }}
-                            animate={{ width: `${(cat.value / 10) * 100}%` }}
-                            transition={{ duration: 0.8, delay: 0.3 }}
-                          />
-                        </div>
-                      </div>
+                          </Button>
+                        </TableCell>
+                      </TableRow>
                     ))}
-                  </CardContent>
-                </Card>
-              </motion.div>
+                  </TableBody>
+                </Table>
+              </div>
             )}
-          </div>
-        )}
+          </CardContent>
+        </Card>
       </main>
     </div>
   );

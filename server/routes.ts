@@ -1546,6 +1546,22 @@ export async function registerRoutes(httpServer: Server, app: Express): Promise<
       const allowed = allowedTypes[user.role] ?? ["broadcast"];
 
       let filtered = messages.filter((msg: any) => allowed.includes(msg.type));
+      
+      // For teachers, we must strictly filter `direct` messages to only those matching their linked doctor profile.
+      if (user.role === "teacher") {
+         const allDoctors = await storage.getAllDoctors();
+         const fullName = [user.firstName, user.lastName].filter(Boolean).join(" ").trim().toLowerCase();
+         const normalize = (name: string) => name.replace(/^Dr\.?\s+/i, "").trim().toLowerCase();
+         const matchedDoctors = fullName ? allDoctors.filter(d => normalize(d.name) === fullName) : [];
+         const matchedDoctorId = matchedDoctors.length > 0 ? matchedDoctors[0].id : -1;
+         
+         filtered = filtered.filter((msg: any) => {
+           if (msg.type === "direct") {
+             return msg.targetDoctorId === matchedDoctorId;
+           }
+           return true; 
+         });
+      }
 
       // Strip sender identity for anonymous messages
       filtered = filtered.map((msg: any) => {
@@ -1568,7 +1584,7 @@ export async function registerRoutes(httpServer: Server, app: Express): Promise<
       const user = await storage.getUser(userId);
       if (!user) return res.status(404).json({ message: "User not found" });
 
-      const { receiverId, title, content, type, isAnonymous } = req.body;
+      const { receiverId, targetDoctorId, title, content, type, isAnonymous } = req.body;
       
       // Validation based on roles
       if (type === "broadcast" && user.role !== "admin" && user.role !== "teacher") {
@@ -1578,6 +1594,7 @@ export async function registerRoutes(httpServer: Server, app: Express): Promise<
       const msg = await storage.createMessage({
         senderId: userId,
         receiverId: type === "broadcast" ? null : receiverId,
+        targetDoctorId: targetDoctorId ?? null,
         title,
         content,
         type,
@@ -2126,6 +2143,81 @@ export async function registerRoutes(httpServer: Server, app: Express): Promise<
       res.json(portfolio);
     } catch (err: any) {
       res.status(500).json({ message: "Failed to save portfolio" });
+    }
+  });
+
+  // ─────────────────────────────────────────────────────────────────────────
+  // TEACHER STATS (Honest UI tags)
+  // ─────────────────────────────────────────────────────────────────────────
+  app.get("/api/teacher/stats", isAuthenticated, async (req, res) => {
+    try {
+      const user = req.user as any;
+      if (!user) return res.status(401).json({ message: "Unauthorized" });
+
+      const allDoctors = await storage.getAllDoctors();
+      const fullName = [user.firstName, user.lastName].filter(Boolean).join(" ").trim().toLowerCase();
+      const normalize = (name: string) => name.replace(/^Dr\.?\s+/i, "").trim().toLowerCase();
+      
+      const matchedDoctors = fullName ? allDoctors.filter(d => normalize(d.name) === fullName) : [];
+      let rating = 0;
+      let reviews = 0;
+      
+      if (matchedDoctors.length > 0) {
+        rating = matchedDoctors[0].ratings?.overallRating ?? 0;
+        reviews = matchedDoctors[0].ratings?.totalReviews ?? 0;
+      }
+      
+      // Calculate students count automatically from teacherClasses table
+      const classes = await storage.getTeacherClasses?.({ userId: user.id }) ?? [];
+      const students = classes.reduce((sum: number, c: any) => sum + (c.studentsCount || 0), 0);
+      
+      res.json({ rating, students, reviews });
+    } catch (err: any) {
+      console.error(err);
+      res.status(500).json({ message: "Failed to fetch teacher stats" });
+    }
+  });
+
+  // ─────────────────────────────────────────────────────────────────────────
+  // TEACHER CLASSES / TIMETABLE
+  // ─────────────────────────────────────────────────────────────────────────
+  app.get("/api/teacher/classes", isAuthenticated, async (req, res) => {
+    try {
+      if (!storage.getTeacherClasses) return res.json([]);
+      const classes = await storage.getTeacherClasses({ userId: getUserId(req)! });
+      res.json(classes);
+    } catch (error) {
+      res.status(500).json({ message: "Error fetching classes" });
+    }
+  });
+
+  app.post("/api/teacher/classes", isAuthenticated, validateCsrfHeader, async (req, res) => {
+    try {
+      if (!storage.createTeacherClass) return res.status(501).json({ message: "Not implemented" });
+      const cls = await storage.createTeacherClass({ ...req.body, userId: getUserId(req)! });
+      res.status(201).json(cls);
+    } catch (error) {
+      res.status(500).json({ message: "Error creating class" });
+    }
+  });
+
+  app.put("/api/teacher/classes/:id", isAuthenticated, validateCsrfHeader, async (req, res) => {
+    try {
+      if (!storage.updateTeacherClass) return res.status(501).json({ message: "Not implemented" });
+      const cls = await storage.updateTeacherClass(parseInt(req.params.id), req.body);
+      res.json(cls);
+    } catch (error) {
+      res.status(500).json({ message: "Error updating class" });
+    }
+  });
+
+  app.delete("/api/teacher/classes/:id", isAuthenticated, validateCsrfHeader, async (req, res) => {
+    try {
+      if (!storage.deleteTeacherClass) return res.status(501).json({ message: "Not implemented" });
+      await storage.deleteTeacherClass(parseInt(req.params.id));
+      res.status(204).end();
+    } catch (error) {
+      res.status(500).json({ message: "Error deleting class" });
     }
   });
 

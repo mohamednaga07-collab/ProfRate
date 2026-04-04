@@ -23,6 +23,7 @@ interface SendMessageDialogProps {
   /** Pre-set the receiver ID (e.g. a specific teacher's user ID for DMs) */
   receiverId?: string;
   receiverName?: string;
+  targetDoctorId?: number;
   /**
    * Force a specific message type and skip the type picker.
    * - "direct"           → anonymous student DM to a specific teacher
@@ -80,6 +81,7 @@ export function SendMessageDialog({
   onOpenChange,
   receiverId,
   receiverName,
+  targetDoctorId,
   forcedType,
   forceAnonymous = false,
 }: SendMessageDialogProps) {
@@ -105,6 +107,7 @@ export function SendMessageDialog({
       const { token } = await csrfRes.json();
       const body: any = {
         receiverId: receiverId ?? null,
+        targetDoctorId: targetDoctorId ?? null,
         title,
         content,
         type: activeType,

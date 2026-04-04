@@ -1105,5 +1105,16 @@
       "maintenance": "Maintenance Mode",
       "maintenanceDesc": "Locks out all non-admin users (use with extreme caution)"
     }
+  },
+  "teacherPerformance": {
+    "title": "Performance Analytics",
+    "subtitle": "Track your ratings and engagement over time",
+    "week": "Week {{n}}",
+    "noProfileLinked": "No doctor profile is currently linked to your account.",
+    "trendDirection": "Since last month",
+    "totalRatings": "Total Ratings",
+    "topCategory": "Best Performing Metric",
+    "ratingTrajectory": "Rating Trajectory",
+    "ratingTrajectoryDesc": "Your overall average across all metrics."
   }
 }

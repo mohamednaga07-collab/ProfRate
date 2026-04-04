@@ -1168,6 +1168,7 @@
   "teacherPerformance": {
     "title": "تحليلات الأداء",
     "subtitle": "تفصيل مفصّل لتقييماتك الأكاديمية عبر الزمن",
+    "week": "أسبوع {{n}}",
     "noProfileLinked": "حسابك غير مرتبط بملف أستاذ بعد.",
     "trendDirection": "اتجاه التطور",
     "totalRatings": "إجمالي التقييمات",
