@@ -1,7 +1,7 @@
 import crypto from "crypto";
 import bcrypt from "bcrypt";
 import sanitizeHtml from "sanitize-html";
-import rateLimit from "express-rate-limit";
+import rateLimit, { ipKeyGenerator } from "express-rate-limit";
 import { type Request, type Response, type NextFunction } from "express";
 
 // Rate limiting - Prevent brute force and DoS attacks
@@ -13,10 +13,11 @@ export const loginLimiter = rateLimit({
   standardHeaders: true, // Return rate limit info in RateLimit-* headers
   skip: (req) => process.env.NODE_ENV === "development", // Skip in development
   keyGenerator: (req) => {
-    // Use username from request body for rate limiting
-    // This allows multiple users to login from same IP simultaneously
-    const username = req.body?.username || req.ip;
-    return `login:${username}`;
+    // Use username from request body for rate limiting when present.
+    // Fall back to ipKeyGenerator to correctly handle IPv6 addresses.
+    const username = req.body?.username;
+    if (username) return `login:${String(username).toLowerCase()}`;
+    return ipKeyGenerator(req as any);
   },
 });
 
