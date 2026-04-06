@@ -2229,7 +2229,11 @@ export async function registerRoutes(httpServer: Server, app: Express): Promise<
   // ─────────────────────────────────────────────────────────────────────────
   app.get("/api/teacher/feedback", isAuthenticated, async (req, res) => {
     try {
-      const user = req.user as any;
+      const sessionUser = req.user as any;
+      if (!sessionUser) return res.status(401).json({ message: "Unauthorized" });
+
+      // Fetch fresh user data from DB (session req.user might be stale if they just updated their name)
+      const user = await storage.getUser(sessionUser.id);
       if (!user) return res.status(401).json({ message: "Unauthorized" });
 
       const allDoctors = await storage.getAllDoctors();
