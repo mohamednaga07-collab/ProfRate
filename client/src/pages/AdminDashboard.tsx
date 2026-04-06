@@ -157,6 +157,7 @@ export default function AdminDashboard() {
   const [doctorCardOpen, setDoctorCardOpen] = useState(false);
   const [newDoctor, setNewDoctor] = useState({ name: "", department: "", title: "", bio: "" });
   const [editRole, setEditRole] = useState<string>("student");
+  const [editLinkedDoctorId, setEditLinkedDoctorId] = useState<string>("none");
   const roleEditorRef = useRef<HTMLDivElement>(null);
   const [searchQuery, setSearchQuery] = useState("");
   const [filterRole, setFilterRole] = useState<string>("all");
@@ -173,6 +174,7 @@ export default function AdminDashboard() {
   useEffect(() => {
     if (editingUser) {
       setEditRole(editingUser.role);
+      setEditLinkedDoctorId(editingUser.linkedDoctorId ? String(editingUser.linkedDoctorId) : "none");
       // Scroll the inline editor into view after it renders
       setTimeout(() => roleEditorRef.current?.scrollIntoView({ behavior: 'smooth', block: 'center' }), 0);
     }
@@ -307,6 +309,35 @@ export default function AdminDashboard() {
       toast({ title: t("admin.toasts.userRoleUpdateFailed"), variant: "destructive" });
     },
   });
+
+  const updateLinkedDoctor = useMutation({
+    mutationFn: async ({ userId, doctorId }: { userId: string, doctorId: number | null }) => {
+      const res = await apiRequest("PATCH", `/api/admin/users/${userId}/link-doctor`, { doctorId });
+      return res.json();
+    },
+    onSuccess: () => {
+      toast({ title: "Doctor linked successfully" });
+      refetchUsers();
+    },
+  });
+
+  const handleSaveChanges = () => {
+    if (editingUser) {
+      if (editRole !== editingUser.role) {
+        updateUserRole.mutate({ userId: editingUser.id, role: editRole });
+      }
+      
+      const currentLinkedIdStr = editingUser.linkedDoctorId ? String(editingUser.linkedDoctorId) : "none";
+      if (editRole === "teacher" && editLinkedDoctorId !== currentLinkedIdStr) {
+        updateLinkedDoctor.mutate({ 
+          userId: editingUser.id, 
+          doctorId: editLinkedDoctorId === "none" ? null : parseInt(editLinkedDoctorId, 10) 
+        });
+      }
+      
+      setIsEditUserOpen(false);
+    }
+  };
 
   // Create doctor mutation
   const createDoctor = useMutation({
@@ -762,21 +793,43 @@ export default function AdminDashboard() {
                                 </div>
                               </CardContent>
                             </Card>
+
+                            {editRole === "teacher" && (
+                              <Card className="border shadow-none mt-2">
+                                <CardContent className="p-4 flex flex-col md:flex-row items-start md:items-center justify-between gap-4">
+                                  <div className="flex-1">
+                                    <Label htmlFor="link-doctor" className="mb-1 block">Link Professor Profile</Label>
+                                    <p className="text-xs text-muted-foreground">Bypass name-matching. Ensures charts load properly.</p>
+                                  </div>
+                                  <div className="w-full md:w-[220px]">
+                                    <Select
+                                      value={editLinkedDoctorId}
+                                      onValueChange={setEditLinkedDoctorId}
+                                    >
+                                      <SelectTrigger id="link-doctor">
+                                        <SelectValue placeholder="No profile linked" />
+                                      </SelectTrigger>
+                                      <SelectContent>
+                                        <SelectItem value="none">
+                                          <span className="italic text-muted-foreground">No Profile</span>
+                                        </SelectItem>
+                                        {doctors?.map(doc => (
+                                          <SelectItem key={doc.id} value={String(doc.id)}>{doc.name}</SelectItem>
+                                        ))}
+                                      </SelectContent>
+                                    </Select>
+                                  </div>
+                                </CardContent>
+                              </Card>
+                            )}
                           </div>
                         </div>
 
                         <DialogFooter className="mt-8 gap-2">
                           <Button variant="outline" onClick={() => setIsEditUserOpen(false)}>{t("common.cancel")}</Button>
                           <Button
-                            disabled={(updateUserRole as any).isLoading || (updateUserRole as any).isPending}
-                            onClick={() => {
-                              if (editingUser) {
-                                updateUserRole.mutate(
-                                  { userId: editingUser.id, role: editRole },
-                                  { onSuccess: () => setIsEditUserOpen(false) }
-                                );
-                              }
-                            }}
+                            disabled={(updateUserRole as any).isLoading || (updateUserRole as any).isPending || updateLinkedDoctor.isPending}
+                            onClick={handleSaveChanges}
                             className="bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 text-white shadow-md"
                           >
                             {((updateUserRole as any).isLoading || (updateUserRole as any).isPending) ? t("common.saving") : t("admin.users.edit.save")}
