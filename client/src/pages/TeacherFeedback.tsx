@@ -28,6 +28,7 @@ interface FeedbackResponse {
   matched: boolean;
   doctor: { id: number; name: string; ratings: any } | null;
   reviews: Review[];
+  searchedName?: string;
 }
 
 function getCategoryAvg(catSubScores: Record<string, number> | undefined) {
@@ -88,11 +89,21 @@ export default function TeacherFeedback() {
           </div>
         ) : !data?.matched ? (
           <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }}>
-            <Alert className="border-amber-400/40 bg-amber-50 dark:bg-amber-950/20 mb-6">
-              <AlertCircle className="h-4 w-4 text-amber-500" />
-              <AlertDescription className="text-amber-800 dark:text-amber-200">
-                <strong>{t("teacherFeedback.noProfileLinked")}</strong>
-              </AlertDescription>
+            <Alert className="border-amber-400/40 bg-amber-50 dark:bg-amber-950/20 mb-6 py-6 shadow-sm ring-1 ring-amber-500/10">
+              <AlertCircle className="h-6 w-6 text-amber-500" />
+              <div className="ml-2">
+                <AlertDescription className="text-amber-800 dark:text-amber-200 text-lg font-medium">
+                  {t("teacherFeedback.noProfileLinked")}
+                </AlertDescription>
+                <div className="mt-2 text-sm text-amber-700/70 dark:text-amber-300/50 flex flex-col gap-1">
+                  <p>
+                    System searched for profile matching: <code className="bg-amber-500/10 px-1.5 py-0.5 rounded font-bold text-amber-600 dark:text-amber-400 capitalize">"{data?.searchedName || user?.username}"</code>
+                  </p>
+                  <p className="italic">
+                    Tip: Go to <strong>Profile Settings</strong> and update your First Name and Last Name to match your university registration.
+                  </p>
+                </div>
+              </div>
             </Alert>
           </motion.div>
         ) : reviews.length === 0 ? (

@@ -3,8 +3,9 @@ import { Header } from "@/components/Header";
 import { useAuth } from "@/hooks/useAuth";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { motion } from "framer-motion";
-import { TrendingUp, Activity, Target } from "lucide-react";
+import { TrendingUp, Activity, Target, AlertCircle } from "lucide-react";
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from "recharts";
+import { Alert, AlertDescription } from "@/components/ui/alert";
 import { useTranslation } from "react-i18next";
 
 export default function TeacherPerformance() {
@@ -54,12 +55,24 @@ export default function TeacherPerformance() {
             <div className="h-8 w-8 animate-spin rounded-full border-4 border-primary border-t-transparent" />
           </div>
         ) : !data?.matched ? (
-          <Card className="text-center py-16 border-dashed">
-            <CardContent>
-              <Activity className="h-14 w-14 mx-auto mb-4 text-muted-foreground" />
-              <p className="text-lg text-muted-foreground">{t("teacherPerformance.noProfileLinked")}</p>
-            </CardContent>
-          </Card>
+          <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }}>
+            <Alert className="border-amber-400/40 bg-amber-50 dark:bg-amber-950/20 mb-6 py-6 shadow-sm ring-1 ring-amber-500/10">
+              <AlertCircle className="h-6 w-6 text-amber-500" />
+              <div className="ml-2">
+                <AlertDescription className="text-amber-800 dark:text-amber-200 text-lg font-medium">
+                  {t("teacherPerformance.noProfileLinked")}
+                </AlertDescription>
+                <div className="mt-2 text-sm text-amber-700/70 dark:text-amber-300/50 flex flex-col gap-1">
+                  <p>
+                    System searched for profile matching: <code className="bg-amber-500/10 px-1.5 py-0.5 rounded font-bold text-amber-600 dark:text-amber-400 capitalize">"{data?.searchedName || user?.username}"</code>
+                  </p>
+                  <p className="italic">
+                    Tip: Go to <strong>Profile Settings</strong> and update your First Name and Last Name to match your professor entry.
+                  </p>
+                </div>
+              </div>
+            </Alert>
+          </motion.div>
         ) : (
           <div className="space-y-6">
             <div className="grid sm:grid-cols-3 gap-4">

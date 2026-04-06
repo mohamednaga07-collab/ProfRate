@@ -546,6 +546,9 @@ export function AuthForm({ onSuccess, defaultTab = "login" }: AuthFormProps) {
           description: t("auth.success.verificationSent", { email: registerEmail, name: registerFirstName || registerUsername }),
         });
 
+        // Clear any cached user data — do NOT auto-login
+        queryClient.setQueryData(["/api/auth/user"], null);
+
         // Set success state and switch to login tab after showing message
         setRegistrationSuccess(true);
         setTimeout(() => {
@@ -565,7 +568,7 @@ export function AuthForm({ onSuccess, defaultTab = "login" }: AuthFormProps) {
           }, 300);
         }, 3000);
 
-        if (onSuccess) onSuccess();
+        // Do NOT call onSuccess — user must verify email first, then login manually
       } else {
         throw new Error("No user in response");
       }

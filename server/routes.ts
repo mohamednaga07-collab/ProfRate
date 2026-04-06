@@ -864,27 +864,14 @@ export async function registerRoutes(httpServer: Server, app: Express): Promise<
         console.error(`❌ [Registration] Setup error for email:`, err);
       }
 
-      // Automatically log the new user in so they don't have to navigate to login immediately
-      if (req.session) {
-        req.session.userId = newUser.id;
-        try {
-          await new Promise<void>((resolve, reject) => {
-            req.session?.save((err: any) => {
-              if (err) reject(err);
-              else resolve();
-            });
-          });
-          console.log(`📝 Auto-login session set for new user: ${newUser.id}`);
-        } catch (sessionErr) {
-          console.error("❌ Auto-login session save error:", sessionErr);
-        }
-      }
+      // Do NOT auto-login — user must verify email first, then login manually
+      console.log(`📧 [Registration] User must verify email before logging in: ${username}`);
 
       // Don't send password to client
       const { password: _, ...userWithoutPassword } = newUser as any;
       res.json({ 
         user: userWithoutPassword,
-        message: "Registration successful. You are now logged in! Please check your email to verify your account."
+        message: "Registration successful! Please check your email to verify your account, then log in."
       });
     } catch (error) {
       console.error("Error during registration:", error);
@@ -2246,17 +2233,29 @@ export async function registerRoutes(httpServer: Server, app: Express): Promise<
       if (!user) return res.status(401).json({ message: "Unauthorized" });
 
       const allDoctors = await storage.getAllDoctors();
-      const fullName = [user.firstName, user.lastName].filter(Boolean).join(" ").trim().toLowerCase();
+      const normalize = (name: string) => name.replace(/^(Dr\.?|Prof\.?)\s+/i, "").trim().toLowerCase();
+      
+      const firstName = user.firstName || "";
+      const lastName = user.lastName || "";
+      const fullName = [firstName, lastName].filter(Boolean).join(" ").trim().toLowerCase();
+      const username = (user.username || "").trim().toLowerCase();
+      
+      // Use full name if available, otherwise fallback to username
+      const searchName = fullName || username;
+      const normalizedSearchName = normalize(searchName);
 
-      const normalize = (name: string) => name.replace(/^Dr\.?\s+/i, "").trim().toLowerCase();
-
-      // Match teacher by name
-      const matchedDoctors = fullName
-        ? allDoctors.filter(d => normalize(d.name) === fullName)
+      // Match teacher by name or username
+      const matchedDoctors = searchName
+        ? allDoctors.filter(d => normalize(d.name) === normalizedSearchName)
         : [];
 
       if (matchedDoctors.length === 0) {
-        return res.json({ reviews: [], doctor: null, matched: false });
+        return res.json({ 
+          reviews: [], 
+          doctor: null, 
+          matched: false,
+          searchedName: searchName || "Empty Profile Name" 
+        });
       }
 
       const doctor = matchedDoctors[0];
@@ -2266,6 +2265,7 @@ export async function registerRoutes(httpServer: Server, app: Express): Promise<
         doctor: { id: doctor.id, name: doctor.name, ratings: doctor.ratings },
         reviews,
         matched: true,
+        searchedName: searchName
       });
     } catch (err) {
       console.error("Error fetching teacher feedback:", err);

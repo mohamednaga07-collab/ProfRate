@@ -1116,5 +1116,36 @@
     "topCategory": "Best Performing Metric",
     "ratingTrajectory": "Rating Trajectory",
     "ratingTrajectoryDesc": "Your overall average across all metrics."
+  },
+  "teacherFeedback": {
+    "title": "Student Feedback",
+    "subtitle": "Anonymous reviews left by your students",
+    "noProfileLinked": "No linked profile — could not automatically match your account name to a professor profile. Please ensure your Full Name in Profile Settings matches the professor entry in the system.",
+    "noReviews": "No reviews for your profile yet. Check back later after students start rating!",
+    "overallRating": "Overall Rating",
+    "totalReviews": "Total Reviews",
+    "fromStudents": "from students",
+    "writtenComments": "Written Comments",
+    "ratingOnly": "rating only",
+    "writtenFeedback": "Written Feedback",
+    "ratingOnlyReviews": "Rating-only reviews",
+    "ratingOnlyDesc": "These students left star ratings without written comments.",
+    "anonymousStudent": "Anonymous Student",
+    "detailedReview": "Detailed Review",
+    "sentiment": {
+      "positive": "Positive",
+      "negative": "Critical",
+      "neutral": "Neutral"
+    },
+    "categories": {
+      "teaching": "Teaching",
+      "available": "Availability",
+      "comms": "Communication",
+      "knowledge": "Knowledge",
+      "fairness": "Fairness",
+      "engage": "Engagement",
+      "helpful": "Helpfulness",
+      "org": "Organization"
+    }
   }
 }
