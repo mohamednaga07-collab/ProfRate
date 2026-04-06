@@ -32,11 +32,22 @@ export default function AdminUsers() {
   const [newRole, setNewRole] = useState<string>("");
   const [isDialogOpen, setIsDialogOpen] = useState(false);
 
+  const [newLinkedDoctorId, setNewLinkedDoctorId] = useState<string>("none");
+
   const { data: users, isLoading, error } = useQuery({
     queryKey: ["/api/admin/users"],
     queryFn: async () => {
       const res = await fetch("/api/admin/users");
       if (!res.ok) throw new Error("Failed to fetch users");
+      return res.json();
+    },
+  });
+
+  const { data: doctors = [] } = useQuery({
+    queryKey: ["/api/admin/doctors"],
+    queryFn: async () => {
+      const res = await fetch("/api/admin/doctors");
+      if (!res.ok) throw new Error("Failed to fetch doctors");
       return res.json();
     },
   });
@@ -63,15 +74,53 @@ export default function AdminUsers() {
     }
   });
 
-  const handleRoleChange = () => {
-    if (selectedUser && newRole) {
-      updateRoleMutation.mutate({ userId: selectedUser.id, role: newRole });
+  const linkDoctorMutation = useMutation({
+    mutationFn: async ({ userId, doctorId }: { userId: string; doctorId: number | null }) => {
+      const res = await apiRequest("PATCH", `/api/admin/users/${userId}/link-doctor`, { doctorId });
+      return res.json();
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["/api/admin/users"] });
+      toast({
+        title: "Profile linked",
+        description: "Teacher properly linked to profile.",
+      });
+    }
+  });
+
+  const handleSaveChanges = () => {
+    if (selectedUser) {
+      let isUpdating = false;
+
+      // Update role if changed
+      if (newRole && newRole !== selectedUser.role) {
+        updateRoleMutation.mutate({ userId: selectedUser.id, role: newRole });
+        isUpdating = true;
+      }
+
+      // Update linked doctor if changed
+      const currentLinkedIdStr = selectedUser.linkedDoctorId ? String(selectedUser.linkedDoctorId) : "none";
+      if (newRole === "teacher" && newLinkedDoctorId !== currentLinkedIdStr) {
+        linkDoctorMutation.mutate({ 
+          userId: selectedUser.id, 
+          doctorId: newLinkedDoctorId === "none" ? null : parseInt(newLinkedDoctorId, 10) 
+        });
+        isUpdating = true;
+      }
+
+      // If user isn't teacher but had a linked doctor, optionally unlink? 
+      // We'll leave it simple for now and only link if role was/is teacher.
+
+      if (!isUpdating) {
+        setIsDialogOpen(false);
+      }
     }
   };
 
   const openEditDialog = (user: any) => {
     setSelectedUser(user);
     setNewRole(user.role);
+    setNewLinkedDoctorId(user.linkedDoctorId ? String(user.linkedDoctorId) : "none");
     setIsDialogOpen(true);
   };
 
@@ -208,13 +257,40 @@ export default function AdminUsers() {
                                         </SelectContent>
                                     </Select>
                                 </div>
+                                {newRole === "teacher" && (
+                                    <div className="space-y-2 mt-4">
+                                        <label className="text-sm font-medium">Link Doctor Profile</label>
+                                        <Select value={newLinkedDoctorId} onValueChange={setNewLinkedDoctorId}>
+                                            <SelectTrigger>
+                                                <SelectValue placeholder="Select doctor profile to link..." />
+                                            </SelectTrigger>
+                                            <SelectContent>
+                                                <SelectItem value="none">
+                                                    <div className="text-muted-foreground italic">No profile linked</div>
+                                                </SelectItem>
+                                                {doctors.map((doc: any) => (
+                                                    <SelectItem key={doc.id} value={String(doc.id)}>
+                                                        {doc.name} - {doc.department}
+                                                    </SelectItem>
+                                                ))}
+                                            </SelectContent>
+                                        </Select>
+                                        <p className="text-xs text-muted-foreground">
+                                            Linking a profile guarantees this user's Teacher Dashboard connects to the correct data.
+                                        </p>
+                                    </div>
+                                )}
                             </div>
                             <DialogFooter>
                                 <DialogClose asChild>
                                     <Button variant="outline">{t("common.cancel", { defaultValue: "Cancel" })}</Button>
                                 </DialogClose>
-                                <Button onClick={handleRoleChange} disabled={updateRoleMutation.isPending || newRole === user.role} className="min-w-[100px]">
-                                    {updateRoleMutation.isPending ? <Loader2 className="h-4 w-4 animate-spin" /> : t("common.save", { defaultValue: "Save Changes" })}
+                                <Button 
+                                  onClick={handleSaveChanges} 
+                                  disabled={updateRoleMutation.isPending || linkDoctorMutation.isPending} 
+                                  className="min-w-[100px]"
+                                >
+                                    {updateRoleMutation.isPending || linkDoctorMutation.isPending ? <Loader2 className="h-4 w-4 animate-spin" /> : t("common.save", { defaultValue: "Save Changes" })}
                                 </Button>
                             </DialogFooter>
                         </DialogContent>

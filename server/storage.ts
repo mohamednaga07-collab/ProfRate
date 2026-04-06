@@ -38,6 +38,8 @@ export interface IStorage {
   getUserByResetToken(token: string): Promise<User | undefined>;
   updateUserResetToken(id: string, token: string, expiry: Date): Promise<void>;
   updateUserPassword(id: string, hashedPassword: string): Promise<void>;
+  updateUserRole(id: string, role: string): Promise<void>;
+  linkUserToDoctor(id: string, doctorId: number | null): Promise<void>;
   clearResetToken(id: string): Promise<void>;
   getUserByVerificationToken(token: string): Promise<User | undefined>;
   updateUserVerificationToken(id: string, token: string): Promise<void>;
@@ -194,6 +196,10 @@ export class DatabaseStorage implements IStorage {
 
   async updateUserRole(id: string, role: string): Promise<void> {
     await db.update(users).set({ role }).where(eq(users.id, id));
+  }
+
+  async linkUserToDoctor(id: string, doctorId: number | null): Promise<void> {
+    await db.update(users).set({ linkedDoctorId: doctorId }).where(eq(users.id, id));
   }
 
   async deleteUser(id: string): Promise<void> {

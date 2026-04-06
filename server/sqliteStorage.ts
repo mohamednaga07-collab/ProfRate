@@ -363,6 +363,11 @@ export class SqliteStorage implements IStorage {
   async updateUserRole(id: string, role: string): Promise<void> {
     this.db.prepare("UPDATE users SET role=?, updatedAt=CURRENT_TIMESTAMP WHERE id=?").run(role, id);
   }
+  
+  async linkUserToDoctor(id: string, doctorId: number | null): Promise<void> {
+    this.db.prepare("UPDATE users SET linkedDoctorId=?, updatedAt=CURRENT_TIMESTAMP WHERE id=?").run(doctorId, id);
+  }
+
   async deleteUser(id: string): Promise<void> {
     this.db.prepare("DELETE FROM users WHERE id=?").run(id);
   }

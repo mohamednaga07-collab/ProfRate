@@ -132,11 +132,31 @@ export default function TeacherDashboard() {
   const normalizedTeacherName = teacherFullName.toLowerCase();
 
   // Best-effort mapping: if a teacher account name matches a doctor name,
-  // show only that doctor's stats. (There is no explicit DB relation yet.)
-  const matchedDoctors =
-    user?.role === "teacher" && normalizedTeacherName
-      ? doctors.filter((doc) => normalizeDoctorName(doc.name) === normalizedTeacherName)
-      : doctors;
+  // show only that doctor's stats. Now using explicit DB relationship if available!
+  let matchedDoctors = doctors;
+  
+  if (user?.role === "teacher") {
+    if (user.linkedDoctorId) {
+      // 1. Explicit Link Match
+      const doc = doctors.find(d => d.id === user.linkedDoctorId);
+      if (doc) matchedDoctors = [doc];
+      else matchedDoctors = [];
+    } else if (normalizedTeacherName) {
+      // 2. Exact Name Match Fallback
+      const exactMatches = doctors.filter((doc) => normalizeDoctorName(doc.name) === normalizedTeacherName);
+      if (exactMatches.length > 0) {
+        matchedDoctors = exactMatches;
+      } else {
+        // 3. Fuzzy Name Match Fallback
+        matchedDoctors = doctors.filter((doc) => 
+          normalizeDoctorName(doc.name).includes(normalizedTeacherName) || 
+          normalizedTeacherName.includes(normalizeDoctorName(doc.name))
+        );
+      }
+    } else {
+      matchedDoctors = []; // No profile name to match
+    }
+  }
 
   // Find current teacher's data - for now just show all doctors with ratings
   // In a real app, you'd have a /api/teacher/:id endpoint

@@ -1675,6 +1675,26 @@ export async function registerRoutes(httpServer: Server, app: Express): Promise<
       res.status(500).json({ message: "Failed to fetch users" });
     }
   });
+  // Link user to doctor profile
+  app.patch("/api/admin/users/:userId/link-doctor", isAdmin, validateCsrfHeader, async (req, res) => {
+    try {
+      const { userId } = req.params;
+      const { doctorId } = req.body;
+      
+      const parsedDoctorId = doctorId ? parseInt(doctorId, 10) : null;
+      if (doctorId && isNaN(parsedDoctorId as number)) {
+        return res.status(400).json({ message: "Invalid doctor ID" });
+      }
+
+      await storage.linkUserToDoctor(userId, parsedDoctorId);
+
+      console.log(`[Admin] Linked user ${userId} to doctor profile ${parsedDoctorId}`);
+      res.json({ message: "Doctor profile linked successfully" });
+    } catch (error) {
+      console.error("Error linking doctor profile:", error);
+      res.status(500).json({ message: "Failed to link doctor profile" });
+    }
+  });
 
   // Update user role
   app.patch("/api/admin/users/:userId/role", isAdmin, validateCsrfHeader, async (req, res) => {
@@ -2141,15 +2161,26 @@ export async function registerRoutes(httpServer: Server, app: Express): Promise<
       if (!user) return res.status(401).json({ message: "Unauthorized" });
 
       const allDoctors = await storage.getAllDoctors();
-      const fullName = [user.firstName, user.lastName].filter(Boolean).join(" ").trim().toLowerCase();
-      const normalize = (name: string) => name.replace(/^Dr\.?\s+/i, "").trim().toLowerCase();
       
-      // Try exact match first, then partial/includes match
-      let matchedDoctors = fullName ? allDoctors.filter(d => normalize(d.name) === fullName) : [];
-      if (matchedDoctors.length === 0 && fullName) {
-        matchedDoctors = allDoctors.filter(d => 
-          normalize(d.name).includes(fullName) || fullName.includes(normalize(d.name))
-        );
+      let matchedDoctors: any[] = [];
+      
+      // 1. Unbreakable Explicit Match
+      if (user.linkedDoctorId) {
+        const doc = allDoctors.find(d => d.id === user.linkedDoctorId);
+        if (doc) matchedDoctors = [doc];
+      }
+
+      // 2. Fallback to Fuzzy Name Match
+      if (matchedDoctors.length === 0) {
+        const fullName = [user.firstName, user.lastName].filter(Boolean).join(" ").trim().toLowerCase();
+        const normalize = (name: string) => name.replace(/^Dr\.?\s+/i, "").trim().toLowerCase();
+        
+        matchedDoctors = fullName ? allDoctors.filter(d => normalize(d.name) === fullName) : [];
+        if (matchedDoctors.length === 0 && fullName) {
+          matchedDoctors = allDoctors.filter(d => 
+            normalize(d.name).includes(fullName) || fullName.includes(normalize(d.name))
+          );
+        }
       }
       
       let rating = 0;
@@ -2248,16 +2279,25 @@ export async function registerRoutes(httpServer: Server, app: Express): Promise<
       const searchName = fullName || username;
       const normalizedSearchName = normalize(searchName);
 
+      let matchedDoctors: any[] = [];
+
+      // 0. Explicit Link Match (100% guarantee)
+      if (user.linkedDoctorId) {
+        const doc = allDoctors.find(d => d.id === user.linkedDoctorId);
+        if (doc) matchedDoctors = [doc];
+      }
+
       // 1. Try exact match
-      let matchedDoctors = searchName
-        ? allDoctors.filter(d => normalize(d.name) === normalizedSearchName)
-        : [];
+      if (matchedDoctors.length === 0) {
+        matchedDoctors = searchName
+          ? allDoctors.filter(d => normalize(d.name) === normalizedSearchName)
+          : [];
+      }
 
       // 2. Try partial/fuzzy match if exact match fails
       if (matchedDoctors.length === 0 && searchName) {
         matchedDoctors = allDoctors.filter(d => {
           const docName = normalize(d.name);
-          // e.g., if doc is "sample teacher" and user is "teacher"
           return docName.includes(normalizedSearchName) || normalizedSearchName.includes(docName);
         });
       }
