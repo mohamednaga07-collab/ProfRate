@@ -2244,10 +2244,19 @@ export async function registerRoutes(httpServer: Server, app: Express): Promise<
       const searchName = fullName || username;
       const normalizedSearchName = normalize(searchName);
 
-      // Match teacher by name or username
-      const matchedDoctors = searchName
+      // 1. Try exact match
+      let matchedDoctors = searchName
         ? allDoctors.filter(d => normalize(d.name) === normalizedSearchName)
         : [];
+
+      // 2. Try partial/fuzzy match if exact match fails
+      if (matchedDoctors.length === 0 && searchName) {
+        matchedDoctors = allDoctors.filter(d => {
+          const docName = normalize(d.name);
+          // e.g., if doc is "sample teacher" and user is "teacher"
+          return docName.includes(normalizedSearchName) || normalizedSearchName.includes(docName);
+        });
+      }
 
       if (matchedDoctors.length === 0) {
         return res.json({ 
