@@ -45,6 +45,8 @@ export const users = pgTable("users", {
   verificationToken: varchar("verification_token", { length: 255 }),
   /** Tracks the express-session SID of the single active session (null = no active session) */
   activeSessionId: varchar("active_session_id", { length: 255 }),
+  /** Direct link to a doctor/professor profile — set by admin to bypass name-matching */
+  linkedDoctorId: integer("linked_doctor_id"),
   createdAt: timestamp("created_at").defaultNow(),
   updatedAt: timestamp("updated_at").defaultNow(),
 });
