@@ -1686,7 +1686,24 @@ export async function registerRoutes(httpServer: Server, app: Express): Promise<
         return res.status(400).json({ message: "Invalid doctor ID" });
       }
 
+      const allDoctors = await storage.getAllDoctors();
+      const doctorToLink = parsedDoctorId ? allDoctors.find(d => Number(d.id) === Number(parsedDoctorId)) : null;
+
       await storage.linkUserToDoctor(userId, parsedDoctorId);
+
+      // Auto-sync user's first/last name with the doctor's name if a doctor is linked
+      // This serves as an additional fallback mechanism and satisfies user expectations
+      if (doctorToLink) {
+         const cleanName = doctorToLink.name.replace(/^(Dr\.?|Prof\.?)\s+/i, "").trim();
+         const nameParts = cleanName.split(" ");
+         const firstName = nameParts[0] || "";
+         const lastName = nameParts.slice(1).join(" ") || "";
+         
+         await storage.updateUser(userId, {
+            firstName: firstName,
+            lastName: lastName
+         });
+      }
 
       console.log(`[Admin] Linked user ${userId} to doctor profile ${parsedDoctorId}`);
       res.json({ message: "Doctor profile linked successfully" });
@@ -2166,7 +2183,7 @@ export async function registerRoutes(httpServer: Server, app: Express): Promise<
       
       // 1. Unbreakable Explicit Match
       if (user.linkedDoctorId) {
-        const doc = allDoctors.find(d => d.id === user.linkedDoctorId);
+        const doc = allDoctors.find(d => Number(d.id) === Number(user.linkedDoctorId));
         if (doc) matchedDoctors = [doc];
       }
 
@@ -2283,7 +2300,7 @@ export async function registerRoutes(httpServer: Server, app: Express): Promise<
 
       // 0. Explicit Link Match (100% guarantee)
       if (user.linkedDoctorId) {
-        const doc = allDoctors.find(d => d.id === user.linkedDoctorId);
+        const doc = allDoctors.find(d => Number(d.id) === Number(user.linkedDoctorId));
         if (doc) matchedDoctors = [doc];
       }
 

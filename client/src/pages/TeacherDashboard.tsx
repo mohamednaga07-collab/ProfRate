@@ -138,7 +138,7 @@ export default function TeacherDashboard() {
   if (user?.role === "teacher") {
     if (user.linkedDoctorId) {
       // 1. Explicit Link Match
-      const doc = doctors.find(d => d.id === user.linkedDoctorId);
+      const doc = doctors.find(d => Number(d.id) === Number(user.linkedDoctorId));
       if (doc) matchedDoctors = [doc];
       else matchedDoctors = [];
     } else if (normalizedTeacherName) {
