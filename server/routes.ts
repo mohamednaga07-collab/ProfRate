@@ -1713,6 +1713,42 @@ export async function registerRoutes(httpServer: Server, app: Express): Promise<
     }
   });
 
+  // DEVELOPER DEBUG ROUTE: Forcefully maps the username "teacher" to the "Sample Teacher" doctor
+  // This bypasses UI issues for immediate testing purposes 
+  app.post("/api/admin/debug-link-test-teacher", isAdmin, async (req, res) => {
+    try {
+      // 1. Find user account "teacher"
+      const users = await storage.getAllUsers();
+      const testUser = users.find(u => u.username?.toLowerCase() === "teacher");
+      if (!testUser) return res.status(404).json({ message: "Test user 'teacher' not found in database." });
+
+      // 2. Find doctor "Sample Teacher"
+      const doctors = await storage.getAllDoctors();
+      const testDoctor = doctors.find(d => d.name.toLowerCase().includes("sample teacher"));
+      if (!testDoctor) return res.status(404).json({ message: "Doctor profile for 'Sample Teacher' not found in database." });
+
+      // 3. Link them!
+      await storage.linkUserToDoctor(testUser.id, testDoctor.id);
+
+      // 4. Auto-sync names just like the admin patch logic
+      const cleanName = testDoctor.name.replace(/^(Dr\.?|Prof\.?)\s+/i, "").trim();
+      const nameParts = cleanName.split(" ");
+      await storage.updateUser(testUser.id, {
+        firstName: nameParts[0] || "",
+        lastName: nameParts.slice(1).join(" ") || ""
+      });
+
+      res.json({ 
+        message: "Successfully hard-linked 'teacher' to 'Dr. Sample Teacher'. State cache is clear, you may now test!", 
+        updatedUserId: testUser.id,
+        doctorId: testDoctor.id
+      });
+    } catch (error) {
+      console.error("Error in debug link route:", error);
+      res.status(500).json({ message: "Failed to execute debug link script." });
+    }
+  });
+
   // Update user role
   app.patch("/api/admin/users/:userId/role", isAdmin, validateCsrfHeader, async (req, res) => {
     try {

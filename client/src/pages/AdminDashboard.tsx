@@ -1,7 +1,7 @@
 import { useState, useRef, useEffect } from "react";
 import { useQuery, useMutation } from "@tanstack/react-query";
 import { Header } from "@/components/Header";
-import { apiRequest } from "@/lib/queryClient";
+import { apiRequest, queryClient } from "@/lib/queryClient";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Button } from "@/components/ui/button";
@@ -53,7 +53,8 @@ import {
   Database,
   Zap,
   Star,
-
+  Wrench,
+  RefreshCw,
 } from "lucide-react";
 import { useTranslation } from "react-i18next";
 import HealthStatus, { AnimatedHealthText } from "@/components/ui/HealthStatus";
@@ -318,7 +319,15 @@ export default function AdminDashboard() {
     onSuccess: () => {
       toast({ title: "Doctor linked successfully" });
       refetchUsers();
+      // Force invalidate queries relating to the teacher's profile/stats globally
+      // This solves the glitch where an admin tests their own teacher profile right after linking!
+      queryClient.invalidateQueries({ queryKey: ["/api/user"] });
+      queryClient.invalidateQueries({ queryKey: ["/api/teacher/feedback"] });
+      queryClient.invalidateQueries({ queryKey: ["/api/teacher/stats"] });
     },
+    onError: (error) => {
+      toast({ title: "Failed to link doctor profile", description: error instanceof Error ? error.message : "Database error", variant: "destructive" });
+    }
   });
 
   const handleSaveChanges = () => {
@@ -387,6 +396,23 @@ export default function AdminDashboard() {
 
   // Track to top when finding user
 
+  const runDebugLinkMutation = useMutation({
+    mutationFn: async () => {
+      const res = await apiRequest("POST", `/api/admin/debug-link-test-teacher`);
+      return res.json();
+    },
+    onSuccess: (data) => {
+      toast({ title: "Debug Success!", description: data.message });
+      refetchUsers();
+      queryClient.invalidateQueries({ queryKey: ["/api/user"] });
+      queryClient.invalidateQueries({ queryKey: ["/api/teacher/feedback"] });
+      queryClient.invalidateQueries({ queryKey: ["/api/teacher/stats"] });
+    },
+    onError: (error) => {
+      toast({ title: "Debug Failed", description: error instanceof Error ? error.message : "Internal Server Error", variant: "destructive" });
+    }
+  });
+
 
   return (
     <div className="min-h-screen bg-background relative selection:bg-primary/20">
@@ -437,6 +463,16 @@ export default function AdminDashboard() {
               transition={{ delay: 0.5 }}
               className="flex gap-2"
             >
+              <Button 
+                variant="secondary" 
+                size="sm" 
+                className="gap-2 bg-yellow-500/20 text-yellow-50 hover:bg-yellow-500/40 border border-yellow-400/50" 
+                onClick={() => runDebugLinkMutation.mutate()}
+                disabled={runDebugLinkMutation.isPending}
+              >
+                {runDebugLinkMutation.isPending ? <RefreshCw className="h-4 w-4 animate-spin" /> : <Wrench className="h-4 w-4" />}
+                Force Link 'Sample Teacher' (Dev)
+              </Button>
               <Button variant="secondary" size="sm" className="gap-2" onClick={handleExportData}>
                 <Download className="h-4 w-4" />
                 {t("admin.header.export")}
