@@ -138,6 +138,14 @@ export class MemoryStorage implements IStorage {
     return user;
   }
 
+  async linkUserToDoctor(id: string, doctorId: number | null): Promise<void> {
+    const user = this.users.get(id);
+    if (user) {
+      user.linkedDoctorId = doctorId;
+      user.updatedAt = new Date();
+    }
+  }
+
   async clearResetToken(id: string): Promise<void> {
     const user = this.users.get(id);
     if (user && user.resetToken) {
