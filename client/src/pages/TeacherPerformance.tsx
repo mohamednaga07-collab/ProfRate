@@ -26,15 +26,34 @@ export default function TeacherPerformance() {
   const reviews = data?.reviews ?? [];
   const ratings = data?.doctor?.ratings;
   
-  // Generate mock timeline data based on reviews if possible or just mock data
-  const chartData = [
-    { name: t("teacherPerformance.week", { defaultValue: "Week 1", n: 1 }), score: 4.2 },
-    { name: t("teacherPerformance.week", { defaultValue: "Week 2", n: 2 }), score: 4.4 },
-    { name: t("teacherPerformance.week", { defaultValue: "Week 3", n: 3 }), score: 4.3 },
-    { name: t("teacherPerformance.week", { defaultValue: "Week 4", n: 4 }), score: 4.6 },
-    { name: t("teacherPerformance.week", { defaultValue: "Week 5", n: 5 }), score: 4.8 },
-    { name: t("teacherPerformance.week", { defaultValue: "Week 6", n: 6 }), score: (ratings?.overallRating ?? 4.9) },
-  ];
+  // Build real trajectory from actual reviews grouped by month
+  const chartData = (() => {
+    if (!reviews || reviews.length === 0) {
+      // No reviews — show flat zero line over last 6 months
+      const months: { name: string; score: number }[] = [];
+      for (let i = 5; i >= 0; i--) {
+        const d = new Date();
+        d.setMonth(d.getMonth() - i);
+        months.push({ name: d.toLocaleString("default", { month: "short", year: "2-digit" }), score: 0 });
+      }
+      return months;
+    }
+    // Group reviews by month and compute average overallScore per month
+    const byMonth: Record<string, number[]> = {};
+    reviews.forEach((r: any) => {
+      const d = new Date(r.createdAt);
+      const key = d.toLocaleString("default", { month: "short", year: "2-digit" });
+      if (!byMonth[key]) byMonth[key] = [];
+      const score = r.overallScore ?? ((r.teachingQuality + r.availability + r.communication + r.knowledge + r.fairness) / 5);
+      byMonth[key].push(score);
+    });
+    return Object.entries(byMonth)
+      .sort((a, b) => new Date("01 " + a[0]).getTime() - new Date("01 " + b[0]).getTime())
+      .map(([name, scores]) => ({
+        name,
+        score: parseFloat((scores.reduce((s, v) => s + v, 0) / scores.length).toFixed(2))
+      }));
+  })();
 
   // Map to 8-axis Octagon "Skills Radar"
   // Note: we'll multiply normalized / 10 scales by 1 if out of 10 or convert appropriately.

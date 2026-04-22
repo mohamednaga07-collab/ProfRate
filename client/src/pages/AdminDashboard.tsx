@@ -770,7 +770,7 @@ export default function AdminDashboard() {
                 <CardContent>
                   {/* User Details & Edit Dialog */}
                   <Dialog open={isEditUserOpen} onOpenChange={setIsEditUserOpen}>
-                    <DialogContent className="max-w-3xl p-0 overflow-hidden bg-background/95 backdrop-blur-xl border-accent/20 max-h-[90vh] flex flex-col">
+                    <DialogContent className="max-w-3xl p-0 overflow-hidden bg-background/95 backdrop-blur-xl border-accent/20 max-h-[85vh] flex flex-col !top-[54%]">
                       <DialogTitle className="sr-only">{t("admin.users.edit.title")}</DialogTitle>
                       <DialogDescription className="sr-only">{t("admin.users.edit.subtitle", { username: editingUser?.username })}</DialogDescription>
                       

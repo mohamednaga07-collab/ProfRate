@@ -604,10 +604,11 @@ export async function registerRoutes(httpServer: Server, app: Express): Promise<
         return res.status(409).json({ message: "Username already taken" });
       }
 
-      // 5. Update Username
-      const updatedUser = await storage.updateUser(userId, { username: newUsername });
+      // 5. Update Username — always store lowercase/sanitized to match login lookup
+      const sanitizedNew = sanitizeUsername(newUsername);
+      const updatedUser = await storage.updateUser(userId, { username: sanitizedNew });
 
-      console.log(`✅ User ${user.username} changed username to ${newUsername}`);
+      console.log(`✅ User ${user.username} changed username to ${sanitizedNew}`);
       
       // Don't send password back
       const { password: _, ...safeUser } = updatedUser as any;
@@ -1845,9 +1846,10 @@ export async function registerRoutes(httpServer: Server, app: Express): Promise<
       }
 
       // If username is changing, ensure it's not taken
-      if (username && username !== user.username) {
-        const existing = await storage.getUserByUsername(username);
-        if (existing) {
+      const sanitizedUsername = username ? sanitizeUsername(username) : undefined;
+      if (sanitizedUsername && sanitizedUsername !== user.username) {
+        const existing = await storage.getUserByUsername(sanitizedUsername);
+        if (existing && existing.id !== userId) {
           return res.status(400).json({ message: "Username already taken" });
         }
       }
@@ -1855,7 +1857,7 @@ export async function registerRoutes(httpServer: Server, app: Express): Promise<
       const updatedUser = await storage.updateUser(userId, {
         firstName: firstName !== undefined ? firstName : user.firstName,
         lastName: lastName !== undefined ? lastName : user.lastName,
-        username: username !== undefined ? username : user.username,
+        username: sanitizedUsername !== undefined ? sanitizedUsername : user.username,
         role: role !== undefined ? role : user.role,
       });
 

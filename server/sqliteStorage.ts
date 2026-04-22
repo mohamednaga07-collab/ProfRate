@@ -307,7 +307,7 @@ export class SqliteStorage implements IStorage {
   }
 
   async getUserByUsername(username: string): Promise<User | undefined> {
-    return this.normalizeUser(this.db.prepare("SELECT * FROM users WHERE username = ?").get(username));
+    return this.normalizeUser(this.db.prepare("SELECT * FROM users WHERE LOWER(username) = LOWER(?)").get(username));
   }
   async getUserByEmail(email: string): Promise<User | undefined> {
     return this.normalizeUser(this.db.prepare("SELECT * FROM users WHERE email = ?").get(email));
