@@ -159,6 +159,9 @@ export default function AdminDashboard() {
   const [newDoctor, setNewDoctor] = useState({ name: "", department: "", title: "", bio: "" });
   const [editRole, setEditRole] = useState<string>("student");
   const [editLinkedDoctorId, setEditLinkedDoctorId] = useState<string>("none");
+  const [editFirstName, setEditFirstName] = useState("");
+  const [editLastName, setEditLastName] = useState("");
+  const [editUsername, setEditUsername] = useState("");
   const roleEditorRef = useRef<HTMLDivElement>(null);
   const [searchQuery, setSearchQuery] = useState("");
   const [filterRole, setFilterRole] = useState<string>("all");
@@ -176,6 +179,9 @@ export default function AdminDashboard() {
     if (editingUser) {
       setEditRole(editingUser.role);
       setEditLinkedDoctorId(editingUser.linkedDoctorId ? String(editingUser.linkedDoctorId) : "none");
+      setEditFirstName(editingUser.firstName || "");
+      setEditLastName(editingUser.lastName || "");
+      setEditUsername(editingUser.username || "");
       // Scroll the inline editor into view after it renders
       setTimeout(() => roleEditorRef.current?.scrollIntoView({ behavior: 'smooth', block: 'center' }), 0);
     }
@@ -330,6 +336,24 @@ export default function AdminDashboard() {
     }
   });
 
+  const updateUserDetails = useMutation({
+    mutationFn: async ({ userId, data }: { userId: number; data: any }) => {
+      const res = await apiRequest("PATCH", `/api/admin/users/${userId}/details`, data);
+      if (!res.ok) {
+         const errorData = await res.json();
+         throw new Error(errorData.message || "Update failed");
+      }
+      return res.json();
+    },
+    onSuccess: () => {
+      toast({ title: "User Details Updated" });
+      refetchUsers();
+    },
+    onError: (error: any) => {
+      toast({ title: "Update failed", description: error.message, variant: "destructive" });
+    }
+  });
+
   const handleSaveChanges = () => {
     if (editingUser) {
       if (editRole !== editingUser.role) {
@@ -341,6 +365,21 @@ export default function AdminDashboard() {
         updateLinkedDoctor.mutate({ 
           userId: editingUser.id, 
           doctorId: editLinkedDoctorId === "none" ? null : parseInt(editLinkedDoctorId, 10) 
+        });
+      }
+
+      if (
+        editFirstName !== (editingUser.firstName || "") ||
+        editLastName !== (editingUser.lastName || "") ||
+        editUsername !== (editingUser.username || "")
+      ) {
+        updateUserDetails.mutate({
+          userId: editingUser.id,
+          data: {
+            firstName: editFirstName,
+            lastName: editLastName,
+            username: editUsername,
+          }
         });
       }
       
@@ -750,6 +789,24 @@ export default function AdminDashboard() {
 
                         <div className="mt-8 grid gap-4">
                           <div className="grid gap-1.5">
+                            <Label className="text-xs text-muted-foreground uppercase font-semibold tracking-wider">Profile Details</Label>
+                            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                              <div className="space-y-1.5">
+                                <Label htmlFor="edit-firstname" className="text-sm font-medium">First Name</Label>
+                                <Input id="edit-firstname" value={editFirstName} onChange={(e) => setEditFirstName(e.target.value)} placeholder="First Name" />
+                              </div>
+                              <div className="space-y-1.5">
+                                <Label htmlFor="edit-lastname" className="text-sm font-medium">Last Name</Label>
+                                <Input id="edit-lastname" value={editLastName} onChange={(e) => setEditLastName(e.target.value)} placeholder="Last Name" />
+                              </div>
+                            </div>
+                            <div className="space-y-1.5 mt-2">
+                              <Label htmlFor="edit-username" className="text-sm font-medium">Username</Label>
+                              <Input id="edit-username" value={editUsername} onChange={(e) => setEditUsername(e.target.value)} placeholder="Username" />
+                            </div>
+                          </div>
+
+                          <div className="grid gap-1.5 mt-4">
                             <Label className="text-xs text-muted-foreground uppercase font-semibold tracking-wider">{t("admin.users.edit.contact")}</Label>
                             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                               <div className="flex items-center gap-2 p-3 rounded-lg bg-muted/50 border border-border/50">
