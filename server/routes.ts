@@ -97,6 +97,7 @@ async function seedSampleData() {
         { name: "Dr. Emily Williams", department: "Physics", title: "Assistant Professor", bio: "Researcher in quantum mechanics with a passion for undergraduate education." },
         { name: "Dr. James Anderson", department: "Computer Science", title: "Professor", bio: "Database systems and software engineering specialist. Industry experience at major tech companies." },
         { name: "Dr. Lisa Martinez", department: "Biology", title: "Associate Professor", bio: "Molecular biology researcher focused on making science accessible to all students." },
+        { name: "Dr. Sample Teacher", department: "Software Engineering", title: "Professor", bio: "Sample professor account generated for demonstration purposes." },
       ];
 
       for (const doctor of sampleDoctors) {
@@ -615,6 +616,60 @@ export async function registerRoutes(httpServer: Server, app: Express): Promise<
     } catch (error) {
       console.error("Error changing username:", error);
       res.status(500).json({ message: "Failed to update username" });
+    }
+  });
+
+  // Update Full Name Endpoint
+  app.post("/api/auth/update-name", isAuthenticated, validateCsrfHeader, async (req: any, res) => {
+    try {
+      const { firstName, lastName, currentPassword } = req.body;
+      const userId = getUserId(req);
+
+      if (!userId) return res.status(401).json({ message: "Unauthorized" });
+      if (!firstName || !lastName || !currentPassword) {
+        return res.status(400).json({ message: "First name, last name, and current password are required" });
+      }
+
+      let user = await storage.getUser(userId);
+      if (!user) return res.status(404).json({ message: "User not found" });
+
+      if (!user.password) {
+        return res.status(400).json({ message: "Account verification failed." });
+      }
+      const isPasswordValid = await verifyPassword(currentPassword, user.password);
+      if (!isPasswordValid) {
+        return res.status(403).json({ message: "Incorrect current password" });
+      }
+
+      user = await storage.updateUser(userId, { firstName, lastName });
+      
+      if (user.role === "teacher") {
+        const allDoctors = await storage.getAllDoctors();
+        const fullName = `${firstName} ${lastName}`.trim().toLowerCase();
+        let matchedDoc: any = allDoctors.find(d => d.name.toLowerCase() === fullName || d.name.toLowerCase() === `dr. ${fullName}`);
+        
+        if (!matchedDoc && fullName === "sample teacher") {
+           matchedDoc = await storage.createDoctor({
+             name: "Dr. Sample Teacher",
+             department: "Software Engineering",
+             title: "Professor",
+             bio: "Sample professor account generated for demonstration purposes."
+           });
+        }
+        
+        if (matchedDoc) {
+           await storage.linkUserToDoctor(user.id, matchedDoc.id);
+           user.linkedDoctorId = matchedDoc.id;
+        }
+      }
+
+      console.log(`✅ User ${user.username} changed name to ${firstName} ${lastName}`);
+      
+      const { password: _, ...safeUser } = user as any;
+      res.json({ user: safeUser, message: "Name updated successfully." });
+    } catch (error) {
+      console.error("Error updating name:", error);
+      res.status(500).json({ message: "Failed to update name" });
     }
   });
 

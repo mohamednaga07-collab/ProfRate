@@ -68,6 +68,13 @@ export default function ProfileSettings() {
   const [isChangingUsername, setIsChangingUsername] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
 
+  // Change Name State
+  const [firstName, setFirstName] = useState("");
+  const [lastName, setLastName] = useState("");
+  const [nameConfirmPassword, setNameConfirmPassword] = useState("");
+  const [isChangingName, setIsChangingName] = useState(false);
+  const [showNameConfirmPassword, setShowNameConfirmPassword] = useState(false);
+
   const compressImage = (base64Str: string, maxWidth = 800, maxHeight = 800): Promise<string> => {
     return new Promise((resolve) => {
       const img = new Image();
@@ -230,6 +237,46 @@ export default function ProfileSettings() {
       });
     } finally {
       setIsChangingUsername(false);
+    }
+  };
+
+  const handleChangeName = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!firstName || !lastName || !nameConfirmPassword) return;
+
+    try {
+      setIsChangingName(true);
+      const res: any = await apiRequest("POST", "/api/auth/update-name", {
+         firstName,
+         lastName,
+         currentPassword: nameConfirmPassword
+      });
+      const data = await res.json();
+      
+      if (res.ok) {
+        queryClient.setQueryData(["/api/auth/user"], data.user);
+        toast({
+          title: t("profile.name.success", { defaultValue: "Name Updated" }),
+          description: data.message || "Your name has been updated successfully.",
+        });
+        setFirstName("");
+        setLastName("");
+        setNameConfirmPassword("");
+        if (user?.role === "teacher") {
+          queryClient.invalidateQueries({ queryKey: ["/api/teacher/stats"] });
+          queryClient.invalidateQueries({ queryKey: ["/api/teacher/feedback"] });
+        }
+      } else {
+        throw new Error(data.message || "Failed to update name");
+      }
+    } catch (error: any) {
+       toast({
+        title: t("profile.name.error", { defaultValue: "Error" }),
+        description: error.message,
+        variant: "destructive",
+      });
+    } finally {
+      setIsChangingName(false);
     }
   };
 
@@ -472,6 +519,110 @@ export default function ProfileSettings() {
                       </>
                    ) : (
                       t("profile.changeUsername.submit", { defaultValue: "Update Username" })
+                   )}
+                 </Button>
+              </form>
+            </CardContent>
+          </Card>
+        </motion.div>
+
+        {/* Change Name Card */}
+        <motion.div
+          custom={2}
+          variants={cardVariants}
+          initial="initial"
+          animate="animate"
+        >
+          <Card className="mb-6 border-0 shadow-xl bg-card/50 backdrop-blur-sm overflow-hidden">
+            <CardHeader className="border-b bg-muted/30">
+              <CardTitle className="flex items-center gap-2">
+                <User className={`h-5 w-5 ${theme.accent}`} />
+                {t("profile.changeName.title", { defaultValue: "Change Full Name" })}
+              </CardTitle>
+              <CardDescription>
+                {t("profile.changeName.desc", { defaultValue: "Update your real first and last name. This is crucial for linking your professor profile correctly." })}
+              </CardDescription>
+            </CardHeader>
+            <CardContent className="pt-6">
+              <form onSubmit={handleChangeName} className="space-y-4">
+                 <div className="grid grid-cols-2 gap-4">
+                   <div className="space-y-2">
+                     <Label htmlFor="first-name" className="font-semibold">
+                       {t("profile.changeName.firstLabel", "First Name")}
+                     </Label>
+                     <div className="relative">
+                       <User className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
+                       <Input 
+                          id="first-name"
+                          value={firstName} 
+                          onChange={(e) => setFirstName(e.target.value)} 
+                          placeholder={user.firstName || "First name"}
+                          className="pl-10 bg-background"
+                       />
+                     </div>
+                   </div>
+                   <div className="space-y-2">
+                     <Label htmlFor="last-name" className="font-semibold">
+                       {t("profile.changeName.lastLabel", "Last Name")}
+                     </Label>
+                     <div className="relative">
+                       <User className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
+                       <Input 
+                          id="last-name"
+                          value={lastName} 
+                          onChange={(e) => setLastName(e.target.value)} 
+                          placeholder={user.lastName || "Last name"}
+                          className="pl-10 bg-background"
+                       />
+                     </div>
+                   </div>
+                 </div>
+                 <div className="space-y-2">
+                   <Label htmlFor="name-confirm-pass" className="font-semibold">
+                     {t("profile.changeName.passwordLabel", { defaultValue: "Verify with Password" })}
+                   </Label>
+                   <div className="relative">
+                     <Lock className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
+                     <Input 
+                        id="name-confirm-pass"
+                        type={showNameConfirmPassword ? "text" : "password"}
+                        value={nameConfirmPassword} 
+                        onChange={(e) => setNameConfirmPassword(e.target.value)} 
+                        placeholder={t("profile.changeUsername.passwordPlaceholder", { defaultValue: "Enter current password" })}
+                        className="pl-10 pr-10 bg-background"
+                     />
+                     <button
+                       type="button"
+                       onClick={() => setShowNameConfirmPassword((s) => !s)}
+                       className="absolute right-3 top-3 p-1 text-muted-foreground hover:text-primary transition-colors"
+                       aria-label={showNameConfirmPassword ? t("auth.hidePassword", { defaultValue: "Hide password" }) : t("auth.showPassword", { defaultValue: "Show password" })}
+                     >
+                       <AnimatePresence mode="wait" initial={false}>
+                         <motion.div
+                           key={showNameConfirmPassword ? "hide" : "show"}
+                           initial={{ opacity: 0, scale: 0.8 }}
+                           animate={{ opacity: 1, scale: 1 }}
+                           exit={{ opacity: 0, scale: 0.8 }}
+                           transition={{ duration: 0.15 }}
+                         >
+                           {showNameConfirmPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+                         </motion.div>
+                       </AnimatePresence>
+                     </button>
+                   </div>
+                 </div>
+                 <Button 
+                   type="submit" 
+                   disabled={isChangingName || !firstName || !lastName || !nameConfirmPassword}
+                   className={`w-full bg-gradient-to-r ${theme.gradient} hover:opacity-90 transition-opacity`}
+                 >
+                   {isChangingName ? (
+                      <>
+                        <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                        {t("common.saving", { defaultValue: "Saving..." })}
+                      </>
+                   ) : (
+                      t("profile.changeName.submit", { defaultValue: "Update Name" })
                    )}
                  </Button>
               </form>
