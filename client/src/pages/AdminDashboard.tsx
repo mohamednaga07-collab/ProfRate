@@ -777,27 +777,24 @@ export default function AdminDashboard() {
                       <div className="flex-1 overflow-y-auto overflow-x-hidden">
                         <div className="h-24 bg-gradient-to-r from-blue-500 to-purple-500 relative w-full shrink-0">
                         </div>
-                        <div className="px-6 pb-6 relative">
-                          {/* Avatar overlapping the banner */}
-                          <div className="absolute -top-12 start-6">
-                            <Avatar className="h-24 w-24 border-4 border-background shadow-lg">
+                        <div className="px-6 pb-6">
+                          {/* Avatar + header row: avatar overlaps banner bottom */}
+                          <div className="flex items-end gap-4 -mt-8">
+                            <Avatar className="h-20 w-20 border-4 border-background shadow-lg shrink-0">
                               <AvatarImage src={editingUser?.profileImageUrl} alt={editingUser?.username} />
-                              <AvatarFallback className="text-2xl font-bold bg-primary/10 text-primary">
+                              <AvatarFallback className="text-xl font-bold bg-primary/10 text-primary">
                                 {editingUser?.username?.substring(0, 2).toUpperCase() || "??"}
                               </AvatarFallback>
                             </Avatar>
-                          </div>
-
-                          <div className="ms-28 pt-2 space-y-1">
-                            <div className="flex items-center gap-2">
-                              <h2 className="text-2xl font-bold">{editingUser?.firstName ? `${editingUser.firstName} ${editingUser.lastName}` : editingUser?.username}</h2>
-                              <Badge variant={editingUser?.role === "admin" ? "destructive" : editingUser?.role === "teacher" ? "default" : "secondary"}>
-                                {editingUser?.role && t(`roles.${editingUser.role}`)}
-                              </Badge>
+                            <div className="pb-1 space-y-0.5">
+                              <div className="flex items-center gap-2">
+                                <h2 className="text-2xl font-bold">{editingUser?.firstName ? `${editingUser.firstName} ${editingUser.lastName}` : editingUser?.username}</h2>
+                                <Badge variant={editingUser?.role === "admin" ? "destructive" : editingUser?.role === "teacher" ? "default" : "secondary"}>
+                                  {editingUser?.role && t(`roles.${editingUser.role}`)}
+                                </Badge>
+                              </div>
+                              <p className="text-muted-foreground text-sm">@{editingUser?.username}</p>
                             </div>
-                            <p className="text-muted-foreground flex items-center gap-1">
-                              @{editingUser?.username}
-                            </p>
                           </div>
 
                           <div className="mt-8 grid gap-4">

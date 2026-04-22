@@ -2311,51 +2311,45 @@ export async function registerRoutes(httpServer: Server, app: Express): Promise<
       const user = req.user as any;
       if (!user) return res.status(401).json({ message: "Unauthorized" });
 
+      // Always fetch fresh user from DB in case linkedDoctorId was recently updated
+      const freshUser = await storage.getUser(user.id) ?? user;
       const allDoctors = await storage.getAllDoctors();
       
       let matchedDoctors: any[] = [];
       
-      // 1. Unbreakable Explicit Match
-      if (user.linkedDoctorId) {
-        const doc = allDoctors.find(d => d.id === user.linkedDoctorId);
+      // 1. Unbreakable Explicit Match (linkedDoctorId wins)
+      if (freshUser.linkedDoctorId) {
+        const doc = allDoctors.find((d: any) => d.id === freshUser.linkedDoctorId);
         if (doc) matchedDoctors = [doc];
       }
 
       // 2. Fallback to Fuzzy Name Match
       if (matchedDoctors.length === 0) {
-        const fullName = [user.firstName, user.lastName].filter(Boolean).join(" ").trim().toLowerCase();
-        const normalize = (name: string) => name.replace(/^Dr\.?\s+/i, "").trim().toLowerCase();
+        const fullName = [freshUser.firstName, freshUser.lastName].filter(Boolean).join(" ").trim().toLowerCase();
+        const normalize = (name: string) => name.replace(/^(Dr\.?|Prof\.?)\s+/i, "").trim().toLowerCase();
         
-        matchedDoctors = fullName ? allDoctors.filter(d => normalize(d.name) === fullName) : [];
+        matchedDoctors = fullName ? allDoctors.filter((d: any) => normalize(d.name) === normalize(fullName)) : [];
         if (matchedDoctors.length === 0 && fullName) {
-          matchedDoctors = allDoctors.filter(d => 
+          matchedDoctors = allDoctors.filter((d: any) => 
             normalize(d.name).includes(fullName) || fullName.includes(normalize(d.name))
           );
         }
       }
       
-      let rating = 0;
-      let reviews = 0;
-      
-      if (matchedDoctors.length > 0) {
-        rating = matchedDoctors[0].ratings?.overallRating ?? 0;
-        reviews = matchedDoctors[0].ratings?.totalReviews ?? 0;
-      } else {
-        // Fallback: show platform-wide averages so the teacher still sees meaningful data
-        const doctorsWithRatings = allDoctors.filter(d => d.ratings && (d.ratings.totalReviews ?? 0) > 0);
-        if (doctorsWithRatings.length > 0) {
-          const avgRating = doctorsWithRatings.reduce((s, d) => s + (d.ratings?.overallRating ?? 0), 0) / doctorsWithRatings.length;
-          const totalReviews = doctorsWithRatings.reduce((s, d) => s + (d.ratings?.totalReviews ?? 0), 0);
-          rating = parseFloat(avgRating.toFixed(1));
-          reviews = totalReviews;
-        }
+      if (matchedDoctors.length === 0) {
+        // No match — return zero stats so teacher knows they have no profile yet
+        return res.json({ rating: 0, students: 0, reviews: 0, matched: false });
       }
+
+      const doctor = matchedDoctors[0];
+      const rating = doctor.ratings?.overallRating ?? 0;
+      const reviews = doctor.ratings?.totalReviews ?? 0;
       
       // Calculate students count from teacherClasses table
-      const classes = await storage.getTeacherClasses?.({ userId: user.id }) ?? [];
+      const classes = await storage.getTeacherClasses?.({ userId: freshUser.id }) ?? [];
       const students = classes.reduce((sum: number, c: any) => sum + (c.studentCount || 0), 0);
       
-      res.json({ rating, students, reviews });
+      res.json({ rating, students, reviews, matched: true });
     } catch (err: any) {
       console.error(err);
       res.status(500).json({ message: "Failed to fetch teacher stats" });

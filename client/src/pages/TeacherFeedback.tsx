@@ -109,7 +109,7 @@ export default function TeacherFeedback() {
           <div className="flex justify-center py-32">
             <div className="h-12 w-12 animate-spin rounded-full border-4 border-purple-500 border-t-transparent shadow-[0_0_15px_rgba(168,85,247,0.5)]" />
           </div>
-        ) : !data?.matched ? (
+        ) : data?.matched === false ? (
           <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }}>
             <Alert className="border-amber-500/30 bg-amber-500/10 backdrop-blur-xl mb-6 py-8 shadow-2xl relative overflow-hidden">
               <div className="absolute top-0 right-0 w-64 h-64 bg-amber-500/10 rounded-full blur-3xl -mr-20 -mt-20 pointer-events-none" />
