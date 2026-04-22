@@ -77,24 +77,26 @@ export default function TeacherPortfolio() {
   const displayData = editing ? form : (portfolio ?? form);
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-background via-background to-blue-500/5">
+    <div className="min-h-screen bg-black text-slate-100 font-sans selection:bg-blue-500/30">
+      <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_top_right,_var(--tw-gradient-stops))] from-blue-900/20 via-background to-background pointer-events-none" />
       <Header />
-      <main className="container mx-auto px-4 py-8 max-w-4xl">
+      <main className="container mx-auto px-4 py-8 max-w-4xl relative z-10">
         <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} className="mb-8">
           <div className="flex items-center justify-between flex-wrap gap-4">
-            <div className="flex items-center gap-3">
-              <div className="p-3 rounded-xl bg-blue-500/10 border border-blue-200 dark:border-blue-800">
-                <BookOpen className="h-6 w-6 text-blue-500" />
+            <div className="flex items-center gap-4">
+              <div className="p-4 rounded-2xl bg-gradient-to-br from-blue-500 to-blue-600 shadow-[0_0_30px_rgba(59,130,246,0.3)]">
+                <BookOpen className="h-8 w-8 text-white" />
               </div>
               <div>
-                <h1 className="text-3xl font-bold">{t("teacherPortfolio.title")}</h1>
-                <p className="text-muted-foreground">{t("teacherPortfolio.subtitle")}</p>
+                <h1 className="text-4xl font-extrabold tracking-tight text-white mb-1">{t("teacherPortfolio.title")}</h1>
+                <p className="text-blue-200/70 text-lg">{t("teacherPortfolio.subtitle")}</p>
               </div>
             </div>
             <Button
               onClick={() => editing ? saveMutation.mutate(form) : setEditing(true)}
               disabled={saveMutation.isPending || isError}
-              className="gap-2"
+              className={`gap-2 ${editing ? 'bg-blue-600 hover:bg-blue-700 text-white' : 'bg-white/5 border-white/10 text-white hover:bg-white/10'} backdrop-blur-md`}
+              variant={editing ? "default" : "outline"}
             >
               {editing ? <><Save className="h-4 w-4" />{t("teacherPortfolio.saveChanges")}</> : <><Edit2 className="h-4 w-4" />{t("teacherPortfolio.editPortfolio")}</>}
             </Button>
@@ -103,15 +105,15 @@ export default function TeacherPortfolio() {
 
         {isLoading ? (
           <div className="flex items-center justify-center py-24">
-            <div className="h-8 w-8 animate-spin rounded-full border-4 border-primary border-t-transparent" />
+            <div className="h-8 w-8 animate-spin rounded-full border-4 border-blue-500 border-t-transparent" />
           </div>
         ) : isError ? (
           <div className="flex flex-col items-center justify-center py-24 text-center">
-            <div className="h-16 w-16 mb-4 rounded-full bg-red-100 dark:bg-red-900/20 flex items-center justify-center">
+            <div className="h-16 w-16 mb-4 rounded-full bg-red-500/10 border border-red-500/20 flex items-center justify-center">
               <span className="text-red-500 text-3xl font-bold">!</span>
             </div>
-            <h2 className="text-xl font-bold mb-2">{t("system.error.title", { defaultValue: "Connection Error" })}</h2>
-            <p className="text-muted-foreground max-w-md">
+            <h2 className="text-xl font-bold mb-2 text-white">{t("system.error.title", { defaultValue: "Connection Error" })}</h2>
+            <p className="text-white/50 max-w-md">
               {t("system.error.description", { defaultValue: "The system is currently unavailable. This is usually due to a degraded connection. Please try again later." })}
             </p>
           </div>
@@ -119,10 +121,10 @@ export default function TeacherPortfolio() {
           <div className="space-y-6">
             {/* Portfolio Title */}
             <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.1 }}>
-              <Card className="bg-card/80 backdrop-blur">
+              <Card className="backdrop-blur-2xl bg-[#0a0f1c]/80 border-white/5 shadow-2xl relative overflow-hidden transition-all hover:border-white/20">
                 <CardHeader>
-                  <CardTitle className="flex items-center gap-2 text-lg">
-                    <Sparkles className="h-5 w-5 text-yellow-500" /> {t("teacherPortfolio.portfolioTitle.label")}
+                  <CardTitle className="flex items-center gap-2 text-lg text-white">
+                    <Sparkles className="h-5 w-5 text-blue-400" /> {t("teacherPortfolio.portfolioTitle.label")}
                   </CardTitle>
                 </CardHeader>
                 <CardContent>
@@ -131,10 +133,11 @@ export default function TeacherPortfolio() {
                       value={form.title ?? ""}
                       onChange={e => setForm(f => ({ ...f, title: e.target.value }))}
                       placeholder={t("teacherPortfolio.portfolioTitle.placeholder")}
+                      className="bg-white/5 border-white/10 text-white placeholder:text-white/30 focus-visible:ring-blue-500"
                     />
                   ) : (
-                    <p className="text-xl font-semibold text-primary">
-                      {displayData?.title || <span className="text-muted-foreground italic">{t("teacherPortfolio.portfolioTitle.empty")}</span>}
+                    <p className="text-xl font-semibold text-white">
+                      {displayData?.title || <span className="text-white/40 italic">{t("teacherPortfolio.portfolioTitle.empty")}</span>}
                     </p>
                   )}
                 </CardContent>
@@ -143,12 +146,12 @@ export default function TeacherPortfolio() {
 
             {/* Teaching Philosophy */}
             <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.15 }}>
-              <Card className="bg-card/80 backdrop-blur">
+              <Card className="backdrop-blur-2xl bg-[#0a0f1c]/80 border-white/5 shadow-2xl relative overflow-hidden transition-all hover:border-white/20">
                 <CardHeader>
-                  <CardTitle className="flex items-center gap-2 text-lg">
-                    <FileText className="h-5 w-5 text-purple-500" /> {t("teacherPortfolio.philosophy.label")}
+                  <CardTitle className="flex items-center gap-2 text-lg text-white">
+                    <FileText className="h-5 w-5 text-purple-400" /> {t("teacherPortfolio.philosophy.label")}
                   </CardTitle>
-                  <CardDescription>{t("teacherPortfolio.philosophy.desc")}</CardDescription>
+                  <CardDescription className="text-white/40">{t("teacherPortfolio.philosophy.desc")}</CardDescription>
                 </CardHeader>
                 <CardContent>
                   {editing ? (
@@ -156,11 +159,11 @@ export default function TeacherPortfolio() {
                       value={form.philosophy ?? ""}
                       onChange={e => setForm(f => ({ ...f, philosophy: e.target.value }))}
                       placeholder={t("teacherPortfolio.philosophy.placeholder")}
-                      className="min-h-[140px] resize-none"
+                      className="min-h-[140px] resize-none bg-white/5 border-white/10 text-white placeholder:text-white/30 focus-visible:ring-blue-500"
                     />
                   ) : (
-                    <p className="text-base leading-relaxed whitespace-pre-wrap text-foreground/90">
-                      {displayData?.philosophy || <span className="text-muted-foreground italic">{t("teacherPortfolio.philosophy.empty")}</span>}
+                    <p className="text-base leading-relaxed whitespace-pre-wrap text-white/80">
+                      {displayData?.philosophy || <span className="text-white/40 italic">{t("teacherPortfolio.philosophy.empty")}</span>}
                     </p>
                   )}
                 </CardContent>
@@ -169,12 +172,12 @@ export default function TeacherPortfolio() {
 
             {/* Syllabus Link */}
             <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.2 }}>
-              <Card className="bg-card/80 backdrop-blur">
+              <Card className="backdrop-blur-2xl bg-[#0a0f1c]/80 border-white/5 shadow-2xl relative overflow-hidden transition-all hover:border-white/20">
                 <CardHeader>
-                  <CardTitle className="flex items-center gap-2 text-lg">
-                    <ExternalLink className="h-5 w-5 text-green-500" /> {t("teacherPortfolio.syllabus.label")}
+                  <CardTitle className="flex items-center gap-2 text-lg text-white">
+                    <ExternalLink className="h-5 w-5 text-green-400" /> {t("teacherPortfolio.syllabus.label")}
                   </CardTitle>
-                  <CardDescription>{t("teacherPortfolio.syllabus.desc")}</CardDescription>
+                  <CardDescription className="text-white/40">{t("teacherPortfolio.syllabus.desc")}</CardDescription>
                 </CardHeader>
                 <CardContent>
                   {editing ? (
@@ -183,18 +186,19 @@ export default function TeacherPortfolio() {
                       onChange={e => setForm(f => ({ ...f, syllabusUrl: e.target.value }))}
                       placeholder="https://..."
                       type="url"
+                      className="bg-white/5 border-white/10 text-white placeholder:text-white/30 focus-visible:ring-blue-500"
                     />
                   ) : displayData?.syllabusUrl ? (
                     <a
                       href={displayData.syllabusUrl}
                       target="_blank"
                       rel="noopener noreferrer"
-                      className="text-primary hover:underline flex items-center gap-2 font-medium"
+                      className="text-blue-400 hover:text-blue-300 hover:underline flex items-center gap-2 font-medium transition-colors"
                     >
                       <Eye className="h-4 w-4" /> {t("teacherPortfolio.syllabus.view")}
                     </a>
                   ) : (
-                    <p className="text-muted-foreground italic">{t("teacherPortfolio.syllabus.empty")}</p>
+                    <p className="text-white/40 italic">{t("teacherPortfolio.syllabus.empty")}</p>
                   )}
                 </CardContent>
               </Card>
@@ -202,50 +206,50 @@ export default function TeacherPortfolio() {
 
             {/* Course Materials */}
             <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.25 }}>
-              <Card className="bg-card/80 backdrop-blur">
+              <Card className="backdrop-blur-2xl bg-[#0a0f1c]/80 border-white/5 shadow-2xl relative overflow-hidden transition-all hover:border-white/20">
                 <CardHeader>
-                  <CardTitle className="flex items-center gap-2 text-lg">
-                    <BookOpen className="h-5 w-5 text-orange-500" /> {t("teacherPortfolio.materials.label")}
+                  <CardTitle className="flex items-center gap-2 text-lg text-white">
+                    <BookOpen className="h-5 w-5 text-orange-400" /> {t("teacherPortfolio.materials.label")}
                   </CardTitle>
-                  <CardDescription>{t("teacherPortfolio.materials.desc")}</CardDescription>
+                  <CardDescription className="text-white/40">{t("teacherPortfolio.materials.desc")}</CardDescription>
                 </CardHeader>
                 <CardContent className="space-y-4">
                   {((displayData?.materials ?? []) as Material[]).map((m, i) => (
-                    <div key={i} className="flex items-center justify-between gap-3 p-3 rounded-lg bg-muted/50 border">
+                    <div key={i} className="flex items-center justify-between gap-3 p-4 rounded-xl bg-white/5 border border-white/10 hover:border-white/20 transition-colors">
                       <div className="flex-1 min-w-0">
-                        <p className="font-medium truncate">{m.title}</p>
+                        <p className="font-medium text-white truncate">{m.title}</p>
                         {m.url && (
                           <a href={m.url} target="_blank" rel="noopener noreferrer"
-                            className="text-sm text-primary hover:underline truncate block">
+                            className="text-sm text-blue-400 hover:text-blue-300 hover:underline truncate block mt-1 transition-colors">
                             {m.url}
                           </a>
                         )}
                       </div>
                       {editing && (
-                        <Button variant="ghost" size="icon" onClick={() => removeMaterial(i)}>
-                          <Trash2 className="h-4 w-4 text-destructive" />
+                        <Button variant="ghost" size="icon" onClick={() => removeMaterial(i)} className="text-white/50 hover:text-red-400 hover:bg-red-500/10">
+                          <Trash2 className="h-4 w-4" />
                         </Button>
                       )}
                     </div>
                   ))}
                   {((displayData?.materials ?? []) as Material[]).length === 0 && !editing && (
-                    <p className="text-muted-foreground italic">{t("teacherPortfolio.materials.empty")}</p>
+                    <p className="text-white/40 italic">{t("teacherPortfolio.materials.empty")}</p>
                   )}
                   {editing && (
-                    <div className="flex gap-2 flex-wrap pt-2">
+                    <div className="flex gap-3 flex-wrap pt-4 mt-4 border-t border-white/10">
                       <Input
                         value={newMat.title}
                         onChange={e => setNewMat(n => ({ ...n, title: e.target.value }))}
                         placeholder={t("teacherPortfolio.materials.titlePlaceholder")}
-                        className="flex-1 min-w-[160px]"
+                        className="flex-1 min-w-[160px] bg-white/5 border-white/10 text-white placeholder:text-white/30 focus-visible:ring-blue-500"
                       />
                       <Input
                         value={newMat.url}
                         onChange={e => setNewMat(n => ({ ...n, url: e.target.value }))}
                         placeholder={t("teacherPortfolio.materials.urlPlaceholder")}
-                        className="flex-1 min-w-[160px]"
+                        className="flex-1 min-w-[160px] bg-white/5 border-white/10 text-white placeholder:text-white/30 focus-visible:ring-blue-500"
                       />
-                      <Button type="button" variant="outline" onClick={addMaterial} className="gap-1">
+                      <Button type="button" variant="outline" onClick={addMaterial} className="gap-1 bg-white/5 border-white/10 text-white hover:bg-white/10">
                         <Plus className="h-4 w-4" /> {t("teacherPortfolio.materials.add")}
                       </Button>
                     </div>

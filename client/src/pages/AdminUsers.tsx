@@ -30,9 +30,11 @@ export default function AdminUsers() {
   const queryClient = useQueryClient();
   const [selectedUser, setSelectedUser] = useState<any>(null);
   const [newRole, setNewRole] = useState<string>("");
-  const [isDialogOpen, setIsDialogOpen] = useState(false);
-
+  const [newFirstName, setNewFirstName] = useState<string>("");
+  const [newLastName, setNewLastName] = useState<string>("");
+  const [newUsername, setNewUsername] = useState<string>("");
   const [newLinkedDoctorId, setNewLinkedDoctorId] = useState<string>("none");
+  const [isDialogOpen, setIsDialogOpen] = useState(false);
 
   const { data: users, isLoading, error } = useQuery({
     queryKey: ["/api/admin/users"],
@@ -52,22 +54,26 @@ export default function AdminUsers() {
     },
   });
 
-  const updateRoleMutation = useMutation({
-    mutationFn: async ({ userId, role }: { userId: number; role: string }) => {
-      const res = await apiRequest("PATCH", `/api/admin/users/${userId}/role`, { role });
+  const updateDetailsMutation = useMutation({
+    mutationFn: async ({ userId, data }: { userId: number; data: any }) => {
+      const res = await apiRequest("PATCH", `/api/admin/users/${userId}/details`, data);
+      if (!res.ok) {
+         const errorData = await res.json();
+         throw new Error(errorData.message || "Update failed");
+      }
       return res.json();
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["/api/admin/users"] });
       toast({
-        title: t("admin.success.roleUpdated", { defaultValue: "Role updated successfully" }),
-        description: t("admin.success.roleUpdatedDesc", { defaultValue: "The user's role has been changed." }),
+        title: "User Updated",
+        description: "The user's details and role have been updated.",
       });
       setIsDialogOpen(false);
     },
     onError: (error: any) => {
         toast({
-            title: t("admin.errors.updateFailed", { defaultValue: "Update failed" }),
+            title: "Update failed",
             description: error.message,
             variant: "destructive",
         });
@@ -90,29 +96,24 @@ export default function AdminUsers() {
 
   const handleSaveChanges = () => {
     if (selectedUser) {
-      let isUpdating = false;
+      // First update details (which also updates role and might auto-link)
+      updateDetailsMutation.mutate({ 
+        userId: selectedUser.id, 
+        data: {
+           firstName: newFirstName,
+           lastName: newLastName,
+           username: newUsername,
+           role: newRole
+        }
+      });
 
-      // Update role if changed
-      if (newRole && newRole !== selectedUser.role) {
-        updateRoleMutation.mutate({ userId: selectedUser.id, role: newRole });
-        isUpdating = true;
-      }
-
-      // Update linked doctor if changed
+      // Update linked doctor if explicitly changed manually
       const currentLinkedIdStr = selectedUser.linkedDoctorId ? String(selectedUser.linkedDoctorId) : "none";
       if (newRole === "teacher" && newLinkedDoctorId !== currentLinkedIdStr) {
         linkDoctorMutation.mutate({ 
           userId: selectedUser.id, 
           doctorId: newLinkedDoctorId === "none" ? null : parseInt(newLinkedDoctorId, 10) 
         });
-        isUpdating = true;
-      }
-
-      // If user isn't teacher but had a linked doctor, optionally unlink? 
-      // We'll leave it simple for now and only link if role was/is teacher.
-
-      if (!isUpdating) {
-        setIsDialogOpen(false);
       }
     }
   };
@@ -120,6 +121,9 @@ export default function AdminUsers() {
   const openEditDialog = (user: any) => {
     setSelectedUser(user);
     setNewRole(user.role);
+    setNewFirstName(user.firstName || "");
+    setNewLastName(user.lastName || "");
+    setNewUsername(user.username || "");
     setNewLinkedDoctorId(user.linkedDoctorId ? String(user.linkedDoctorId) : "none");
     setIsDialogOpen(true);
   };
@@ -206,28 +210,45 @@ export default function AdminUsers() {
                                 className="h-8" 
                                 onClick={() => openEditDialog(user)}
                                 disabled={currentUser?.id === user.id}
-                                title={currentUser?.id === user.id ? t("admin.tooltips.cannotEditSelf", { defaultValue: "You cannot edit your own role" }) : t("admin.actions.editRole", { defaultValue: "Edit Role" })}
+                                title={currentUser?.id === user.id ? t("admin.tooltips.cannotEditSelf", { defaultValue: "You cannot edit your own role" }) : t("admin.actions.editRole", { defaultValue: "Edit Details" })}
                             >
                                 <Edit className="h-3.5 w-3.5 mr-2" />
-                                {t("common.edit", { defaultValue: "Edit" })}
+                                Edit
                             </Button>
                         </DialogTrigger>
                         <DialogContent>
                             <DialogHeader>
-                                <DialogTitle>{t("admin.actions.changeRole", { defaultValue: "Change User Role" })}</DialogTitle>
+                                <DialogTitle>Edit User Details</DialogTitle>
                             </DialogHeader>
                             <div className="py-6 space-y-4">
-                                <div className="p-4 bg-muted rounded-lg space-y-2">
-                                    <div className="text-sm font-medium text-muted-foreground">{t("admin.labels.user", { defaultValue: "User" })}</div>
-                                    <div className="font-semibold flex items-center gap-2">
-                                        <div className="h-8 w-8 rounded-full bg-primary/10 flex items-center justify-center text-primary text-xs">
-                                            {user.firstName?.[0]}{user.lastName?.[0]}
-                                        </div>
-                                        <div>
-                                            <div>{user.firstName} {user.lastName}</div>
-                                            <div className="text-xs text-muted-foreground font-normal">{user.email}</div>
-                                        </div>
+                                <div className="grid grid-cols-2 gap-4">
+                                    <div className="space-y-2">
+                                        <label className="text-sm font-medium">First Name</label>
+                                        <input 
+                                            className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background file:border-0 file:bg-transparent file:text-sm file:font-medium placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
+                                            value={newFirstName}
+                                            onChange={(e) => setNewFirstName(e.target.value)}
+                                            placeholder="First Name"
+                                        />
                                     </div>
+                                    <div className="space-y-2">
+                                        <label className="text-sm font-medium">Last Name</label>
+                                        <input 
+                                            className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background file:border-0 file:bg-transparent file:text-sm file:font-medium placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
+                                            value={newLastName}
+                                            onChange={(e) => setNewLastName(e.target.value)}
+                                            placeholder="Last Name"
+                                        />
+                                    </div>
+                                </div>
+                                <div className="space-y-2">
+                                    <label className="text-sm font-medium">Username</label>
+                                    <input 
+                                        className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background file:border-0 file:bg-transparent file:text-sm file:font-medium placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
+                                        value={newUsername}
+                                        onChange={(e) => setNewUsername(e.target.value)}
+                                        placeholder="Username"
+                                    />
                                 </div>
                                 <div className="space-y-2">
                                     <label className="text-sm font-medium">{t("admin.labels.selectRole")}</label>
@@ -259,14 +280,14 @@ export default function AdminUsers() {
                                 </div>
                                 {newRole === "teacher" && (
                                     <div className="space-y-2 mt-4">
-                                        <label className="text-sm font-medium">Link Doctor Profile</label>
+                                        <label className="text-sm font-medium">Link Doctor Profile (Optional Override)</label>
                                         <Select value={newLinkedDoctorId} onValueChange={setNewLinkedDoctorId}>
                                             <SelectTrigger>
                                                 <SelectValue placeholder="Select doctor profile to link..." />
                                             </SelectTrigger>
                                             <SelectContent>
                                                 <SelectItem value="none">
-                                                    <div className="text-muted-foreground italic">No profile linked</div>
+                                                    <div className="text-muted-foreground italic">Auto-link based on name</div>
                                                 </SelectItem>
                                                 {doctors.map((doc: any) => (
                                                     <SelectItem key={doc.id} value={String(doc.id)}>
@@ -276,7 +297,7 @@ export default function AdminUsers() {
                                             </SelectContent>
                                         </Select>
                                         <p className="text-xs text-muted-foreground">
-                                            Linking a profile guarantees this user's Teacher Dashboard connects to the correct data.
+                                            If set to 'Auto-link', the system will automatically match the profile using the First and Last name.
                                         </p>
                                     </div>
                                 )}
@@ -287,10 +308,10 @@ export default function AdminUsers() {
                                 </DialogClose>
                                 <Button 
                                   onClick={handleSaveChanges} 
-                                  disabled={updateRoleMutation.isPending || linkDoctorMutation.isPending} 
+                                  disabled={updateDetailsMutation.isPending || linkDoctorMutation.isPending} 
                                   className="min-w-[100px]"
                                 >
-                                    {updateRoleMutation.isPending || linkDoctorMutation.isPending ? <Loader2 className="h-4 w-4 animate-spin" /> : t("common.save", { defaultValue: "Save Changes" })}
+                                    {updateDetailsMutation.isPending || linkDoctorMutation.isPending ? <Loader2 className="h-4 w-4 animate-spin" /> : t("common.save", { defaultValue: "Save Changes" })}
                                 </Button>
                             </DialogFooter>
                         </DialogContent>

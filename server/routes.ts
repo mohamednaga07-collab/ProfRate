@@ -1833,6 +1833,102 @@ export async function registerRoutes(httpServer: Server, app: Express): Promise<
     }
   });
 
+  // Update user details (Admin)
+  app.patch("/api/admin/users/:userId/details", isAdmin, validateCsrfHeader, async (req, res) => {
+    try {
+      const { userId } = req.params;
+      const { firstName, lastName, username, role } = req.body;
+      
+      const user = await storage.getUser(userId);
+      if (!user) {
+        return res.status(404).json({ message: "User not found" });
+      }
+
+      // If username is changing, ensure it's not taken
+      if (username && username !== user.username) {
+        const existing = await storage.getUserByUsername(username);
+        if (existing) {
+          return res.status(400).json({ message: "Username already taken" });
+        }
+      }
+
+      const updatedUser = await storage.updateUser(userId, {
+        firstName: firstName !== undefined ? firstName : user.firstName,
+        lastName: lastName !== undefined ? lastName : user.lastName,
+        username: username !== undefined ? username : user.username,
+        role: role !== undefined ? role : user.role,
+      });
+
+      // If user is a teacher or role changed to teacher, attempt to auto-link
+      if (updatedUser.role === "teacher") {
+        const allDoctors = await storage.getAllDoctors();
+        const normalize = (name: string) => name.replace(/^(Dr\.?|Prof\.?)\s+/i, "").trim().toLowerCase();
+        
+        const fName = updatedUser.firstName || "";
+        const lName = updatedUser.lastName || "";
+        const fullName = [fName, lName].filter(Boolean).join(" ").trim().toLowerCase();
+        const searchName = fullName || (updatedUser.username || "").trim().toLowerCase();
+        const normalizedSearchName = normalize(searchName);
+
+        let matchedDoctors = searchName ? allDoctors.filter(d => normalize(d.name) === normalizedSearchName) : [];
+        if (matchedDoctors.length === 0 && searchName) {
+           matchedDoctors = allDoctors.filter(d => {
+             const docName = normalize(d.name);
+             return docName.includes(normalizedSearchName) || normalizedSearchName.includes(docName);
+           });
+        }
+        
+        let linkedId = updatedUser.linkedDoctorId;
+
+        if (matchedDoctors.length > 0) {
+           linkedId = matchedDoctors[0].id;
+           await storage.linkUserToDoctor(userId, linkedId);
+           console.log(`✅ [Admin Auto-Link] Linked ${updatedUser.username} to doctor ID: ${linkedId}`);
+        } else if (updatedUser.username === "Sample_Teacher" || updatedUser.username === "Sample Teacher" || fullName === "sample teacher") {
+           // Development Fallback for the Sample Teacher account
+           try {
+             console.log(`[Admin Auto-Link] Development fallback triggered: Creating 'Dr. Sample Teacher' on the fly.`);
+             const newDoc = await storage.createDoctor({
+               name: "Dr. Sample Teacher",
+               department: "Software Engineering",
+               title: "Professor",
+               bio: "Sample professor account generated for demonstration purposes."
+             });
+             linkedId = newDoc.id;
+             await storage.linkUserToDoctor(userId, linkedId);
+             console.log(`✅ [Admin Auto-Link] Created & Linked to new doctor ID: ${linkedId}`);
+           } catch (err) {
+             console.error("Failed to create fallback sample doctor:", err);
+           }
+        }
+        
+        // Also apply role change if necessary since linkUserToDoctor might update it
+        if (role === "teacher") {
+          await storage.updateUserRole(userId, "teacher");
+        }
+      }
+
+      // Log the action
+      const adminUser = await storage.getUser(getUserId(req)!);
+      if (adminUser) {
+        await storage.logActivity({
+          userId: adminUser.id,
+          username: adminUser.username || "Unknown",
+          role: adminUser.role,
+          action: `Updated details for user ${updatedUser.username}`,
+          type: "admin_action",
+          ipAddress: req.ip,
+          userAgent: req.headers["user-agent"],
+        });
+      }
+
+      res.json({ message: "User updated successfully", user: updatedUser });
+    } catch (error: any) {
+      console.error("Error updating user details:", error);
+      res.status(500).json({ message: `Failed to update user: ${error.message}` });
+    }
+  });
+
   // Delete user
   app.delete("/api/admin/users/:userId", isAdmin, validateCsrfHeader, async (req, res) => {
     try {

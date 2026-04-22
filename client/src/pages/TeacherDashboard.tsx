@@ -193,7 +193,8 @@ export default function TeacherDashboard() {
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-background via-background to-muted/20">
+    <div className="min-h-screen bg-black text-slate-100 font-sans selection:bg-blue-500/30">
+      <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_top_right,_var(--tw-gradient-stops))] from-blue-900/20 via-background to-background pointer-events-none" />
       <Header />
       
       {/* Hero Section with Infinite Continuous Strip Carousel */}
@@ -345,11 +346,11 @@ export default function TeacherDashboard() {
               transition={{ duration: 0.5, delay: 0.1 }}
               className="flex items-center justify-between mb-4"
             >
-              <h2 className="text-lg font-semibold text-muted-foreground tracking-wide uppercase text-xs">Your Performance</h2>
+              <h2 className="text-lg font-semibold text-white/50 tracking-wide uppercase text-xs">Your Performance</h2>
               <Button
                 variant="outline"
                 size="sm"
-                className="gap-2"
+                className="gap-2 bg-white/5 border-white/10 text-white hover:bg-white/10 backdrop-blur-md"
                 onClick={() => setIsComposeOpen(true)}
               >
                 <MessageSquare className="h-4 w-4" />
@@ -364,73 +365,73 @@ export default function TeacherDashboard() {
             >
               {teacherReviews[0] && (
                 <>
-                  <Card className="bg-gradient-to-br from-blue-500/10 to-blue-600/5 border-blue-200 dark:border-blue-800 backdrop-blur">
-                    <CardContent className="pt-6">
+                  <Card className="bg-gradient-to-br from-blue-500/20 to-blue-600/5 border border-blue-500/20 backdrop-blur-xl relative overflow-hidden group hover:border-white/20 transition-all duration-300">
+                    <div className="absolute top-0 right-0 p-4 opacity-20 group-hover:opacity-40 transition-opacity group-hover:scale-110 duration-500">
+                      <Award className="w-16 h-16 text-blue-400" />
+                    </div>
+                    <CardContent className="pt-6 relative z-10">
                       <div className="flex items-center justify-between">
                         <div>
-                          <p className="text-sm font-medium text-muted-foreground mb-1">{t("teacherDashboard.stats.overallRating")}</p>
-                          <p className="text-3xl font-bold text-blue-600 dark:text-blue-400">
+                          <p className="text-sm font-medium text-white/50 uppercase tracking-wider mb-1">{t("teacherDashboard.stats.overallRating")}</p>
+                          <p className="text-3xl font-black text-blue-400">
                             {teacherReviews[0].ratings?.overallRating.toFixed(1)}
                           </p>
-                          <p className="text-xs text-muted-foreground mt-1">{t("teacherDashboard.stats.overallRatingLabel")}</p>
-                        </div>
-                        <div className="h-12 w-12 rounded-full bg-blue-500/20 flex items-center justify-center">
-                          <Award className="h-6 w-6 text-blue-600 dark:text-blue-400" />
+                          <p className="text-xs text-white/30 mt-1">{t("teacherDashboard.stats.overallRatingLabel")}</p>
                         </div>
                       </div>
                     </CardContent>
                   </Card>
 
-                  <Card className="bg-gradient-to-br from-green-500/10 to-green-600/5 border-green-200 dark:border-green-800 backdrop-blur">
-                    <CardContent className="pt-6">
+                  <Card className="bg-gradient-to-br from-green-500/20 to-green-600/5 border border-green-500/20 backdrop-blur-xl relative overflow-hidden group hover:border-white/20 transition-all duration-300">
+                    <div className="absolute top-0 right-0 p-4 opacity-20 group-hover:opacity-40 transition-opacity group-hover:scale-110 duration-500">
+                      <MessageSquare className="w-16 h-16 text-green-400" />
+                    </div>
+                    <CardContent className="pt-6 relative z-10">
                       <div className="flex items-center justify-between">
                         <div>
-                          <p className="text-sm font-medium text-muted-foreground mb-1">{t("teacherDashboard.stats.totalReviews")}</p>
-                          <p className="text-3xl font-bold text-green-600 dark:text-green-400">
+                          <p className="text-sm font-medium text-white/50 uppercase tracking-wider mb-1">{t("teacherDashboard.stats.totalReviews")}</p>
+                          <p className="text-3xl font-black text-green-400">
                             {teacherReviews[0].ratings?.totalReviews ?? 0}
                           </p>
-                          <p className="text-xs text-muted-foreground mt-1">{t("teacherDashboard.stats.totalReviewsLabel")}</p>
-                        </div>
-                        <div className="h-12 w-12 rounded-full bg-green-500/20 flex items-center justify-center">
-                          <MessageSquare className="h-6 w-6 text-green-600 dark:text-green-400" />
+                          <p className="text-xs text-white/30 mt-1">{t("teacherDashboard.stats.totalReviewsLabel")}</p>
                         </div>
                       </div>
                     </CardContent>
                   </Card>
 
-                  <Card className="bg-gradient-to-br from-purple-500/10 to-purple-600/5 border-purple-200 dark:border-purple-800 backdrop-blur">
-                    <CardContent className="pt-6">
+                  <Card className="bg-gradient-to-br from-purple-500/20 to-purple-600/5 border border-purple-500/20 backdrop-blur-xl relative overflow-hidden group hover:border-white/20 transition-all duration-300">
+                    <div className="absolute top-0 right-0 p-4 opacity-20 group-hover:opacity-40 transition-opacity group-hover:scale-110 duration-500">
+                      <Target className="w-16 h-16 text-purple-400" />
+                    </div>
+                    <CardContent className="pt-6 relative z-10">
                       <div className="flex items-center justify-between">
                         <div>
-                          <p className="text-sm font-medium text-muted-foreground mb-1">{t("teacherDashboard.stats.topStrength")}</p>
-                          <p className="text-3xl font-bold text-purple-600 dark:text-purple-400">
+                          <p className="text-sm font-medium text-white/50 uppercase tracking-wider mb-1">{t("teacherDashboard.stats.topStrength")}</p>
+                          <p className="text-3xl font-black text-purple-400">
                             {Math.max(
                               teacherReviews[0].ratings?.avgTeachingQuality ?? 0,
                               teacherReviews[0].ratings?.avgKnowledge ?? 0,
                               teacherReviews[0].ratings?.avgCommunication ?? 0
                             ).toFixed(1)}
                           </p>
-                          <p className="text-xs text-muted-foreground mt-1">{t("teacherDashboard.stats.topStrengthLabel")}</p>
-                        </div>
-                        <div className="h-12 w-12 rounded-full bg-purple-500/20 flex items-center justify-center">
-                          <Target className="h-6 w-6 text-purple-600 dark:text-purple-400" />
+                          <p className="text-xs text-white/30 mt-1">{t("teacherDashboard.stats.topStrengthLabel")}</p>
                         </div>
                       </div>
                     </CardContent>
                   </Card>
 
-                  <Card className="bg-gradient-to-br from-orange-500/10 to-orange-600/5 border-orange-200 dark:border-orange-800 backdrop-blur">
-                    <CardContent className="pt-6">
+                  <Card className="bg-gradient-to-br from-orange-500/20 to-orange-600/5 border border-orange-500/20 backdrop-blur-xl relative overflow-hidden group hover:border-white/20 transition-all duration-300">
+                    <div className="absolute top-0 right-0 p-4 opacity-20 group-hover:opacity-40 transition-opacity group-hover:scale-110 duration-500">
+                      <TrendingUp className="w-16 h-16 text-orange-400" />
+                    </div>
+                    <CardContent className="pt-6 relative z-10">
                       <div className="flex items-center justify-between">
                         <div>
-                          <p className="text-sm font-medium text-muted-foreground mb-1">{t("teacherDashboard.stats.engagement")}</p>
-                          <p className="text-3xl font-bold text-orange-600 dark:text-orange-400">
+                          <p className="text-sm font-medium text-white/50 uppercase tracking-wider mb-1">{t("teacherDashboard.stats.engagement")}</p>
+                          <p className="text-3xl font-black text-orange-400">
                             {((teacherReviews[0].ratings?.avgAvailability ?? 0) * 20).toFixed(0)}%
                           </p>
-                          <p className="text-xs text-muted-foreground mt-1">{t("teacherDashboard.stats.engagementLabel")}</p>
-                        </div>
-                        <div className="h-12 w-12 rounded-full bg-orange-500/20 flex items-center justify-center">
-                          <TrendingUp className="h-6 w-6 text-orange-600 dark:text-orange-400" />
+                          <p className="text-xs text-white/30 mt-1">{t("teacherDashboard.stats.engagementLabel")}</p>
                         </div>
                       </div>
                     </CardContent>
@@ -447,19 +448,19 @@ export default function TeacherDashboard() {
                 animate={{ opacity: 1, x: 0 }}
                 transition={{ duration: 0.5, delay: 0.2 }}
               >
-                <Card className="backdrop-blur bg-gradient-to-br from-card/90 to-card/50 shadow-xl border-primary/10 overflow-hidden h-full relative">
-                  <div className="absolute inset-0 bg-gradient-to-br from-primary/5 via-transparent to-transparent pointer-events-none" />
+                <Card className="h-full bg-[#0a0f1c]/80 backdrop-blur-2xl border-white/5 shadow-2xl relative overflow-hidden">
+                  <div className="absolute inset-0 bg-gradient-to-br from-blue-500/10 via-transparent to-transparent pointer-events-none" />
                   <CardHeader className="relative z-10">
-                    <CardTitle className="flex items-center gap-2 text-xl">
-                      <BarChart className="h-5 w-5 text-primary" />
+                    <CardTitle className="flex items-center gap-2 text-xl text-white">
+                      <BarChart className="h-5 w-5 text-blue-400" />
                       {t("teacherDashboard.chart.title")}
                     </CardTitle>
-                    <CardDescription>{t("teacherDashboard.chart.description")}</CardDescription>
+                    <CardDescription className="text-white/40">{t("teacherDashboard.chart.description")}</CardDescription>
                   </CardHeader>
                   <CardContent className="relative z-10 pb-6">
                     <ResponsiveContainer width="100%" height={380}>
                       <BarChart data={chartData} margin={{ top: 20, right: 0, left: -20, bottom: 0 }}>
-                        <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="hsl(var(--border))" opacity={0.5} />
+                        <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="rgba(255,255,255,0.1)" opacity={0.5} />
                         <XAxis 
                           dataKey="name" 
                           angle={0} 
@@ -467,7 +468,7 @@ export default function TeacherDashboard() {
                           height={40}
                           tickLine={false}
                           axisLine={false}
-                          stroke="hsl(var(--muted-foreground))"
+                          stroke="rgba(255,255,255,0.7)"
                           fontWeight={500}
                           fontSize={12}
                         />
@@ -475,22 +476,23 @@ export default function TeacherDashboard() {
                           domain={[0, 10]}
                           tickLine={false}
                           axisLine={false}
-                          stroke="hsl(var(--muted-foreground))"
+                          stroke="rgba(255,255,255,0.7)"
                           fontSize={12}
                           tickFormatter={(val) => `${val}`}
                         />
                         <Tooltip 
-                          cursor={{ fill: "hsl(var(--accent))", opacity: 0.1, radius: 4 }}
+                          cursor={{ fill: "rgba(255,255,255,0.05)", opacity: 0.1, radius: 4 }}
                           contentStyle={{ 
-                            backgroundColor: "hsl(var(--card))", 
-                            borderColor: "hsl(var(--border))",
+                            backgroundColor: "rgba(10,15,28,0.95)", 
+                            borderColor: "rgba(255,255,255,0.1)",
                             borderRadius: "12px",
-                            boxShadow: "0 10px 25px -5px rgba(0,0,0,0.1)",
-                            padding: "12px"
+                            boxShadow: "0 10px 25px -5px rgba(0,0,0,0.5)",
+                            padding: "12px",
+                            color: "white"
                           }}
                           itemStyle={{ fontWeight: 500 }}
                         />
-                        <Legend wrapperStyle={{ paddingTop: "20px" }} />
+                        <Legend wrapperStyle={{ paddingTop: "20px", color: "rgba(255,255,255,0.7)" }} />
                         <Bar dataKey="Teaching" name={t("doctorProfile.factorsShort.teaching")} fill="#3b82f6" radius={[6, 6, 0, 0]} maxBarSize={40} />
                         <Bar dataKey="Availability" name={t("doctorProfile.factorsShort.availability")} fill="#8b5cf6" radius={[6, 6, 0, 0]} maxBarSize={40} />
                         <Bar dataKey="Communication" name={t("doctorProfile.factorsShort.communication")} fill="#ec4899" radius={[6, 6, 0, 0]} maxBarSize={40} />
@@ -512,14 +514,14 @@ export default function TeacherDashboard() {
                   animate={{ opacity: 1, x: 0 }}
                   transition={{ duration: 0.5, delay: 0.3 }}
                 >
-                  <Card className="backdrop-blur bg-gradient-to-bl from-card/90 to-card/50 shadow-xl border-primary/10 overflow-hidden h-full relative">
-                    <div className="absolute inset-0 bg-gradient-to-bl from-primary/5 via-transparent to-transparent pointer-events-none" />
+                  <Card className="h-full bg-[#0a0f1c]/80 backdrop-blur-2xl border-white/5 shadow-2xl relative overflow-hidden">
+                    <div className="absolute inset-0 bg-gradient-to-tr from-blue-500/10 via-transparent to-purple-500/10 pointer-events-none" />
                     <CardHeader className="relative z-10">
-                      <CardTitle className="flex items-center gap-2 text-xl">
-                        <Target className="h-5 w-5 text-primary" />
+                      <CardTitle className="flex items-center gap-2 text-xl text-white">
+                        <Target className="h-5 w-5 text-blue-400" />
                         {t("teacherDashboard.radar.title")}
                       </CardTitle>
-                      <CardDescription>
+                      <CardDescription className="text-white/40">
                         {t("teacherDashboard.radar.description")}
                       </CardDescription>
                     </CardHeader>
@@ -665,23 +667,23 @@ export default function TeacherDashboard() {
                   animate={{ opacity: 1, y: 0 }}
                   transition={{ duration: 0.5, delay: 0.5 + index * 0.1 }}
                 >
-                  <Card className="backdrop-blur bg-card/80 hover:shadow-lg transition-shadow duration-300">
+                  <Card className="backdrop-blur-2xl bg-[#0a0f1c]/80 border-white/5 hover:border-white/20 transition-all duration-300 shadow-2xl relative overflow-hidden">
                     <CardHeader>
-                      <div className="flex items-start justify-between flex-wrap gap-4">
+                      <div className="flex items-start justify-between flex-wrap gap-4 relative z-10">
                         <div className="flex items-start gap-4">
-                          <div className="h-16 w-16 rounded-full bg-gradient-to-br from-primary/20 to-primary/10 flex items-center justify-center">
-                            <BookOpen className="h-8 w-8 text-primary" />
+                          <div className="h-16 w-16 rounded-full bg-gradient-to-br from-blue-500/20 to-blue-500/10 flex items-center justify-center border border-blue-500/20">
+                            <BookOpen className="h-8 w-8 text-blue-400" />
                           </div>
                           <div>
-                            <CardTitle className="text-2xl">
+                            <CardTitle className="text-2xl text-white font-bold">
                               {t("doctorProfile.doctorPrefix", "د.")} {t(`home.professors.names.${doctor.name.replace(/^Dr\.?\s+/i, "").trim()}`, { defaultValue: doctor.name.replace(/^Dr\.?\s+/i, "").trim() })}
                             </CardTitle>
-                            <CardDescription className="text-base mt-1">
+                            <CardDescription className="text-base mt-1 text-blue-200/50">
                               {t(`home.departments.${doctor.title?.trim()}`, { defaultValue: doctor.title })} • {t(`home.departments.${doctor.department.trim()}`, { defaultValue: t(`home.departments.${doctor.department.trim().toLowerCase()}`, { defaultValue: doctor.department }) })}
                             </CardDescription>
                             <div className="flex items-center gap-2 mt-2">
-                              <MessageSquare className="h-4 w-4 text-muted-foreground" />
-                              <span className="text-sm text-muted-foreground">
+                              <MessageSquare className="h-4 w-4 text-white/40" />
+                              <span className="text-sm text-white/40">
                                 {doctor.ratings?.totalReviews ?? 0}{" "}
                                 {t("teacherDashboard.reviewsCount", { count: doctor.ratings?.totalReviews ?? 0 })}
                               </span>
@@ -689,58 +691,58 @@ export default function TeacherDashboard() {
                           </div>
                         </div>
                         <div className="text-right">
-                          <div className="text-4xl font-bold bg-gradient-to-r from-primary to-primary/70 bg-clip-text text-transparent">
+                          <div className="text-4xl font-black bg-gradient-to-br from-blue-400 to-purple-400 bg-clip-text text-transparent drop-shadow-sm">
                             {doctor.ratings?.overallRating.toFixed(1)}
                           </div>
                           <StarRating rating={doctor.ratings?.overallRating ?? 0} size="sm" />
-                          <div className="text-sm text-muted-foreground mt-1">{t("compare.overall")}</div>
+                          <div className="text-sm text-white/30 mt-1 uppercase tracking-wider font-semibold">{t("compare.overall")}</div>
                         </div>
                       </div>
                     </CardHeader>
-                    <CardContent className="space-y-6">
+                    <CardContent className="space-y-6 relative z-10">
                       <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-4">
-                        <div className="p-4 rounded-lg bg-blue-500/10 border border-blue-200 dark:border-blue-800">
-                          <div className="text-sm font-medium text-muted-foreground mb-2">
+                        <div className="p-4 rounded-xl bg-blue-500/10 border border-blue-500/20 backdrop-blur">
+                          <div className="text-sm font-medium text-blue-200/50 uppercase tracking-wider mb-2">
                             {t("doctorProfile.factors.teachingQuality")}
                           </div>
                           <StarRating rating={doctor.ratings?.avgTeachingQuality ?? 0} size="sm" />
-                          <div className="text-2xl font-bold mt-2 text-blue-600 dark:text-blue-400">
+                          <div className="text-2xl font-bold mt-2 text-blue-400">
                             {doctor.ratings?.avgTeachingQuality.toFixed(1)}
                           </div>
                         </div>
-                        <div className="p-4 rounded-lg bg-purple-500/10 border border-purple-200 dark:border-purple-800">
-                          <div className="text-sm font-medium text-muted-foreground mb-2">
+                        <div className="p-4 rounded-xl bg-purple-500/10 border border-purple-500/20 backdrop-blur">
+                          <div className="text-sm font-medium text-purple-200/50 uppercase tracking-wider mb-2">
                             {t("doctorProfile.factors.availability")}
                           </div>
                           <StarRating rating={doctor.ratings?.avgAvailability ?? 0} size="sm" />
-                          <div className="text-2xl font-bold mt-2 text-purple-600 dark:text-purple-400">
+                          <div className="text-2xl font-bold mt-2 text-purple-400">
                             {doctor.ratings?.avgAvailability.toFixed(1)}
                           </div>
                         </div>
-                        <div className="p-4 rounded-lg bg-pink-500/10 border border-pink-200 dark:border-pink-800">
-                          <div className="text-sm font-medium text-muted-foreground mb-2">
+                        <div className="p-4 rounded-xl bg-pink-500/10 border border-pink-500/20 backdrop-blur">
+                          <div className="text-sm font-medium text-pink-200/50 uppercase tracking-wider mb-2">
                             {t("doctorProfile.factors.communication")}
                           </div>
                           <StarRating rating={doctor.ratings?.avgCommunication ?? 0} size="sm" />
-                          <div className="text-2xl font-bold mt-2 text-pink-600 dark:text-pink-400">
+                          <div className="text-2xl font-bold mt-2 text-pink-400">
                             {doctor.ratings?.avgCommunication.toFixed(1)}
                           </div>
                         </div>
-                        <div className="p-4 rounded-lg bg-amber-500/10 border border-amber-200 dark:border-amber-800">
-                          <div className="text-sm font-medium text-muted-foreground mb-2">
+                        <div className="p-4 rounded-xl bg-amber-500/10 border border-amber-500/20 backdrop-blur">
+                          <div className="text-sm font-medium text-amber-200/50 uppercase tracking-wider mb-2">
                             {t("doctorProfile.factors.knowledge")}
                           </div>
                           <StarRating rating={doctor.ratings?.avgKnowledge ?? 0} size="sm" />
-                          <div className="text-2xl font-bold mt-2 text-amber-600 dark:text-amber-400">
+                          <div className="text-2xl font-bold mt-2 text-amber-400">
                             {doctor.ratings?.avgKnowledge.toFixed(1)}
                           </div>
                         </div>
-                        <div className="p-4 rounded-lg bg-green-500/10 border border-green-200 dark:border-green-800">
-                          <div className="text-sm font-medium text-muted-foreground mb-2">
+                        <div className="p-4 rounded-xl bg-green-500/10 border border-green-500/20 backdrop-blur">
+                          <div className="text-sm font-medium text-green-200/50 uppercase tracking-wider mb-2">
                             {t("doctorProfile.factors.fairness")}
                           </div>
                           <StarRating rating={doctor.ratings?.avgFairness ?? 0} size="sm" />
-                          <div className="text-2xl font-bold mt-2 text-green-600 dark:text-green-400">
+                          <div className="text-2xl font-bold mt-2 text-green-400">
                             {doctor.ratings?.avgFairness.toFixed(1)}
                           </div>
                         </div>
