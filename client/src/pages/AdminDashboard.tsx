@@ -759,35 +759,37 @@ export default function AdminDashboard() {
                 <CardContent>
                   {/* User Details & Edit Dialog */}
                   <Dialog open={isEditUserOpen} onOpenChange={setIsEditUserOpen}>
-                    <DialogContent className="max-w-4xl p-0 overflow-hidden bg-background/95 backdrop-blur-xl border-accent/20">
+                    <DialogContent className="max-w-3xl p-0 overflow-hidden bg-background/95 backdrop-blur-xl border-accent/20 max-h-[90vh] flex flex-col">
                       <DialogTitle className="sr-only">{t("admin.users.edit.title")}</DialogTitle>
                       <DialogDescription className="sr-only">{t("admin.users.edit.subtitle", { username: editingUser?.username })}</DialogDescription>
-                      <div className="h-24 bg-gradient-to-r from-blue-500 to-purple-500 relative w-full">
-                      </div>
-                      <div className="px-6 pb-6 relative">
-                        {/* Avatar overlapping the banner */}
-                        <div className="absolute -top-12 start-6">
-                          <Avatar className="h-24 w-24 border-4 border-background shadow-lg">
-                            <AvatarImage src={editingUser?.profileImageUrl} alt={editingUser?.username} />
-                            <AvatarFallback className="text-2xl font-bold bg-primary/10 text-primary">
-                              {editingUser?.username?.substring(0, 2).toUpperCase() || "??"}
-                            </AvatarFallback>
-                          </Avatar>
+                      
+                      <div className="flex-1 overflow-y-auto overflow-x-hidden">
+                        <div className="h-24 bg-gradient-to-r from-blue-500 to-purple-500 relative w-full shrink-0">
                         </div>
-
-                        <div className="ms-28 -mt-4 space-y-1">
-                          <div className="flex items-center gap-2">
-                            <h2 className="text-2xl font-bold">{editingUser?.firstName ? `${editingUser.firstName} ${editingUser.lastName}` : editingUser?.username}</h2>
-                            <Badge variant={editingUser?.role === "admin" ? "destructive" : editingUser?.role === "teacher" ? "default" : "secondary"}>
-                              {editingUser?.role && t(`roles.${editingUser.role}`)}
-                            </Badge>
+                        <div className="px-6 pb-6 relative">
+                          {/* Avatar overlapping the banner */}
+                          <div className="absolute -top-12 start-6">
+                            <Avatar className="h-24 w-24 border-4 border-background shadow-lg">
+                              <AvatarImage src={editingUser?.profileImageUrl} alt={editingUser?.username} />
+                              <AvatarFallback className="text-2xl font-bold bg-primary/10 text-primary">
+                                {editingUser?.username?.substring(0, 2).toUpperCase() || "??"}
+                              </AvatarFallback>
+                            </Avatar>
                           </div>
-                          <p className="text-muted-foreground flex items-center gap-1">
-                            @{editingUser?.username}
-                          </p>
-                        </div>
 
-                        <div className="mt-8 grid gap-4">
+                          <div className="ms-28 -mt-4 space-y-1">
+                            <div className="flex items-center gap-2">
+                              <h2 className="text-2xl font-bold">{editingUser?.firstName ? `${editingUser.firstName} ${editingUser.lastName}` : editingUser?.username}</h2>
+                              <Badge variant={editingUser?.role === "admin" ? "destructive" : editingUser?.role === "teacher" ? "default" : "secondary"}>
+                                {editingUser?.role && t(`roles.${editingUser.role}`)}
+                              </Badge>
+                            </div>
+                            <p className="text-muted-foreground flex items-center gap-1">
+                              @{editingUser?.username}
+                            </p>
+                          </div>
+
+                          <div className="mt-8 grid gap-4">
                           <div className="grid gap-1.5">
                             <Label className="text-xs text-muted-foreground uppercase font-semibold tracking-wider">Profile Details</Label>
                             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
@@ -893,18 +895,19 @@ export default function AdminDashboard() {
                             )}
                           </div>
                         </div>
-
-                        <DialogFooter className="mt-8 gap-2">
-                          <Button variant="outline" onClick={() => setIsEditUserOpen(false)}>{t("common.cancel")}</Button>
-                          <Button
-                            disabled={(updateUserRole as any).isLoading || (updateUserRole as any).isPending || updateLinkedDoctor.isPending}
-                            onClick={handleSaveChanges}
-                            className="bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 text-white shadow-md"
-                          >
-                            {((updateUserRole as any).isLoading || (updateUserRole as any).isPending) ? t("common.saving") : t("admin.users.edit.save")}
-                          </Button>
-                        </DialogFooter>
                       </div>
+                    </div>
+
+                      <DialogFooter className="px-6 py-4 border-t bg-muted/20 gap-2 shrink-0">
+                        <Button variant="outline" onClick={() => setIsEditUserOpen(false)}>{t("common.cancel")}</Button>
+                        <Button
+                          disabled={(updateUserRole as any).isLoading || (updateUserRole as any).isPending || updateLinkedDoctor.isPending}
+                          onClick={handleSaveChanges}
+                          className="bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 text-white shadow-md"
+                        >
+                          {((updateUserRole as any).isLoading || (updateUserRole as any).isPending) ? t("common.saving") : t("admin.users.edit.save")}
+                        </Button>
+                      </DialogFooter>
                     </DialogContent>
                   </Dialog>
                   <ScrollArea className="h-[500px]">
