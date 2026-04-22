@@ -190,6 +190,17 @@ export default function AdminDashboard() {
   // Determine if any modal is open for background blur effect
   const isAnyModalOpen = showSettings || isEditUserOpen || deleteConfirmOpen || doctorDeleteConfirmOpen || doctorCardOpen;
 
+  useEffect(() => {
+    if (isAnyModalOpen) {
+      document.body.style.overflow = 'hidden';
+    } else {
+      document.body.style.overflow = 'auto';
+    }
+    return () => {
+      document.body.style.overflow = 'auto';
+    };
+  }, [isAnyModalOpen]);
+
   // Fetch admin stats
   const { data: stats } = useQuery<Stats>({
     queryKey: ["/api/admin/stats"],
@@ -777,7 +788,7 @@ export default function AdminDashboard() {
                             </Avatar>
                           </div>
 
-                          <div className="ms-28 -mt-4 space-y-1">
+                          <div className="ms-28 pt-2 space-y-1">
                             <div className="flex items-center gap-2">
                               <h2 className="text-2xl font-bold">{editingUser?.firstName ? `${editingUser.firstName} ${editingUser.lastName}` : editingUser?.username}</h2>
                               <Badge variant={editingUser?.role === "admin" ? "destructive" : editingUser?.role === "teacher" ? "default" : "secondary"}>
