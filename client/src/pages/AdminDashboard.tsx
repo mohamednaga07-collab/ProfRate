@@ -396,22 +396,7 @@ export default function AdminDashboard() {
 
   // Track to top when finding user
 
-  const runDebugLinkMutation = useMutation({
-    mutationFn: async () => {
-      const res = await apiRequest("POST", `/api/admin/debug-link-test-teacher`);
-      return res.json();
-    },
-    onSuccess: (data) => {
-      toast({ title: "Debug Success!", description: data.message });
-      refetchUsers();
-      queryClient.invalidateQueries({ queryKey: ["/api/user"] });
-      queryClient.invalidateQueries({ queryKey: ["/api/teacher/feedback"] });
-      queryClient.invalidateQueries({ queryKey: ["/api/teacher/stats"] });
-    },
-    onError: (error) => {
-      toast({ title: "Debug Failed", description: error instanceof Error ? error.message : "Internal Server Error", variant: "destructive" });
-    }
-  });
+
 
 
   return (
@@ -463,16 +448,7 @@ export default function AdminDashboard() {
               transition={{ delay: 0.5 }}
               className="flex gap-2"
             >
-              <Button 
-                variant="secondary" 
-                size="sm" 
-                className="gap-2 bg-yellow-500/20 text-yellow-50 hover:bg-yellow-500/40 border border-yellow-400/50" 
-                onClick={() => runDebugLinkMutation.mutate()}
-                disabled={runDebugLinkMutation.isPending}
-              >
-                {runDebugLinkMutation.isPending ? <RefreshCw className="h-4 w-4 animate-spin" /> : <Wrench className="h-4 w-4" />}
-                Force Link 'Sample Teacher' (Dev)
-              </Button>
+
               <Button variant="secondary" size="sm" className="gap-2" onClick={handleExportData}>
                 <Download className="h-4 w-4" />
                 {t("admin.header.export")}

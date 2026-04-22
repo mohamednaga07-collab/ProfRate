@@ -1686,66 +1686,13 @@ export async function registerRoutes(httpServer: Server, app: Express): Promise<
         return res.status(400).json({ message: "Invalid doctor ID" });
       }
 
-      const allDoctors = await storage.getAllDoctors();
-      const doctorToLink = parsedDoctorId ? allDoctors.find(d => Number(d.id) === Number(parsedDoctorId)) : null;
-
       await storage.linkUserToDoctor(userId, parsedDoctorId);
-
-      // Auto-sync user's first/last name with the doctor's name if a doctor is linked
-      // This serves as an additional fallback mechanism and satisfies user expectations
-      if (doctorToLink) {
-         const cleanName = doctorToLink.name.replace(/^(Dr\.?|Prof\.?)\s+/i, "").trim();
-         const nameParts = cleanName.split(" ");
-         const firstName = nameParts[0] || "";
-         const lastName = nameParts.slice(1).join(" ") || "";
-         
-         await storage.updateUser(userId, {
-            firstName: firstName,
-            lastName: lastName
-         });
-      }
 
       console.log(`[Admin] Linked user ${userId} to doctor profile ${parsedDoctorId}`);
       res.json({ message: "Doctor profile linked successfully" });
     } catch (error) {
       console.error("Error linking doctor profile:", error);
       res.status(500).json({ message: "Failed to link doctor profile" });
-    }
-  });
-
-  // DEVELOPER DEBUG ROUTE: Forcefully maps the username "teacher" to the "Sample Teacher" doctor
-  // This bypasses UI issues for immediate testing purposes 
-  app.post("/api/admin/debug-link-test-teacher", isAdmin, async (req, res) => {
-    try {
-      // 1. Find user account "teacher"
-      const users = await storage.getAllUsers();
-      const testUser = users.find(u => u.username?.toLowerCase() === "teacher");
-      if (!testUser) return res.status(404).json({ message: "Test user 'teacher' not found in database." });
-
-      // 2. Find doctor "Sample Teacher"
-      const doctors = await storage.getAllDoctors();
-      const testDoctor = doctors.find(d => d.name.toLowerCase().includes("sample teacher"));
-      if (!testDoctor) return res.status(404).json({ message: "Doctor profile for 'Sample Teacher' not found in database." });
-
-      // 3. Link them!
-      await storage.linkUserToDoctor(testUser.id, testDoctor.id);
-
-      // 4. Auto-sync names just like the admin patch logic
-      const cleanName = testDoctor.name.replace(/^(Dr\.?|Prof\.?)\s+/i, "").trim();
-      const nameParts = cleanName.split(" ");
-      await storage.updateUser(testUser.id, {
-        firstName: nameParts[0] || "",
-        lastName: nameParts.slice(1).join(" ") || ""
-      });
-
-      res.json({ 
-        message: "Successfully hard-linked 'teacher' to 'Dr. Sample Teacher'. State cache is clear, you may now test!", 
-        updatedUserId: testUser.id,
-        doctorId: testDoctor.id
-      });
-    } catch (error) {
-      console.error("Error in debug link route:", error);
-      res.status(500).json({ message: "Failed to execute debug link script." });
     }
   });
 
@@ -2219,7 +2166,7 @@ export async function registerRoutes(httpServer: Server, app: Express): Promise<
       
       // 1. Unbreakable Explicit Match
       if (user.linkedDoctorId) {
-        const doc = allDoctors.find(d => Number(d.id) === Number(user.linkedDoctorId));
+        const doc = allDoctors.find(d => d.id === user.linkedDoctorId);
         if (doc) matchedDoctors = [doc];
       }
 
@@ -2336,7 +2283,7 @@ export async function registerRoutes(httpServer: Server, app: Express): Promise<
 
       // 0. Explicit Link Match (100% guarantee)
       if (user.linkedDoctorId) {
-        const doc = allDoctors.find(d => Number(d.id) === Number(user.linkedDoctorId));
+        const doc = allDoctors.find(d => d.id === user.linkedDoctorId);
         if (doc) matchedDoctors = [doc];
       }
 
