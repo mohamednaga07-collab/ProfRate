@@ -2318,29 +2318,40 @@ export async function registerRoutes(httpServer: Server, app: Express): Promise<
       const allDoctors = await storage.getAllDoctors();
       
       let matchedDoctors: any[] = [];
+      const normalize = (name: string) => name.replace(/^(Dr\.?|Prof\.?)\s+/i, "").trim().toLowerCase();
+      const fullName = [freshUser.firstName, freshUser.lastName].filter(Boolean).join(" ").trim().toLowerCase();
       
-      // 1. Unbreakable Explicit Match (linkedDoctorId wins)
+      // 1. Try explicit linkedDoctorId first
       if (freshUser.linkedDoctorId) {
         const linkedId = Number(freshUser.linkedDoctorId);
         const doc = allDoctors.find((d: any) => Number(d.id) === linkedId);
         if (doc) matchedDoctors = [doc];
       }
 
-      // 2. Fallback to Fuzzy Name Match
-      if (matchedDoctors.length === 0) {
-        const fullName = [freshUser.firstName, freshUser.lastName].filter(Boolean).join(" ").trim().toLowerCase();
-        const normalize = (name: string) => name.replace(/^(Dr\.?|Prof\.?)\s+/i, "").trim().toLowerCase();
-        
-        matchedDoctors = fullName ? allDoctors.filter((d: any) => normalize(d.name) === normalize(fullName)) : [];
-        if (matchedDoctors.length === 0 && fullName) {
-          matchedDoctors = allDoctors.filter((d: any) => 
+      // 2. Also try name matching (to handle duplicate/wrong link)
+      let nameMatched: any[] = [];
+      if (fullName) {
+        nameMatched = allDoctors.filter((d: any) => normalize(d.name) === normalize(fullName));
+        if (nameMatched.length === 0) {
+          nameMatched = allDoctors.filter((d: any) =>
             normalize(d.name).includes(fullName) || fullName.includes(normalize(d.name))
           );
         }
       }
+
+      // Prefer whichever has more reviews
+      if (matchedDoctors.length > 0 && nameMatched.length > 0) {
+        const linkedReviews = matchedDoctors[0].ratings?.totalReviews ?? 0;
+        const nameReviews = nameMatched[0].ratings?.totalReviews ?? 0;
+        if (nameReviews > linkedReviews) {
+          matchedDoctors = nameMatched;
+          await storage.linkUserToDoctor(freshUser.id, nameMatched[0].id);
+        }
+      } else if (matchedDoctors.length === 0 && nameMatched.length > 0) {
+        matchedDoctors = nameMatched;
+      }
       
       if (matchedDoctors.length === 0) {
-        // No match — return zero stats so teacher knows they have no profile yet
         return res.json({ rating: 0, students: 0, reviews: 0, matched: false });
       }
 
@@ -2429,26 +2440,38 @@ export async function registerRoutes(httpServer: Server, app: Express): Promise<
 
       let matchedDoctors: any[] = [];
 
-      // 0. Explicit Link Match (100% guarantee) — use Number() to handle SQLite int/string coercion
+      // 0. Explicit Link Match first
       if (user.linkedDoctorId) {
         const linkedId = Number(user.linkedDoctorId);
         const doc = allDoctors.find((d: any) => Number(d.id) === linkedId);
         if (doc) matchedDoctors = [doc];
       }
 
-      // 1. Try exact match
-      if (matchedDoctors.length === 0) {
-        matchedDoctors = searchName
-          ? allDoctors.filter(d => normalize(d.name) === normalizedSearchName)
-          : [];
+      // 1. If linked doctor has 0 reviews, ALSO try name matching — pick the one with more reviews
+      //    This handles the case where auto-link created a duplicate empty doctor profile
+      let nameMatched: any[] = [];
+      if (searchName) {
+        nameMatched = allDoctors.filter((d: any) => normalize(d.name) === normalizedSearchName);
+        if (nameMatched.length === 0) {
+          nameMatched = allDoctors.filter((d: any) => {
+            const docName = normalize(d.name);
+            return docName.includes(normalizedSearchName) || normalizedSearchName.includes(docName);
+          });
+        }
       }
 
-      // 2. Try partial/fuzzy match if exact match fails
-      if (matchedDoctors.length === 0 && searchName) {
-        matchedDoctors = allDoctors.filter(d => {
-          const docName = normalize(d.name);
-          return docName.includes(normalizedSearchName) || normalizedSearchName.includes(docName);
-        });
+      // If linked doctor has no reviews but name match has reviews, prefer name match
+      if (matchedDoctors.length > 0 && nameMatched.length > 0) {
+        const linkedReviews = matchedDoctors[0].ratings?.totalReviews ?? 0;
+        const nameReviews = nameMatched[0].ratings?.totalReviews ?? 0;
+        if (nameReviews > linkedReviews) {
+          matchedDoctors = nameMatched;
+          // Auto-repair the link so future requests are correct
+          await storage.linkUserToDoctor(user.id, nameMatched[0].id);
+          console.log(`🔧 [FeedbackAutoRepair] Re-linked ${user.username} to doctor ${nameMatched[0].id} (${nameMatched[0].name}) which has ${nameReviews} reviews`);
+        }
+      } else if (matchedDoctors.length === 0 && nameMatched.length > 0) {
+        matchedDoctors = nameMatched;
       }
 
       if (matchedDoctors.length === 0) {
