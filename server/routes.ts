@@ -598,14 +598,14 @@ export async function registerRoutes(httpServer: Server, app: Express): Promise<
         return res.status(403).json({ message: "Incorrect current password" });
       }
 
-      // 4. Check if new username is taken
-      const existingUser = await storage.getUserByUsername(newUsername);
-      if (existingUser) {
+      // 4. Check if new username is taken — sanitize FIRST then check to avoid self-match
+      const sanitizedNew = sanitizeUsername(newUsername);
+      const existingUser = await storage.getUserByUsername(sanitizedNew);
+      if (existingUser && existingUser.id !== userId) {
         return res.status(409).json({ message: "Username already taken" });
       }
 
-      // 5. Update Username — always store lowercase/sanitized to match login lookup
-      const sanitizedNew = sanitizeUsername(newUsername);
+      // 5. Update Username — always store sanitized (lowercase) to match login lookup
       const updatedUser = await storage.updateUser(userId, { username: sanitizedNew });
 
       console.log(`✅ User ${user.username} changed username to ${sanitizedNew}`);
@@ -2321,7 +2321,8 @@ export async function registerRoutes(httpServer: Server, app: Express): Promise<
       
       // 1. Unbreakable Explicit Match (linkedDoctorId wins)
       if (freshUser.linkedDoctorId) {
-        const doc = allDoctors.find((d: any) => d.id === freshUser.linkedDoctorId);
+        const linkedId = Number(freshUser.linkedDoctorId);
+        const doc = allDoctors.find((d: any) => Number(d.id) === linkedId);
         if (doc) matchedDoctors = [doc];
       }
 
@@ -2428,9 +2429,10 @@ export async function registerRoutes(httpServer: Server, app: Express): Promise<
 
       let matchedDoctors: any[] = [];
 
-      // 0. Explicit Link Match (100% guarantee)
+      // 0. Explicit Link Match (100% guarantee) — use Number() to handle SQLite int/string coercion
       if (user.linkedDoctorId) {
-        const doc = allDoctors.find(d => d.id === user.linkedDoctorId);
+        const linkedId = Number(user.linkedDoctorId);
+        const doc = allDoctors.find((d: any) => Number(d.id) === linkedId);
         if (doc) matchedDoctors = [doc];
       }
 

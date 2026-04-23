@@ -779,7 +779,7 @@ export default function AdminDashboard() {
                         </div>
                         <div className="px-6 pb-6">
                           {/* Avatar + header row: avatar overlaps banner bottom */}
-                          <div className="flex items-end gap-4 -mt-8">
+                          <div className="flex items-end gap-4 -mt-3">
                             <Avatar className="h-20 w-20 border-4 border-background shadow-lg shrink-0">
                               <AvatarImage src={editingUser?.profileImageUrl} alt={editingUser?.username} />
                               <AvatarFallback className="text-xl font-bold bg-primary/10 text-primary">

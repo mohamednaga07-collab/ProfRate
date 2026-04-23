@@ -178,7 +178,11 @@ export class SqliteStorage implements IStorage {
 
   private normalizeUser(user: any): any {
     if (!user) return null;
-    return { ...user, emailVerified: user.emailVerified === 1 };
+    return {
+      ...user,
+      emailVerified: user.emailVerified === 1,
+      linkedDoctorId: user.linkedDoctorId != null ? Number(user.linkedDoctorId) : null,
+    };
   }
 
   async getReviewsByDoctor(doctorId: number): Promise<Review[]> {
