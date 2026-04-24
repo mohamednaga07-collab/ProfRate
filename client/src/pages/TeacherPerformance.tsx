@@ -114,17 +114,9 @@ export default function TeacherPerformance() {
   // Export PDF via browser print dialog
   const handleExportPDF = () => window.print();
 
-  // ─── CHART DATA FROM ACTUAL REVIEWS ───
+  // ─── CHART DATA: always 6 months so lines always render ───
   const chartData = (() => {
-    if (!reviews || reviews.length === 0) {
-      const months: { name: string; score: number }[] = [];
-      for (let i = 5; i >= 0; i--) {
-        const d = new Date();
-        d.setMonth(d.getMonth() - i);
-        months.push({ name: d.toLocaleString("default", { month: "short", year: "2-digit" }), score: 0 });
-      }
-      return months;
-    }
+    // Build a map of month → average score from actual reviews
     const byMonth: Record<string, number[]> = {};
     reviews.forEach((r: Review) => {
       const d = new Date(r.createdAt);
@@ -133,12 +125,22 @@ export default function TeacherPerformance() {
       const score = r.overallScore ?? ((r.teachingQuality + r.availability + r.communication + r.knowledge + r.fairness) / 5);
       byMonth[key].push(score);
     });
-    return Object.entries(byMonth)
-      .sort((a, b) => new Date("01 " + a[0]).getTime() - new Date("01 " + b[0]).getTime())
-      .map(([name, scores]) => ({
-        name,
-        score: parseFloat((scores.reduce((s, v) => s + v, 0) / scores.length).toFixed(2))
-      }));
+
+    // Always emit the last 6 months so the chart always has lines/grid
+    const result: { name: string; score: number }[] = [];
+    for (let i = 5; i >= 0; i--) {
+      const d = new Date();
+      d.setMonth(d.getMonth() - i);
+      const key = d.toLocaleString("default", { month: "short", year: "2-digit" });
+      const scores = byMonth[key];
+      result.push({
+        name: key,
+        score: scores && scores.length > 0
+          ? parseFloat((scores.reduce((s, v) => s + v, 0) / scores.length).toFixed(2))
+          : 0,
+      });
+    }
+    return result;
   })();
 
   // 8-axis Radar

@@ -49,11 +49,39 @@ export function RoleBasedProfileMenu({
     refetchInterval: userRole === "admin" ? 2000 : false, // Poll every 2s for live updates
   });
 
-  // Fetch teacher stats for live data 
-  const { data: teacherStats } = useQuery<{ rating: number; students: number; reviews: number }>({
-    queryKey: ["/api/teacher/stats"],
+  // Fetch all doctors to calculate teacher stats client-side (matches home page logic perfectly)
+  const { data: doctors = [] } = useQuery({
+    queryKey: ["/api/doctors"],
     enabled: userRole === "teacher",
+    queryFn: async () => {
+      const res = await fetch("/api/doctors");
+      if (!res.ok) throw new Error("Failed to fetch doctors");
+      return res.json() as Promise<{ id: number; name: string; ratings?: any }[]>;
+    },
   });
+
+  // Calculate teacher stats based on exact match logic
+  const teacherStats = (() => {
+    if (userRole !== "teacher") return null;
+    const normalizeName = (name: string) => name.replace(/^(Dr\.?|Prof\.?)\s+/i, "").trim().toLowerCase();
+    const teacherFullName = [user.firstName, user.lastName].filter(Boolean).join(" ").trim();
+    const normalizedTeacher = teacherFullName.toLowerCase();
+
+    let matchedDoc = null;
+    if (user.linkedDoctorId) {
+      matchedDoc = doctors.find(d => Number(d.id) === Number(user.linkedDoctorId));
+    }
+    if (!matchedDoc && normalizedTeacher) {
+      matchedDoc = doctors.find(d => normalizeName(d.name) === normalizedTeacher) ||
+                   doctors.find(d => normalizeName(d.name).includes(normalizedTeacher) || normalizedTeacher.includes(normalizeName(d.name)));
+    }
+
+    return {
+      rating: matchedDoc?.ratings?.overallRating ?? 0,
+      students: 0, // We can't easily get students without another API call, but keeping it 0 is fine for now
+      reviews: matchedDoc?.ratings?.totalReviews ?? 0,
+    };
+  })();
 
   // Health indicator state
   const [health, setHealth] = useState<'healthy' | 'degraded' | 'down'>('healthy');
