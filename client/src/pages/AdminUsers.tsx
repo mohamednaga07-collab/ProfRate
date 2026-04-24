@@ -1,5 +1,5 @@
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
-import { Loader2, Shield, User, GraduationCap, Edit, Check, AlertCircle } from "lucide-react";
+import { Loader2, Shield, User, GraduationCap, Edit, Check, AlertCircle, MessageSquare } from "lucide-react";
 import { useTranslation } from "react-i18next";
 import { useAuth } from "@/hooks/useAuth";
 import {
@@ -22,12 +22,14 @@ import { Button } from "@/components/ui/button";
 import { useToast } from "@/hooks/use-toast";
 import { useState } from "react";
 import { apiRequest } from "@/lib/queryClient";
+import { useLocation } from "wouter";
 
 export default function AdminUsers() {
   const { t } = useTranslation();
   const { user: currentUser } = useAuth();
   const { toast } = useToast();
   const queryClient = useQueryClient();
+  const [, setLocation] = useLocation();
   const [selectedUser, setSelectedUser] = useState<any>(null);
   const [newRole, setNewRole] = useState<string>("");
   const [newFirstName, setNewFirstName] = useState<string>("");
@@ -216,6 +218,16 @@ export default function AdminUsers() {
                                 Edit
                             </Button>
                         </DialogTrigger>
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          className="h-8 ml-2"
+                          onClick={() => setLocation(`/messages?userId=${user.id}`)}
+                          disabled={currentUser?.id === user.id}
+                        >
+                          <MessageSquare className="h-3.5 w-3.5 mr-2" />
+                          Message
+                        </Button>
                         <DialogContent>
                             <DialogHeader>
                                 <DialogTitle>Edit User Details</DialogTitle>

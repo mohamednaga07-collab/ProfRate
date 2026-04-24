@@ -1151,6 +1151,23 @@ export async function registerRoutes(httpServer: Server, app: Express): Promise<
     }
   });
 
+  app.get("/api/admin-contact", isAuthenticated, async (req, res) => {
+    try {
+      const db = (await import("./db")).db;
+      const { users } = await import("@shared/schema");
+      const { eq } = await import("drizzle-orm");
+      
+      const admin = await db.query.users.findFirst({
+        where: eq(users.role, "admin")
+      });
+
+      if (!admin) return res.status(404).json({ message: "No admin available" });
+      res.json({ id: admin.id, firstName: admin.firstName, lastName: admin.lastName, role: admin.role, profileImageUrl: admin.profileImageUrl });
+    } catch (error) {
+      res.status(500).json({ message: "Server error" });
+    }
+  });
+
   app.get("/api/doctors/:id/teacher-user", isAuthenticated, async (req, res) => {
     try {
       const doctorId = parseInt(req.params.id);
@@ -1205,24 +1222,29 @@ export async function registerRoutes(httpServer: Server, app: Express): Promise<
       }
 
       // 1. Role enforcement logic:
-      // Students can initiate (send to teachers)
-      // Teachers can ONLY reply (send to students they already have a chat with)
+      // Admins can message anyone, and anyone can message admins.
+      // Students can initiate to teachers.
+      // Teachers can ONLY reply to students.
       const receiver = await storage.getUser(receiverId);
       if (!receiver) return res.status(404).json({ message: "User not found" });
 
-      if (user.role === "teacher" && receiver.role !== "student") {
-         return res.status(403).json({ message: "Teachers can only message students" });
-      }
-      if (user.role === "student" && receiver.role !== "teacher") {
-         return res.status(403).json({ message: "Students can only message teachers" });
-      }
-      
-      if (user.role === "teacher") {
-        // Enforce teacher can only reply
-        const receivedFromStudent = await storage.getMessages(user.id);
-        const hasHistory = receivedFromStudent.some(m => m.senderId === receiverId);
-        if (!hasHistory) {
-          return res.status(403).json({ message: "Teachers can only reply to students who have messaged them first." });
+      const isAdminInvolved = user.role === "admin" || receiver.role === "admin";
+
+      if (!isAdminInvolved) {
+        if (user.role === "teacher" && receiver.role !== "student") {
+           return res.status(403).json({ message: "Teachers can only message students or admins" });
+        }
+        if (user.role === "student" && receiver.role !== "teacher") {
+           return res.status(403).json({ message: "Students can only message teachers or admins" });
+        }
+        
+        if (user.role === "teacher") {
+          // Enforce teacher can only reply
+          const receivedFromStudent = await storage.getMessages(user.id);
+          const hasHistory = receivedFromStudent.some(m => m.senderId === receiverId);
+          if (!hasHistory) {
+            return res.status(403).json({ message: "Teachers can only reply to students who have messaged them first." });
+          }
         }
       }
 

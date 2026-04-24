@@ -126,6 +126,34 @@ export default function Messages() {
           </div>
           
           <ScrollArea className="flex-1">
+            <div className="p-2 pb-0">
+              {user?.role !== "admin" && (
+                <button
+                  onClick={async () => {
+                    const res = await fetch("/api/admin-contact");
+                    if (res.ok) {
+                      const adminInfo = await res.json();
+                      if (!displayConversations.some(c => c.id === adminInfo.id)) {
+                        displayConversations.unshift(adminInfo);
+                      }
+                      setSelectedUserId(adminInfo.id);
+                    }
+                  }}
+                  className="w-full text-left p-3 rounded-xl transition-all duration-200 flex items-center gap-3 mb-2 bg-secondary/50 hover:bg-secondary text-secondary-foreground"
+                >
+                  <div className="bg-primary text-primary-foreground h-10 w-10 rounded-full flex items-center justify-center border-2 border-background">
+                    <ShieldCheck className="h-5 w-5" />
+                  </div>
+                  <div className="flex-1 overflow-hidden">
+                    <p className="font-semibold truncate">Contact Support</p>
+                    <p className="text-xs text-muted-foreground flex items-center gap-1">
+                      Platform Administration
+                    </p>
+                  </div>
+                </button>
+              )}
+            </div>
+            
             {loadingConversations ? (
               <div className="flex justify-center p-8 text-muted-foreground">
                 <Loader2 className="h-6 w-6 animate-spin" />
@@ -138,6 +166,12 @@ export default function Messages() {
                 <p>No active conversations yet.</p>
                 {user?.role === "student" && (
                   <p className="text-sm mt-2">Visit a professor's profile to start a chat.</p>
+                )}
+                {user?.role === "teacher" && (
+                  <p className="text-sm mt-2">You will see messages here when students contact you.</p>
+                )}
+                {user?.role === "admin" && (
+                  <p className="text-sm mt-2">Visit Manage Users to message a specific user.</p>
                 )}
               </div>
             ) : (
