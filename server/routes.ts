@@ -1118,7 +1118,11 @@ export async function registerRoutes(httpServer: Server, app: Express): Promise<
 
   app.get("/api/messages/:otherUserId", isAuthenticated, async (req, res) => {
     try {
-      const user = req.user as any;
+      let user = req.user as any;
+      if (!user && req.session?.userId) {
+        user = await storage.getUser(req.session.userId);
+      }
+      if (!user) return res.status(401).json({ message: "Not authenticated" });
       const otherUserId = req.params.otherUserId;
       // Get all messages where user is sender or receiver
       const allMessages = await storage.getMessages(user.id);
@@ -1137,9 +1141,13 @@ export async function registerRoutes(httpServer: Server, app: Express): Promise<
     }
   });
 
-  app.get("/api/conversations", isAuthenticated, async (req, res) => {
+  app.get("/api/conversations", isAuthenticated, async (req: any, res) => {
     try {
-      const user = req.user as any;
+      let user = req.user as any;
+      if (!user && req.session?.userId) {
+        user = await storage.getUser(req.session.userId);
+      }
+      if (!user) return res.status(401).json({ message: "Not authenticated" });
       const received = await storage.getMessages(user.id);
       const sent = await storage.getSentMessages(user.id);
       
@@ -1232,7 +1240,10 @@ export async function registerRoutes(httpServer: Server, app: Express): Promise<
 
   app.post("/api/messages", isAuthenticated, validateCsrfHeader, async (req, res) => {
     try {
-      const user = req.user as any;
+      let user = req.user as any;
+      if (!user && (req as any).session?.userId) {
+        user = await storage.getUser((req as any).session.userId);
+      }
       const { receiverId, targetDoctorId, content } = req.body;
       
       if (!receiverId || !content) {
