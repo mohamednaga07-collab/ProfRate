@@ -1284,9 +1284,9 @@ export async function registerRoutes(httpServer: Server, app: Express): Promise<
       });
 
       res.status(201).json(message);
-    } catch (error) {
+    } catch (error: any) {
       console.error("Error sending message:", error);
-      res.status(500).json({ message: "Failed to send message" });
+      res.status(500).json({ message: error?.message || "Failed to send message" });
     }
   });
 
@@ -1296,6 +1296,43 @@ export async function registerRoutes(httpServer: Server, app: Express): Promise<
       res.status(204).end();
     } catch (error) {
       res.status(500).json({ message: "Failed to mark as read" });
+    }
+  });
+
+  // DB Debug Route
+  app.get("/api/debug/db", async (req, res) => {
+    try {
+      if (process.env.DATABASE_URL) {
+        const { db } = await import("./db");
+        const { sql } = await import("drizzle-orm");
+        const result = await db.execute(sql`
+          SELECT table_name 
+          FROM information_schema.tables 
+          WHERE table_schema = 'public';
+        `);
+        return res.json({ tables: result.rows || result });
+      } else {
+        return res.json({ message: "Not using Postgres" });
+      }
+    } catch (error: any) {
+      return res.status(500).json({ error: error.message });
+    }
+  });
+
+  app.post("/api/debug/message", async (req, res) => {
+    try {
+      const { senderId, receiverId, content } = req.body;
+      const message = await storage.createMessage({
+        senderId,
+        receiverId,
+        targetDoctorId: null,
+        title: "Debug Message",
+        content,
+        type: "direct"
+      });
+      return res.json(message);
+    } catch (error: any) {
+      return res.status(500).json({ error: error.message, stack: error.stack });
     }
   });
 
