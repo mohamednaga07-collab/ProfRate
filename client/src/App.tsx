@@ -42,7 +42,7 @@ const StudentStats = lazy(() => import("@/pages/StudentStats"));
 const StudentRatings = lazy(() => import("@/pages/StudentRatings"));
 const StudentRecommendations = lazy(() => import("@/pages/StudentRecommendations"));
 const AdminActivityLog = lazy(() => import("@/pages/AdminActivityLog"));
-
+const Messages = lazy(() => import("@/pages/Messages"));
 const pageVariants = {
   initial: {
     opacity: 0,
@@ -379,6 +379,13 @@ function Router() {
           {() => (
             <AnimatedPageWrapper>
               {!isAuthenticated ? <Landing /> : <ProfileSettings />}
+            </AnimatedPageWrapper>
+          )}
+        </Route>
+        <Route path="/messages">
+          {() => (
+            <AnimatedPageWrapper>
+              {!isAuthenticated ? <Landing /> : <Messages />}
             </AnimatedPageWrapper>
           )}
         </Route>
