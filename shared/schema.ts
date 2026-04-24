@@ -190,6 +190,9 @@ export const messages = pgTable("messages", {
   type: varchar("type", { length: 50 }).notNull(), // 'feedback', 'support', 'direct', 'broadcast'
   isAnonymous: boolean("is_anonymous").default(false), // true if student sending anonymously
   isRead: boolean("is_read").default(false),
+  status: varchar("status", { length: 20 }).default("sent"), // 'sent', 'delivered', 'read'
+  isEdited: boolean("is_edited").default(false),
+  isDeleted: boolean("is_deleted").default(false),
   createdAt: timestamp("created_at").defaultNow().notNull(),
 });
 
@@ -205,6 +208,25 @@ export const messagesRelations = relations(messages, ({ one }) => ({
     relationName: "receivedMessages"
   }),
 }));
+
+// App Settings (Admin toggles)
+export const appSettings = pgTable("app_settings", {
+  id: integer("id").primaryKey().generatedAlwaysAsIdentity(),
+  key: varchar("key", { length: 100 }).notNull().unique(),
+  value: text("value").notNull(), // JSON stringified value for SQLite compatibility
+  updatedAt: timestamp("updated_at").defaultNow().notNull(),
+});
+
+// Chat Attachments (Dual Storage approach)
+export const attachments = pgTable("attachments", {
+  id: varchar("id", { length: 36 }).primaryKey(), // UUID
+  messageId: integer("message_id").notNull().references(() => messages.id, { onDelete: "cascade" }),
+  filename: varchar("filename", { length: 255 }).notNull(),
+  mimeType: varchar("mime_type", { length: 100 }).notNull(),
+  size: integer("size").notNull(),
+  data: text("data").notNull(), // Base64 encoded payload
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+});
 
 // ── Rating system helpers ──────────────────────────────────────────────────
 

@@ -1,7 +1,7 @@
 import { useState, useEffect, useRef } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { useAuth } from "@/hooks/useAuth";
-import { Send, User as UserIcon, Clock, ShieldCheck, CheckCheck, Loader2, MessageCircle } from "lucide-react";
+import { Send, User as UserIcon, Clock, ShieldCheck, CheckCheck, Loader2, MessageCircle, Smile, Paperclip, X, Trash2, Edit2, Play, File as FileIcon, Image as ImageIcon, MoreVertical } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { ScrollArea } from "@/components/ui/scroll-area";
@@ -9,6 +9,9 @@ import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { useToast } from "@/hooks/use-toast";
 import { motion, AnimatePresence } from "framer-motion";
 import { apiRequest } from "@/lib/queryClient";
+import EmojiPicker, { EmojiClickData } from 'emoji-picker-react';
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
+import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
 
 export default function Messages() {
   const { user } = useAuth();
@@ -16,7 +19,13 @@ export default function Messages() {
   const queryClient = useQueryClient();
   const [selectedUserId, setSelectedUserId] = useState<string | number | null>(null);
   const [messageText, setMessageText] = useState("");
+  const [attachment, setAttachment] = useState<File | null>(null);
+  const [showEmojiPicker, setShowEmojiPicker] = useState(false);
+  const [hoveredMessageId, setHoveredMessageId] = useState<number | null>(null);
+  const [editingMessageId, setEditingMessageId] = useState<number | null>(null);
+  const [editContent, setEditContent] = useState("");
   const scrollRef = useRef<HTMLDivElement>(null);
+  const fileInputRef = useRef<HTMLInputElement>(null);
 
   // Read userId from URL search params
   const urlParams = new URLSearchParams(window.location.search);
@@ -60,6 +69,11 @@ export default function Messages() {
     refetchInterval: 3000,
   });
 
+  // Fetch settings to check if edit/delete is allowed
+  const { data: settings } = useQuery<any>({
+    queryKey: ["/api/settings"],
+  });
+
   // Scroll to bottom when new messages arrive
   useEffect(() => {
     if (scrollRef.current) {
@@ -69,15 +83,39 @@ export default function Messages() {
 
   // Send message mutation — uses apiRequest which includes CSRF token
   const sendMessageMutation = useMutation({
-    mutationFn: async (content: string) => {
-      const res = await apiRequest("POST", "/api/messages", {
-        receiverId: selectedUserId,
-        content,
+    mutationFn: async () => {
+      const formData = new FormData();
+      formData.append("receiverId", String(selectedUserId));
+      
+      if (editingMessageId) {
+        // Edit message
+        const res = await apiRequest("PUT", `/api/messages/${editingMessageId}`, { content: messageText.trim() });
+        return res.json();
+      }
+
+      if (messageText.trim()) {
+        formData.append("content", messageText.trim());
+      }
+      if (attachment) {
+        formData.append("attachment", attachment);
+      }
+      
+      const res = await fetch("/api/messages", {
+        method: "POST",
+        body: formData,
       });
+      
+      if (!res.ok) {
+        const err = await res.text();
+        throw new Error(err || "Failed to send message");
+      }
       return res.json();
     },
     onSuccess: () => {
       setMessageText("");
+      setAttachment(null);
+      setEditingMessageId(null);
+      if (fileInputRef.current) fileInputRef.current.value = "";
       queryClient.invalidateQueries({ queryKey: ["/api/messages", selectedUserId] });
       queryClient.invalidateQueries({ queryKey: ["/api/conversations"] });
     },
@@ -92,8 +130,39 @@ export default function Messages() {
 
   const handleSend = (e: React.FormEvent) => {
     e.preventDefault();
-    if (!messageText.trim() || !selectedUserId) return;
-    sendMessageMutation.mutate(messageText.trim());
+    if ((!messageText.trim() && !attachment) || !selectedUserId) return;
+    sendMessageMutation.mutate();
+  };
+
+  const deleteMessageMutation = useMutation({
+    mutationFn: async (messageId: number) => {
+      const res = await apiRequest("DELETE", `/api/messages/${messageId}`);
+      return res.json();
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["/api/messages", selectedUserId] });
+      toast({ title: "Message deleted" });
+    }
+  });
+
+  const handleEmojiClick = (emojiData: EmojiClickData) => {
+    setMessageText(prev => prev + emojiData.emoji);
+  };
+
+  const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    if (e.target.files && e.target.files[0]) {
+      const file = e.target.files[0];
+      if (file.size > 50 * 1024 * 1024) {
+        toast({ title: "File too large", description: "Maximum file size is 50MB", variant: "destructive" });
+        return;
+      }
+      setAttachment(file);
+    }
+  };
+
+  const handleEditClick = (msg: any) => {
+    setEditingMessageId(msg.id);
+    setMessageText(msg.content);
   };
 
   // Find the selected user in display list (compare as strings to handle number/string mismatch)
@@ -252,19 +321,66 @@ export default function Messages() {
                             key={msg.id}
                             initial={{ opacity: 0, y: 10, scale: 0.95 }}
                             animate={{ opacity: 1, y: 0, scale: 1 }}
-                            className={`flex flex-col ${isMe ? "items-end" : "items-start"}`}
+                            className={`flex flex-col relative group ${isMe ? "items-end" : "items-start"}`}
+                            onMouseEnter={() => setHoveredMessageId(msg.id)}
+                            onMouseLeave={() => setHoveredMessageId(null)}
                           >
-                            <div className={`max-w-[70%] rounded-2xl px-4 py-3 shadow-sm ${
-                              isMe 
-                                ? "bg-primary text-primary-foreground rounded-tr-sm" 
-                                : "bg-card border border-border/50 text-foreground rounded-tl-sm"
-                            }`}>
-                              <p className="whitespace-pre-wrap text-sm">{msg.content}</p>
+                            <div className={`flex items-center gap-2 ${isMe ? 'flex-row-reverse' : 'flex-row'}`}>
+                              <div className={`max-w-md rounded-2xl px-4 py-3 shadow-sm ${
+                                isMe 
+                                  ? "bg-primary text-primary-foreground rounded-tr-sm" 
+                                  : "bg-card border border-border/50 text-foreground rounded-tl-sm"
+                              } ${msg.isDeleted ? 'opacity-50 italic bg-muted/50 text-muted-foreground' : ''}`}>
+                                
+                                {msg.isDeleted ? (
+                                  <p className="text-sm flex items-center gap-2"><Trash2 className="h-3 w-3" /> This message was deleted</p>
+                                ) : (
+                                  <>
+                                    {msg.attachmentId && (
+                                      <div className="mb-2 max-w-[200px] overflow-hidden rounded-md border border-white/20">
+                                        {msg.attachmentType?.startsWith('image/') ? (
+                                          <img src={`/api/attachments/${msg.attachmentId}`} alt="attachment" className="w-full h-auto object-cover" />
+                                        ) : msg.attachmentType?.startsWith('video/') ? (
+                                          <video src={`/api/attachments/${msg.attachmentId}`} controls className="w-full h-auto" />
+                                        ) : (
+                                          <a href={`/api/attachments/${msg.attachmentId}`} download className="flex items-center gap-2 p-2 bg-black/10 hover:bg-black/20 rounded transition-colors">
+                                            <FileIcon className="h-4 w-4" />
+                                            <span className="text-xs truncate">{msg.attachmentName || 'Download File'}</span>
+                                          </a>
+                                        )}
+                                      </div>
+                                    )}
+                                    <p className="whitespace-pre-wrap text-sm break-words">{msg.content}</p>
+                                    {msg.isEdited && <span className="text-[10px] opacity-70 ml-2">(edited)</span>}
+                                  </>
+                                )}
+                              </div>
+
+                              {/* Hover Context Menu */}
+                              {isMe && !msg.isDeleted && hoveredMessageId === msg.id && (
+                                <div className="flex gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
+                                  {settings?.allowMessageEdit !== "false" && (
+                                    <Button variant="ghost" size="icon" className="h-8 w-8 rounded-full" onClick={() => handleEditClick(msg)}>
+                                      <Edit2 className="h-4 w-4 text-muted-foreground hover:text-foreground" />
+                                    </Button>
+                                  )}
+                                  {settings?.allowMessageDelete !== "false" && (
+                                    <Button variant="ghost" size="icon" className="h-8 w-8 rounded-full hover:bg-destructive/10" onClick={() => deleteMessageMutation.mutate(msg.id)}>
+                                      <Trash2 className="h-4 w-4 text-destructive" />
+                                    </Button>
+                                  )}
+                                </div>
+                              )}
                             </div>
+
                             <div className={`flex items-center gap-1 mt-1 text-[10px] text-muted-foreground ${isMe ? "flex-row-reverse" : ""}`}>
                               <Clock className="w-3 h-3" />
                               {new Date(msg.createdAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
-                              {isMe && msg.isRead && <CheckCheck className="w-3 h-3 ml-1 text-blue-500" />}
+                              {isMe && (
+                                msg.status === 'read' ? <CheckCheck className="w-3 h-3 ml-1 text-blue-500" /> :
+                                msg.status === 'delivered' ? <CheckCheck className="w-3 h-3 ml-1" /> :
+                                <CheckCheck className="w-3 h-3 ml-1 opacity-50" />
+                              )}
                             </div>
                           </motion.div>
                         );
@@ -276,25 +392,77 @@ export default function Messages() {
               </ScrollArea>
 
               {/* Chat Input */}
-              <div className="p-4 border-t bg-card">
-                <form onSubmit={handleSend} className="flex gap-2 relative">
-                  <Input
-                    placeholder="Type your message here..."
-                    value={messageText}
-                    onChange={(e) => setMessageText(e.target.value)}
-                    className="flex-1 bg-muted/50 border-0 focus-visible:ring-1 rounded-full px-6 shadow-inner"
-                    disabled={sendMessageMutation.isPending}
-                  />
+              <div className="p-4 border-t bg-card flex flex-col">
+                {/* Editing indicator */}
+                {editingMessageId && (
+                  <div className="flex items-center justify-between bg-muted/50 p-2 rounded-t-lg border-l-4 border-primary mb-2 text-sm">
+                    <div className="flex items-center gap-2 text-muted-foreground">
+                      <Edit2 className="h-4 w-4" />
+                      <span>Editing message</span>
+                    </div>
+                    <Button variant="ghost" size="sm" className="h-6 w-6 p-0 rounded-full" onClick={() => { setEditingMessageId(null); setMessageText(""); }}>
+                      <X className="h-4 w-4" />
+                    </Button>
+                  </div>
+                )}
+                
+                {/* Attachment indicator */}
+                {attachment && (
+                  <div className="flex items-center justify-between bg-muted/50 p-2 rounded-t-lg border-l-4 border-blue-500 mb-2 text-sm">
+                    <div className="flex items-center gap-2 text-muted-foreground">
+                      <Paperclip className="h-4 w-4" />
+                      <span className="truncate max-w-[200px]">{attachment.name}</span>
+                      <span className="text-xs opacity-70">({(attachment.size / 1024 / 1024).toFixed(2)} MB)</span>
+                    </div>
+                    <Button variant="ghost" size="sm" className="h-6 w-6 p-0 rounded-full" onClick={() => { setAttachment(null); if (fileInputRef.current) fileInputRef.current.value = ""; }}>
+                      <X className="h-4 w-4" />
+                    </Button>
+                  </div>
+                )}
+
+                <form onSubmit={handleSend} className="flex gap-2 relative items-end">
+                  <div className="flex-1 flex items-center bg-muted/50 border rounded-2xl shadow-inner pr-2 focus-within:ring-1 focus-within:ring-primary focus-within:border-primary transition-all">
+                    <Popover open={showEmojiPicker} onOpenChange={setShowEmojiPicker}>
+                      <PopoverTrigger asChild>
+                        <Button variant="ghost" size="icon" className="h-10 w-10 rounded-full shrink-0 text-muted-foreground hover:text-foreground">
+                          <Smile className="h-5 w-5" />
+                        </Button>
+                      </PopoverTrigger>
+                      <PopoverContent side="top" align="start" className="w-auto p-0 border-none shadow-xl mb-2">
+                        <EmojiPicker onEmojiClick={handleEmojiClick} theme="auto" />
+                      </PopoverContent>
+                    </Popover>
+
+                    <input type="file" className="hidden" ref={fileInputRef} onChange={handleFileChange} />
+                    <Button 
+                      type="button" 
+                      variant="ghost" 
+                      size="icon" 
+                      className="h-10 w-10 rounded-full shrink-0 text-muted-foreground hover:text-foreground"
+                      onClick={() => fileInputRef.current?.click()}
+                    >
+                      <Paperclip className="h-5 w-5" />
+                    </Button>
+
+                    <Input
+                      placeholder={editingMessageId ? "Edit message..." : "Type your message here..."}
+                      value={messageText}
+                      onChange={(e) => setMessageText(e.target.value)}
+                      className="flex-1 bg-transparent border-0 focus-visible:ring-0 shadow-none px-2 h-12"
+                      disabled={sendMessageMutation.isPending}
+                    />
+                  </div>
+                  
                   <Button 
                     type="submit" 
                     size="icon"
-                    className="rounded-full w-10 h-10 shadow-md hover:shadow-lg transition-all"
-                    disabled={!messageText.trim() || sendMessageMutation.isPending}
+                    className="rounded-full w-12 h-12 shrink-0 shadow-md hover:shadow-lg transition-all"
+                    disabled={(!messageText.trim() && !attachment) || sendMessageMutation.isPending}
                   >
                     {sendMessageMutation.isPending ? (
-                      <Loader2 className="h-4 w-4 animate-spin" />
+                      <Loader2 className="h-5 w-5 animate-spin" />
                     ) : (
-                      <Send className="h-4 w-4 ml-1" />
+                      <Send className="h-5 w-5 ml-1" />
                     )}
                   </Button>
                 </form>

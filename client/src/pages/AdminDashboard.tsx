@@ -1,5 +1,6 @@
 import { useState, useRef, useEffect } from "react";
 import { useQuery, useMutation } from "@tanstack/react-query";
+import { useLocation } from "wouter";
 import { Header } from "@/components/Header";
 import { apiRequest, queryClient } from "@/lib/queryClient";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
@@ -26,6 +27,7 @@ import {
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Textarea } from "@/components/ui/textarea";
 import { ScrollArea } from "@/components/ui/scroll-area";
+import { Switch } from "@/components/ui/switch";
 import { useToast } from "@/hooks/use-toast";
 import { motion } from "framer-motion";
 import {
@@ -142,6 +144,7 @@ const maskEmail = (email: string) => {
 export default function AdminDashboard() {
   const { t } = useTranslation();
   const { toast } = useToast();
+  const [_, setLocation] = useLocation();
   const [selectedTab, setSelectedTab] = useState("users");
   const [showSettings, setShowSettings] = useState(false);
   const [isEditUserOpen, setIsEditUserOpen] = useState(false);
@@ -237,6 +240,25 @@ export default function AdminDashboard() {
     queryKey: ["system-health"],
     queryFn: fetchSystemHealth,
     refetchInterval: 30000, // Check every 30s
+  });
+
+  // Fetch system settings
+  const { data: settings, refetch: refetchSettings } = useQuery<any>({
+    queryKey: ["/api/settings"],
+  });
+
+  const updateSettings = useMutation({
+    mutationFn: async (newSettings: any) => {
+      const res = await apiRequest("POST", "/api/settings", newSettings);
+      return res.json();
+    },
+    onSuccess: () => {
+      toast({ title: t("admin.settings.success", { defaultValue: "Settings updated successfully" }) });
+      refetchSettings();
+    },
+    onError: () => {
+      toast({ variant: "destructive", title: t("admin.settings.error", { defaultValue: "Failed to update settings" }) });
+    }
   });
 
   // Export data function
@@ -956,6 +978,14 @@ export default function AdminDashboard() {
                                   <Button
                                     variant="outline"
                                     size="sm"
+                                    onClick={() => setLocation(`/messages?userId=${user.id}`)}
+                                    title="Message User"
+                                  >
+                                    <MessageSquare className="h-4 w-4" />
+                                  </Button>
+                                  <Button
+                                    variant="outline"
+                                    size="sm"
                                     onClick={() => { setEditingUser(user); setIsEditUserOpen(true); }}
                                   >
                                     <Edit className="h-4 w-4" />
@@ -1233,6 +1263,40 @@ export default function AdminDashboard() {
                     </CardContent>
                   </Card>
                 </div>
+              </div>
+
+              {/* Messaging Settings Section */}
+              <div className="space-y-3">
+                <div className="flex items-center gap-2 px-1">
+                  <MessageSquare className="h-5 w-5 text-indigo-500" />
+                  <Label className="text-lg font-semibold">Messaging Settings</Label>
+                </div>
+                <Card className="border-0 shadow-sm bg-indigo-50/50 dark:bg-indigo-950/20 backdrop-blur-sm">
+                  <CardContent className="p-4 space-y-4">
+                    <div className="flex items-center justify-between">
+                      <div className="space-y-0.5">
+                        <Label>Allow Message Editing</Label>
+                        <p className="text-sm text-muted-foreground">Allow users to edit their sent messages.</p>
+                      </div>
+                      <Switch 
+                        checked={settings?.allowMessageEdit !== "false"} 
+                        onCheckedChange={(c) => updateSettings.mutate({ allowMessageEdit: c.toString() })} 
+                        disabled={updateSettings.isPending}
+                      />
+                    </div>
+                    <div className="flex items-center justify-between">
+                      <div className="space-y-0.5">
+                        <Label>Allow Message Deletion</Label>
+                        <p className="text-sm text-muted-foreground">Allow users to delete their sent messages.</p>
+                      </div>
+                      <Switch 
+                        checked={settings?.allowMessageDelete !== "false"} 
+                        onCheckedChange={(c) => updateSettings.mutate({ allowMessageDelete: c.toString() })} 
+                        disabled={updateSettings.isPending}
+                      />
+                    </div>
+                  </CardContent>
+                </Card>
               </div>
 
               {/* Lower Section: Exports and Quick Actions Side-by-Side */}

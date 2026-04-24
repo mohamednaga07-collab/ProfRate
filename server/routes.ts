@@ -10,6 +10,28 @@ import { randomUUID } from "crypto";
 import crypto from "crypto";
 import { sendEmail, generateForgotPasswordEmailHtml, generateForgotUsernameEmailHtml, generateVerificationEmailHtml } from "./email";
 import os from "os";
+import multer from "multer";
+import path from "path";
+import fs from "fs";
+
+// Configure multer for 50MB file uploads (saving to server/uploads)
+const uploadDir = path.join(process.cwd(), "server", "uploads");
+if (!fs.existsSync(uploadDir)) {
+  fs.mkdirSync(uploadDir, { recursive: true });
+}
+const storageConfig = multer.diskStorage({
+  destination: function (req, file, cb) {
+    cb(null, uploadDir);
+  },
+  filename: function (req, file, cb) {
+    const uniqueSuffix = Date.now() + '-' + Math.round(Math.random() * 1E9);
+    cb(null, uniqueSuffix + path.extname(file.originalname));
+  }
+});
+const upload = multer({ 
+  storage: storageConfig,
+  limits: { fileSize: 50 * 1024 * 1024 } // 50 MB limit
+});
 
 // Guard to prevent simultaneous duplicate registration requests
 const pendingRegistrations = new Set<string>();
@@ -1135,8 +1157,35 @@ export async function registerRoutes(httpServer: Server, app: Express): Promise<
       
       // Deduplicate by ID
       const uniqueMessages = Array.from(new Map(combined.map(m => [m.id, m])).values());
-      res.json(uniqueMessages);
+      
+      // Flatten first attachment onto each message for easy frontend access
+      const messagesWithAttachments = await Promise.all(
+        uniqueMessages.map(async (msg) => {
+          try {
+            const attachments = await storage.getAttachmentsForMessage(msg.id);
+            const first = attachments[0];
+            return {
+              ...msg,
+              attachmentId: first?.id || null,
+              attachmentName: first?.filename || null,
+              attachmentType: first?.mimeType || null,
+            };
+          } catch {
+            return { ...msg, attachmentId: null, attachmentName: null, attachmentType: null };
+          }
+        })
+      );
+
+      // Mark messages from the other user as read
+      for (const msg of messagesWithAttachments) {
+        if (msg.senderId === otherUserId && msg.status !== 'read') {
+          try { await storage.markMessageRead(msg.id); } catch {}
+        }
+      }
+      
+      res.json(messagesWithAttachments);
     } catch (error) {
+      console.error("Error fetching messages:", error);
       res.status(500).json({ message: "Failed to fetch messages" });
     }
   });
@@ -1238,32 +1287,30 @@ export async function registerRoutes(httpServer: Server, app: Express): Promise<
     }
   });
 
-  app.post("/api/messages", isAuthenticated, validateCsrfHeader, async (req, res) => {
+  app.post("/api/messages", isAuthenticated, upload.single("attachment"), async (req, res) => {
     try {
       let user = req.user as any;
       if (!user && (req as any).session?.userId) {
         user = await storage.getUser((req as any).session.userId);
       }
       const { receiverId, targetDoctorId, content } = req.body;
+      const file = (req as any).file;
       
-      if (!receiverId || !content) {
-        return res.status(400).json({ message: "Missing required fields" });
+      // If there are files but no content, allow it (just a file message)
+      if (!receiverId || (!content && !file)) {
+        return res.status(400).json({ message: "Message content or attachment is required" });
       }
 
       if (!user) {
         return res.status(401).json({ message: "Not authenticated" });
       }
 
-      // 1. Role enforcement logic:
-      // Admins can message anyone, and anyone can message admins.
-      // Students can initiate to teachers.
-      // Teachers can ONLY reply to students.
+      // 1. Role enforcement logic
       const receiver = await storage.getUser(receiverId);
       if (!receiver) return res.status(404).json({ message: "User not found" });
 
       const userRole = user?.role || "student";
       const receiverRole = receiver?.role || "student";
-
       const isAdminInvolved = userRole === "admin" || receiverRole === "admin";
 
       if (!isAdminInvolved) {
@@ -1273,9 +1320,7 @@ export async function registerRoutes(httpServer: Server, app: Express): Promise<
         if (userRole === "student" && receiverRole !== "teacher") {
            return res.status(403).json({ message: "Students can only message teachers or admins" });
         }
-        
         if (userRole === "teacher") {
-          // Enforce teacher can only reply
           const receivedFromStudent = await storage.getMessages(user.id);
           const hasHistory = receivedFromStudent.some(m => String(m.senderId) === String(receiverId));
           if (!hasHistory) {
@@ -1297,11 +1342,40 @@ export async function registerRoutes(httpServer: Server, app: Express): Promise<
         receiverId,
         targetDoctorId,
         title: "Direct Message",
-        content,
+        content: content || "",
         type: "direct"
       });
 
-      res.status(201).json(message);
+      // 3. Process single attachment for Dual Storage
+      let savedAttachment: any = null;
+      if (file) {
+        try {
+          const fileData = fs.readFileSync(file.path);
+          const base64Data = fileData.toString('base64');
+          
+          const attachment = await storage.addAttachment({
+            id: randomUUID(),
+            messageId: message.id,
+            filename: file.originalname,
+            mimeType: file.mimetype,
+            size: file.size,
+            data: base64Data
+          });
+          
+          // Don't send back the massive base64 string in the JSON response
+          const { data, ...safeAtt } = attachment;
+          savedAttachment = safeAtt;
+        } catch (fileErr) {
+          console.error("Error saving attachment:", fileErr);
+        }
+      }
+
+      res.status(201).json({
+        ...message,
+        attachmentId: savedAttachment?.id || null,
+        attachmentName: savedAttachment?.filename || null,
+        attachmentType: savedAttachment?.mimeType || null,
+      });
     } catch (error: any) {
       console.error("Error sending message:", error);
       res.status(500).json({ message: error?.message || "Failed to send message" });
@@ -1314,6 +1388,111 @@ export async function registerRoutes(httpServer: Server, app: Express): Promise<
       res.status(204).end();
     } catch (error) {
       res.status(500).json({ message: "Failed to mark as read" });
+    }
+  });
+
+  app.put("/api/messages/:id", isAuthenticated, validateCsrfHeader, async (req, res) => {
+    try {
+      let user = req.user as any;
+      if (!user && (req as any).session?.userId) {
+        user = await storage.getUser((req as any).session.userId);
+      }
+      const messageId = parseInt(req.params.id);
+      const { content } = req.body;
+      
+      // Check admin settings
+      const settings = await storage.getAppSettings();
+      const allowEditSetting = settings.find(s => s.key === "allowMessageEdit");
+      if (allowEditSetting && allowEditSetting.value === "false" && user.role !== "admin") {
+        return res.status(403).json({ message: "Message editing is disabled by administrators" });
+      }
+
+      await storage.updateMessage(messageId, { content, isEdited: true });
+      res.status(200).json({ message: "Message updated" });
+    } catch (error) {
+      res.status(500).json({ message: "Failed to update message" });
+    }
+  });
+
+  app.delete("/api/messages/:id", isAuthenticated, validateCsrfHeader, async (req, res) => {
+    try {
+      let user = req.user as any;
+      if (!user && (req as any).session?.userId) {
+        user = await storage.getUser((req as any).session.userId);
+      }
+      const messageId = parseInt(req.params.id);
+      
+      // Check admin settings
+      const settings = await storage.getAppSettings();
+      const allowDeleteSetting = settings.find(s => s.key === "allowMessageDelete");
+      if (allowDeleteSetting && allowDeleteSetting.value === "false" && user.role !== "admin") {
+        return res.status(403).json({ message: "Message deletion is disabled by administrators" });
+      }
+
+      await storage.deleteMessage(messageId);
+      res.status(200).json({ message: "Message deleted" });
+    } catch (error) {
+      res.status(500).json({ message: "Failed to delete message" });
+    }
+  });
+
+  app.get("/api/attachments/:id", isAuthenticated, async (req, res) => {
+    try {
+      const attachmentId = req.params.id;
+      const attachment = await storage.getAttachment(attachmentId);
+      if (!attachment) {
+        return res.status(404).json({ message: "Attachment not found" });
+      }
+
+      const filePath = path.join(uploadDir, attachment.filename);
+      
+      // Check if file exists on disk (ephemeral storage)
+      if (fs.existsSync(filePath)) {
+        return res.sendFile(filePath);
+      }
+
+      // If missing from disk, restore from DB and serve
+      const fileBuffer = Buffer.from(attachment.data, 'base64');
+      fs.writeFileSync(filePath, fileBuffer);
+      return res.sendFile(filePath);
+    } catch (error) {
+      console.error("Error serving attachment:", error);
+      res.status(500).json({ message: "Failed to load attachment" });
+    }
+  });
+
+  app.get("/api/settings", async (req, res) => {
+    try {
+      const settings = await storage.getAppSettings();
+      const settingsObj = settings.reduce((acc, curr) => {
+        acc[curr.key] = curr.value;
+        return acc;
+      }, {});
+      res.json(settingsObj);
+    } catch (error) {
+      res.status(500).json({ message: "Failed to fetch settings" });
+    }
+  });
+
+  app.post("/api/settings", isAuthenticated, validateCsrfHeader, async (req, res) => {
+    try {
+      let user = req.user as any;
+      if (!user && (req as any).session?.userId) {
+        user = await storage.getUser((req as any).session.userId);
+      }
+      
+      if (user?.role !== "admin") {
+        return res.status(403).json({ message: "Forbidden" });
+      }
+
+      const settings = req.body;
+      for (const [key, value] of Object.entries(settings)) {
+        await storage.updateAppSetting(key, String(value));
+      }
+      
+      res.status(200).json({ message: "Settings updated successfully" });
+    } catch (error) {
+      res.status(500).json({ message: "Failed to update settings" });
     }
   });
 

@@ -21,6 +21,8 @@ import {
   messages,
   type Message,
   type InsertMessage,
+  attachments,
+  appSettings,
   teacherClasses,
   type TeacherClass,
   type InsertTeacherClass,
@@ -115,8 +117,18 @@ export interface IStorage {
   getMessages(receiverId: string | null): Promise<Message[]>;
   getSentMessages(senderId: string): Promise<Message[]>;
   createMessage(data: InsertMessage): Promise<Message>;
+  updateMessage(id: number, data: Partial<InsertMessage>): Promise<Message>;
   markMessageRead(id: number): Promise<void>;
   deleteMessage(id: number): Promise<void>;
+
+  // Chat Attachments
+  addAttachment(data: any): Promise<any>;
+  getAttachment(id: string): Promise<any>;
+  getAttachmentsForMessage(messageId: number): Promise<any[]>;
+
+  // System Settings
+  getAppSettings(): Promise<any[]>;
+  updateAppSetting(key: string, value: string): Promise<void>;
 
   // Session management (single-session enforcement)
   setUserActiveSession(userId: string, sessionId: string | null): Promise<void>;
@@ -532,12 +544,46 @@ export class DatabaseStorage implements IStorage {
     return msg;
   }
 
+  async updateMessage(id: number, data: Partial<InsertMessage>): Promise<Message> {
+    const [msg] = await db.update(messages).set(data).where(eq(messages.id, id)).returning();
+    return msg;
+  }
+
   async markMessageRead(id: number): Promise<void> {
-    await db.update(messages).set({ isRead: true }).where(eq(messages.id, id));
+    await db.update(messages).set({ status: 'read' }).where(eq(messages.id, id));
   }
 
   async deleteMessage(id: number): Promise<void> {
-    await db.delete(messages).where(eq(messages.id, id));
+    await db.update(messages).set({ isDeleted: true }).where(eq(messages.id, id));
+  }
+
+  // ── Chat Attachments ───────────────────────────────────────────────────
+  async addAttachment(data: any): Promise<any> {
+    const [attachment] = await db.insert(attachments).values(data).returning();
+    return attachment;
+  }
+
+  async getAttachment(id: string): Promise<any> {
+    const [attachment] = await db.select().from(attachments).where(eq(attachments.id, id));
+    return attachment;
+  }
+
+  async getAttachmentsForMessage(messageId: number): Promise<any[]> {
+    return await db.select().from(attachments).where(eq(attachments.messageId, messageId));
+  }
+
+  // ── System Settings ────────────────────────────────────────────────────
+  async getAppSettings(): Promise<any[]> {
+    return await db.select().from(appSettings);
+  }
+
+  async updateAppSetting(key: string, value: string): Promise<void> {
+    const existing = await db.select().from(appSettings).where(eq(appSettings.key, key));
+    if (existing.length > 0) {
+      await db.update(appSettings).set({ value, updatedAt: new Date() }).where(eq(appSettings.key, key));
+    } else {
+      await db.insert(appSettings).values({ key, value });
+    }
   }
 
   // ── Session management ─────────────────────────────────────────────────

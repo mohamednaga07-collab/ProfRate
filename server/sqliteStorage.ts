@@ -104,9 +104,30 @@ export class SqliteStorage implements IStorage {
         type TEXT DEFAULT 'direct',
         isAnonymous INTEGER DEFAULT 0,
         isRead INTEGER DEFAULT 0,
+        status TEXT DEFAULT 'sent',
+        isEdited INTEGER DEFAULT 0,
+        isDeleted INTEGER DEFAULT 0,
         createdAt TEXT DEFAULT CURRENT_TIMESTAMP,
         FOREIGN KEY (senderId) REFERENCES users(id),
         FOREIGN KEY (receiverId) REFERENCES users(id)
+      );
+
+      CREATE TABLE IF NOT EXISTS app_settings (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        key TEXT UNIQUE NOT NULL,
+        value TEXT NOT NULL,
+        updatedAt TEXT DEFAULT CURRENT_TIMESTAMP
+      );
+
+      CREATE TABLE IF NOT EXISTS attachments (
+        id TEXT PRIMARY KEY,
+        messageId INTEGER NOT NULL,
+        filename TEXT NOT NULL,
+        mimeType TEXT NOT NULL,
+        size INTEGER NOT NULL,
+        data TEXT NOT NULL,
+        createdAt TEXT DEFAULT CURRENT_TIMESTAMP,
+        FOREIGN KEY (messageId) REFERENCES messages(id) ON DELETE CASCADE
       );
     `);
 
@@ -499,12 +520,51 @@ export class SqliteStorage implements IStorage {
     return result;
   }
   
+  async updateMessage(id: number, data: any): Promise<any> {
+    const keys = Object.keys(data);
+    const updates = keys.map(k => `${k} = @${k}`).join(", ");
+    this.db.prepare(`UPDATE messages SET ${updates} WHERE id = @id`).run({ ...data, id });
+    return this.db.prepare("SELECT * FROM messages WHERE id = ?").get(id);
+  }
+
   async markMessageRead(id: number): Promise<void> {
-    this.db.prepare("UPDATE messages SET isRead = 1 WHERE id = ?").run(id);
+    this.db.prepare("UPDATE messages SET status = 'read' WHERE id = ?").run(id);
   }
   
   async deleteMessage(id: number): Promise<void> {
-    this.db.prepare("DELETE FROM messages WHERE id = ?").run(id);
+    this.db.prepare("UPDATE messages SET isDeleted = 1 WHERE id = ?").run(id);
+  }
+
+  // ── Chat Attachments ───────────────────────────────────────────────────
+  async addAttachment(data: any): Promise<any> {
+    const stmt = this.db.prepare(`
+      INSERT INTO attachments (id, messageId, filename, mimeType, size, data)
+      VALUES (@id, @messageId, @filename, @mimeType, @size, @data)
+      RETURNING *
+    `);
+    return stmt.get(data);
+  }
+
+  async getAttachment(id: string): Promise<any> {
+    return this.db.prepare("SELECT * FROM attachments WHERE id = ?").get(id);
+  }
+
+  async getAttachmentsForMessage(messageId: number): Promise<any[]> {
+    return this.db.prepare("SELECT * FROM attachments WHERE messageId = ?").all(messageId) as any[];
+  }
+
+  // ── System Settings ────────────────────────────────────────────────────
+  async getAppSettings(): Promise<any[]> {
+    return this.db.prepare("SELECT * FROM app_settings").all() as any[];
+  }
+
+  async updateAppSetting(key: string, value: string): Promise<void> {
+    const existing = this.db.prepare("SELECT * FROM app_settings WHERE key = ?").get(key);
+    if (existing) {
+      this.db.prepare("UPDATE app_settings SET value = @value, updatedAt = CURRENT_TIMESTAMP WHERE key = @key").run({ key, value });
+    } else {
+      this.db.prepare("INSERT INTO app_settings (key, value) VALUES (@key, @value)").run({ key, value });
+    }
   }
 
   // ── Session management stubs ──
