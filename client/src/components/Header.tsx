@@ -7,7 +7,7 @@ import { RoleBasedProfileMenu } from "./RoleBasedProfileMenu";
 import { NotificationDropdown } from "./NotificationDropdown";
 import { ProfilePictureUpload } from "./ProfilePictureUpload";
 import { useAuth } from "@/hooks/useAuth";
-import { GraduationCap, BarChart3, Home, Star, Search } from "lucide-react";
+import { GraduationCap, BarChart3, Home, Star, Search, MessageSquare } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { useState } from "react";
 import { useTranslation } from "react-i18next";
@@ -89,6 +89,18 @@ export function Header() {
                 <Link href="/compare">
                   <BarChart3 className="h-4 w-4 mr-2" />
                   {t("nav.compare")}
+                </Link>
+              </Button>
+              <Button
+                asChild
+                variant={location === "/messages" ? "secondary" : "ghost"}
+                className="hidden sm:inline-flex relative"
+                data-testid="link-messages"
+              >
+                <Link href="/messages">
+                  <MessageSquare className="h-4 w-4 mr-2" />
+                  Messages
+                  {/* Future enhancement: add unread badge here */}
                 </Link>
               </Button>
               <div className="ml-1 mr-1">

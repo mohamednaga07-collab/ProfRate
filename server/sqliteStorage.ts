@@ -450,12 +450,47 @@ export class SqliteStorage implements IStorage {
     } catch (e) { return []; }
   }
 
-  // ── Message stubs ──
-  async getMessages(_receiverId: string | null): Promise<any[]> { return []; }
-  async getSentMessages(_senderId: string): Promise<any[]> { return []; }
-  async createMessage(data: any): Promise<any> { return { id: 0, ...data, createdAt: new Date().toISOString() }; }
-  async markMessageRead(_id: number): Promise<void> { return; }
-  async deleteMessage(_id: number): Promise<void> { return; }
+  // ── Message operations ──
+  async getMessages(receiverId: string | null): Promise<any[]> {
+    if (receiverId === null) {
+      return this.db.prepare("SELECT * FROM messages WHERE receiverId IS NULL ORDER BY createdAt ASC").all() as any[];
+    }
+    return this.db.prepare("SELECT * FROM messages WHERE receiverId = ? OR senderId = ? ORDER BY createdAt ASC").all(receiverId, receiverId) as any[];
+  }
+  
+  async getSentMessages(senderId: string): Promise<any[]> {
+    return this.db.prepare("SELECT * FROM messages WHERE senderId = ? ORDER BY createdAt ASC").all(senderId) as any[];
+  }
+  
+  async createMessage(data: any): Promise<any> {
+    const stmt = this.db.prepare(`
+      INSERT INTO messages (senderId, receiverId, targetDoctorId, title, content, type, isAnonymous, isRead)
+      VALUES (@senderId, @receiverId, @targetDoctorId, @title, @content, @type, @isAnonymous, @isRead)
+      RETURNING *
+    `);
+    
+    // SQLite doesn't natively support booleans, handle the mapping if necessary,
+    // though better-sqlite3 often handles 1/0 mapped to boolean if the schema expects it.
+    const result = stmt.get({
+      senderId: data.senderId,
+      receiverId: data.receiverId,
+      targetDoctorId: data.targetDoctorId || null,
+      title: data.title || "Message",
+      content: data.content,
+      type: data.type || "direct",
+      isAnonymous: data.isAnonymous ? 1 : 0,
+      isRead: 0
+    });
+    return result;
+  }
+  
+  async markMessageRead(id: number): Promise<void> {
+    this.db.prepare("UPDATE messages SET isRead = 1 WHERE id = ?").run(id);
+  }
+  
+  async deleteMessage(id: number): Promise<void> {
+    this.db.prepare("DELETE FROM messages WHERE id = ?").run(id);
+  }
 
   // ── Session management stubs ──
   async setUserActiveSession(_userId: string, _sessionId: string | null): Promise<void> { return; }

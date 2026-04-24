@@ -307,8 +307,24 @@ export default function DoctorProfile() {
                                 {t("doctorProfile.writeReview")}
                               </Button>
                             )}
-                            <Button variant="outline" data-testid="button-anon-message" onClick={() => setIsMsgDialogOpen(true)}>
-                              <Send className="h-4 w-4 mr-2" />
+                            <Button variant="outline" data-testid="button-anon-message" onClick={async () => {
+                              try {
+                                const res = await fetch(`/api/doctors/${doctor.id}/teacher-user`);
+                                if (!res.ok) {
+                                  toast({
+                                    title: "Not Available",
+                                    description: "This professor has not registered an account yet.",
+                                    variant: "destructive"
+                                  });
+                                  return;
+                                }
+                                const data = await res.json();
+                                window.location.href = `/messages`; // The messages component will fetch the active conversations
+                              } catch (e) {
+                                toast({ title: "Error", description: "Could not initiate chat." });
+                              }
+                            }}>
+                              <MessageCircle className="h-4 w-4 mr-2" />
                               Message Teacher
                             </Button>
                           </div>

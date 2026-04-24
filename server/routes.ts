@@ -1095,6 +1095,170 @@ export async function registerRoutes(httpServer: Server, app: Express): Promise<
     }
   });
 
+  // ─── Messaging Routes ───
+  const messageRateLimiter = new Map<string, number>();
+
+  app.get("/api/messages/:otherUserId", isAuthenticated, async (req, res) => {
+    try {
+      const user = req.user as any;
+      const otherUserId = req.params.otherUserId;
+      // Get all messages where user is sender or receiver
+      const allMessages = await storage.getMessages(user.id);
+      const sentMessages = await storage.getSentMessages(user.id);
+      
+      const combined = [...allMessages, ...sentMessages].filter(m => 
+        (m.senderId === user.id && m.receiverId === otherUserId) || 
+        (m.senderId === otherUserId && m.receiverId === user.id)
+      ).sort((a, b) => new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime());
+      
+      // Deduplicate by ID
+      const uniqueMessages = Array.from(new Map(combined.map(m => [m.id, m])).values());
+      res.json(uniqueMessages);
+    } catch (error) {
+      res.status(500).json({ message: "Failed to fetch messages" });
+    }
+  });
+
+  app.get("/api/conversations", isAuthenticated, async (req, res) => {
+    try {
+      const user = req.user as any;
+      const received = await storage.getMessages(user.id);
+      const sent = await storage.getSentMessages(user.id);
+      
+      const all = [...received, ...sent];
+      const otherUserIds = new Set<string>();
+      
+      all.forEach(m => {
+        if (m.senderId && m.senderId !== user.id) otherUserIds.add(m.senderId);
+        if (m.receiverId && m.receiverId !== user.id) otherUserIds.add(m.receiverId);
+      });
+      
+      // Fetch user details for these users
+      const usersInfo = await Promise.all(
+        Array.from(otherUserIds).map(id => storage.getUser(id))
+      );
+      
+      // Filter out nulls and return basic info
+      res.json(usersInfo.filter(u => u !== undefined).map(u => ({
+        id: u?.id,
+        firstName: u?.firstName,
+        lastName: u?.lastName,
+        profileImageUrl: u?.profileImageUrl,
+        role: u?.role
+      })));
+    } catch (error) {
+      res.status(500).json({ message: "Failed to fetch conversations" });
+    }
+  });
+
+  app.get("/api/doctors/:id/teacher-user", isAuthenticated, async (req, res) => {
+    try {
+      const doctorId = parseInt(req.params.id);
+      const allDoctors = await storage.getAllDoctors();
+      const doctor = allDoctors.find((d: any) => d.id === doctorId);
+      if (!doctor) return res.status(404).json({ message: "Doctor not found" });
+
+      // Find user whose role is teacher and linkedDoctorId matches, OR name matches
+      const allUsersResponse = await storage.getStats(); // wait, we don't have getAllUsers().
+      // Let's use a query to users table directly since storage might not have a dedicated method
+      const db = (await import("./db")).db;
+      const { users } = await import("@shared/schema");
+      const { eq, and } = await import("drizzle-orm");
+      
+      let teacherUser = await db.query.users.findFirst({
+        where: and(eq(users.role, "teacher"), eq(users.linkedDoctorId, doctorId))
+      });
+
+      if (!teacherUser) {
+        // Fallback name matching
+        const normalize = (name: string) => name.replace(/^(Dr\.?|Prof\.?)\s+/i, "").trim().toLowerCase();
+        const docName = normalize(doctor.name);
+        
+        const allTeachers = await db.query.users.findMany({
+          where: eq(users.role, "teacher")
+        });
+        
+        teacherUser = allTeachers.find((t: any) => {
+          const tName = [t.firstName, t.lastName].filter(Boolean).join(" ").trim().toLowerCase();
+          return tName === docName || docName.includes(tName) || tName.includes(docName);
+        });
+      }
+
+      if (!teacherUser) {
+        return res.status(404).json({ message: "No registered teacher found for this profile." });
+      }
+
+      res.json({ teacherUserId: teacherUser.id });
+    } catch (error) {
+      console.error("Error finding teacher user:", error);
+      res.status(500).json({ message: "Server error" });
+    }
+  });
+
+  app.post("/api/messages", isAuthenticated, validateCsrfHeader, async (req, res) => {
+    try {
+      const user = req.user as any;
+      const { receiverId, targetDoctorId, content } = req.body;
+      
+      if (!receiverId || !content) {
+        return res.status(400).json({ message: "Missing required fields" });
+      }
+
+      // 1. Role enforcement logic:
+      // Students can initiate (send to teachers)
+      // Teachers can ONLY reply (send to students they already have a chat with)
+      const receiver = await storage.getUser(receiverId);
+      if (!receiver) return res.status(404).json({ message: "User not found" });
+
+      if (user.role === "teacher" && receiver.role !== "student") {
+         return res.status(403).json({ message: "Teachers can only message students" });
+      }
+      if (user.role === "student" && receiver.role !== "teacher") {
+         return res.status(403).json({ message: "Students can only message teachers" });
+      }
+      
+      if (user.role === "teacher") {
+        // Enforce teacher can only reply
+        const receivedFromStudent = await storage.getMessages(user.id);
+        const hasHistory = receivedFromStudent.some(m => m.senderId === receiverId);
+        if (!hasHistory) {
+          return res.status(403).json({ message: "Teachers can only reply to students who have messaged them first." });
+        }
+      }
+
+      // 2. Anti-spam delay (3 seconds between messages)
+      const now = Date.now();
+      const lastSent = messageRateLimiter.get(user.id) || 0;
+      if (now - lastSent < 3000) {
+        return res.status(429).json({ message: "Please wait a moment before sending another message." });
+      }
+      messageRateLimiter.set(user.id, now);
+
+      const message = await storage.createMessage({
+        senderId: user.id,
+        receiverId,
+        targetDoctorId,
+        title: "Direct Message",
+        content,
+        type: "direct"
+      });
+
+      res.status(201).json(message);
+    } catch (error) {
+      console.error("Error sending message:", error);
+      res.status(500).json({ message: "Failed to send message" });
+    }
+  });
+
+  app.post("/api/messages/:id/read", isAuthenticated, validateCsrfHeader, async (req, res) => {
+    try {
+      await storage.markMessageRead(parseInt(req.params.id));
+      res.status(204).end();
+    } catch (error) {
+      res.status(500).json({ message: "Failed to mark as read" });
+    }
+  });
+
   // Review routes
   app.get("/api/doctors/:id/reviews", async (req, res) => {
     try {
