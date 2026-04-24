@@ -8,8 +8,10 @@ import { ScrollArea } from "@/components/ui/scroll-area";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { useToast } from "@/hooks/use-toast";
 import { motion, AnimatePresence } from "framer-motion";
+import { useLocation } from "wouter";
 
 export default function Messages() {
+  const [, setLocation] = useLocation();
   const { user } = useAuth();
   const { toast } = useToast();
   const queryClient = useQueryClient();
@@ -30,7 +32,7 @@ export default function Messages() {
   });
 
   const urlParams = new URLSearchParams(window.location.search);
-  const initialUserId = urlParams.get('user');
+  const initialUserId = urlParams.get('userId') || urlParams.get('user');
 
   // Select first conversation automatically if none selected, OR select from URL
   useEffect(() => {
@@ -133,9 +135,7 @@ export default function Messages() {
                     const res = await fetch("/api/admin-contact");
                     if (res.ok) {
                       const adminInfo = await res.json();
-                      if (!displayConversations.some(c => c.id === adminInfo.id)) {
-                        displayConversations.unshift(adminInfo);
-                      }
+                      setLocation(`/messages?userId=${adminInfo.id}`);
                       setSelectedUserId(adminInfo.id);
                     }
                   }}

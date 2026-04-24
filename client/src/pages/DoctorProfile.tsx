@@ -318,10 +318,10 @@ export default function DoctorProfile() {
                                   });
                                   return;
                                 }
-                                const data = await res.json();
-                                window.location.href = `/messages`; // The messages component will fetch the active conversations
-                              } catch (e) {
-                                toast({ title: "Error", description: "Could not initiate chat." });
+                                  const data = await res.json();
+                                  window.location.href = `/messages?userId=${data.teacherUserId}`;
+                                } catch (e) {
+                                  toast({ title: "Error", description: "Could not initiate chat." });
                               }
                             }}>
                               <MessageCircle className="h-4 w-4 mr-2" />
