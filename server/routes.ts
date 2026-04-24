@@ -2320,57 +2320,37 @@ export async function registerRoutes(httpServer: Server, app: Express): Promise<
       let matchedDoctors: any[] = [];
       const normalize = (name: string) => name.replace(/^(Dr\.?|Prof\.?)\s+/i, "").trim().toLowerCase();
       const fullName = [freshUser.firstName, freshUser.lastName].filter(Boolean).join(" ").trim().toLowerCase();
-      
-      // STEP 1: Trust explicit linkedDoctorId (same as home page)
+
+      // Mirror exactly what TeacherDashboard (home page) does:
+      // 1. If linkedDoctorId is set, use it directly — no second-guessing
       if (freshUser.linkedDoctorId) {
         const linkedId = Number(freshUser.linkedDoctorId);
         const doc = allDoctors.find((d: any) => Number(d.id) === linkedId);
         if (doc) matchedDoctors = [doc];
       }
 
-      // STEP 2: Build name candidates
-      let nameCandidates: any[] = [];
-      if (fullName) {
-        nameCandidates = allDoctors.filter((d: any) => normalize(d.name) === normalize(fullName));
-        if (nameCandidates.length === 0) {
-          nameCandidates = allDoctors.filter((d: any) =>
+      // 2. Fallback to name match only if no explicit link
+      if (matchedDoctors.length === 0 && fullName) {
+        matchedDoctors = allDoctors.filter((d: any) => normalize(d.name) === normalize(fullName));
+        if (matchedDoctors.length === 0) {
+          matchedDoctors = allDoctors.filter((d: any) =>
             normalize(d.name).includes(fullName) || fullName.includes(normalize(d.name))
           );
         }
       }
 
-      // STEP 3: If linked doctor has 0 actual reviews, check name candidates for one that does
-      if (matchedDoctors.length > 0 && nameCandidates.length > 0) {
-        const linkedDoc = matchedDoctors[0];
-        const linkedActualReviews = await storage.getReviewsByDoctor(linkedDoc.id);
-        if (linkedActualReviews.length === 0) {
-          for (const candidate of nameCandidates) {
-            if (Number(candidate.id) === Number(linkedDoc.id)) continue;
-            const candidateReviews = await storage.getReviewsByDoctor(candidate.id);
-            if (candidateReviews.length > 0) {
-              await storage.linkUserToDoctor(freshUser.id, candidate.id);
-              console.log(`🔧 [StatsAutoRepair] Re-linked ${freshUser.username} → doctor ${candidate.id} (${candidate.name})`);
-              matchedDoctors = [candidate];
-              break;
-            }
-          }
-        }
-      } else if (matchedDoctors.length === 0 && nameCandidates.length > 0) {
-        matchedDoctors = nameCandidates;
-      }
-      
       if (matchedDoctors.length === 0) {
         return res.json({ rating: 0, students: 0, reviews: 0, matched: false });
       }
 
       const doctor = matchedDoctors[0];
+      // Use doctor.ratings directly from the JOIN — same source as home page
       const rating = doctor.ratings?.overallRating ?? 0;
       const reviews = doctor.ratings?.totalReviews ?? 0;
-      
-      // Calculate students count from teacherClasses table
+
       const classes = await storage.getTeacherClasses?.({ userId: freshUser.id }) ?? [];
       const students = classes.reduce((sum: number, c: any) => sum + (c.studentCount || 0), 0);
-      
+
       res.json({ rating, students, reviews, matched: true });
     } catch (err: any) {
       console.error(err);
@@ -2448,46 +2428,23 @@ export async function registerRoutes(httpServer: Server, app: Express): Promise<
 
       let matchedDoctors: any[] = [];
 
-      // STEP 1: Try explicit linkedDoctorId (same as home page logic)
+      // Mirror exactly what TeacherDashboard (home page) does:
+      // 1. linkedDoctorId wins — trust it directly
       if (user.linkedDoctorId) {
         const linkedId = Number(user.linkedDoctorId);
         const doc = allDoctors.find((d: any) => Number(d.id) === linkedId);
         if (doc) matchedDoctors = [doc];
       }
 
-      // STEP 2: Build name candidates list regardless
-      let nameCandidates: any[] = [];
-      if (searchName) {
-        nameCandidates = allDoctors.filter((d: any) => normalize(d.name) === normalizedSearchName);
-        if (nameCandidates.length === 0) {
-          nameCandidates = allDoctors.filter((d: any) => {
+      // 2. Fallback to name match only if no explicit link
+      if (matchedDoctors.length === 0 && searchName) {
+        matchedDoctors = allDoctors.filter((d: any) => normalize(d.name) === normalizedSearchName);
+        if (matchedDoctors.length === 0) {
+          matchedDoctors = allDoctors.filter((d: any) => {
             const docName = normalize(d.name);
             return docName.includes(normalizedSearchName) || normalizedSearchName.includes(docName);
           });
         }
-      }
-
-      // STEP 3: If linkedDoctorId found a doctor, verify it has actual reviews.
-      //         If it has 0 actual reviews but a name candidate has real reviews, auto-repair.
-      if (matchedDoctors.length > 0 && nameCandidates.length > 0) {
-        const linkedDoc = matchedDoctors[0];
-        const linkedActualReviews = await storage.getReviewsByDoctor(linkedDoc.id);
-        if (linkedActualReviews.length === 0) {
-          // Check name candidates for one with real reviews
-          for (const candidate of nameCandidates) {
-            if (Number(candidate.id) === Number(linkedDoc.id)) continue; // skip self
-            const candidateReviews = await storage.getReviewsByDoctor(candidate.id);
-            if (candidateReviews.length > 0) {
-              // This candidate has real reviews — repair the link and use it
-              await storage.linkUserToDoctor(user.id, candidate.id);
-              console.log(`🔧 [AutoRepair] Re-linked ${user.username} → doctor ${candidate.id} (${candidate.name}) with ${candidateReviews.length} real reviews`);
-              matchedDoctors = [candidate];
-              break;
-            }
-          }
-        }
-      } else if (matchedDoctors.length === 0 && nameCandidates.length > 0) {
-        matchedDoctors = nameCandidates;
       }
 
       if (matchedDoctors.length === 0) {

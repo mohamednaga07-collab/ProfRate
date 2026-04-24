@@ -53,11 +53,34 @@ export default function TeacherFeedback() {
   });
 
   const reviews = data?.reviews ?? [];
-  const commented = reviews.filter(r => r.comment?.trim());
-  const noComment = reviews.filter(r => !r.comment?.trim());
-
   const avgOverall = data?.doctor?.ratings?.overallRating ?? 0;
   const ratings = data?.doctor?.ratings;
+
+  // Export reviews to a real downloadable CSV file
+  const handleExportCSV = () => {
+    if (!reviews.length) return;
+    const headers = ["#", "Overall Score", "Teaching", "Availability", "Communication", "Knowledge", "Fairness", "Engagement", "Helpfulness", "Organization", "Comment", "Date"];
+    const rows = reviews.map((r: Review, i: number) => [
+      i + 1,
+      r.overallScore?.toFixed(2) ?? "",
+      r.teachingQuality, r.availability, r.communication, r.knowledge, r.fairness,
+      r.engagement ?? "", r.helpfulness ?? "", r.courseOrganization ?? "",
+      `"${(r.comment || "").replace(/"/g, "'")}"`,
+      new Date(r.createdAt).toLocaleDateString()
+    ].join(","));
+    const csv = [headers.join(","), ...rows].join("\n");
+    const blob = new Blob([csv], { type: "text/csv" });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement("a");
+    a.href = url;
+    a.download = `feedback_${data?.doctor?.name ?? "report"}_${new Date().toISOString().slice(0,10)}.csv`;
+    a.click();
+    URL.revokeObjectURL(url);
+  };
+
+  const commented = reviews.filter((r: Review) => r.comment?.trim());
+  const noComment = reviews.filter((r: Review) => !r.comment?.trim());
+
 
   // Radar chart data strictly for student perception
   const radarData = [
@@ -99,7 +122,11 @@ export default function TeacherFeedback() {
             </div>
           </div>
           <div className="flex gap-3">
-             <Button className="bg-purple-600 hover:bg-purple-500 text-white shadow-[0_0_20px_rgba(168,85,247,0.4)] gap-2 border-0">
+             <Button
+               onClick={handleExportCSV}
+               disabled={reviews.length === 0}
+               className="bg-purple-600 hover:bg-purple-500 disabled:opacity-40 text-white shadow-[0_0_20px_rgba(168,85,247,0.4)] gap-2 border-0"
+             >
                <Layers className="h-4 w-4" /> Export CSV
              </Button>
           </div>

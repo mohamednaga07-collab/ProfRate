@@ -1,4 +1,4 @@
-/* stylelint-disable at-rule-no-unknown */
+﻿/* stylelint-disable at-rule-no-unknown */
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
@@ -568,4 +568,23 @@ body[data-radix-scroll-lock] {
 [data-radix-scroll-lock] a,
 [data-radix-scroll-lock] [role="button"] {
   pointer-events: auto !important;
+}
+/* ─── Print / PDF Export ─────────────────────────────────────────────────── */
+@media print {
+  /* Hide navigation and non-content elements */
+  header, nav, .print\:hidden, button, [role="navigation"] { display: none !important; }
+  /* White background, dark text for readability */
+  body, html { background: #fff !important; color: #111 !important; }
+  /* Remove glow/shadow effects that don't print well */
+  * { box-shadow: none !important; text-shadow: none !important; }
+  /* Make cards visible */
+  .card, [class*="card"] { border: 1px solid #ddd !important; background: #fff !important; color: #111 !important; }
+  /* Charts and SVGs — keep full width */
+  svg, canvas { max-width: 100% !important; }
+  /* Page breaks */
+  .page-break-before { page-break-before: always; }
+  /* Keep all text readable */
+  h1, h2, h3, p, span, div { color: #111 !important; }
+  /* Fill lighter colors for charts */
+  [fill*="transparent"], [fill="none"] { fill: transparent !important; }
 }

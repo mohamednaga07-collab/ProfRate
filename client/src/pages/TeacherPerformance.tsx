@@ -3,16 +3,18 @@ import { Header } from "@/components/Header";
 import { useAuth } from "@/hooks/useAuth";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { motion } from "framer-motion";
-import { TrendingUp, Activity, Target, AlertCircle, Download, Share2, Award, Zap } from "lucide-react";
+import { TrendingUp, Activity, Target, AlertCircle, Download, Share2, Award, Zap, Check } from "lucide-react";
 import { AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip as RechartsTooltip, ResponsiveContainer, RadarChart, PolarGrid, PolarAngleAxis, PolarRadiusAxis, Radar } from "recharts";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { useTranslation } from "react-i18next";
 import { Button } from "@/components/ui/button";
+import { useState } from "react";
 
 export default function TeacherPerformance() {
   const { user } = useAuth();
   const { t } = useTranslation();
-  
+  const [copied, setCopied] = useState(false);
+
   // Fetch teacher feedback for stats
   const { data, isLoading } = useQuery({
     queryKey: ["/api/teacher/feedback"],
@@ -22,6 +24,24 @@ export default function TeacherPerformance() {
       return res.json();
     },
   });
+
+  // Share: copy a search link for this teacher's public profile to clipboard
+  const handleShare = async () => {
+    const doctorName = data?.doctor?.name ?? user?.username ?? "";
+    const url = `${window.location.origin}/?search=${encodeURIComponent(doctorName)}`;
+    try {
+      await navigator.clipboard.writeText(url);
+    } catch {
+      const ta = document.createElement("textarea");
+      ta.value = url; document.body.appendChild(ta); ta.select();
+      document.execCommand("copy"); document.body.removeChild(ta);
+    }
+    setCopied(true);
+    setTimeout(() => setCopied(false), 2500);
+  };
+
+  // Export PDF: open browser print dialog (user can save as PDF)
+  const handleExportPDF = () => window.print();
 
   const reviews = data?.reviews ?? [];
   const ratings = data?.doctor?.ratings;
@@ -86,10 +106,19 @@ export default function TeacherPerformance() {
             </div>
           </div>
           <div className="flex gap-3">
-             <Button variant="outline" className="border-white/10 bg-white/5 hover:bg-white/10 text-white backdrop-blur-md gap-2">
-               <Share2 className="h-4 w-4" /> Share
+             <Button
+               variant="outline"
+               onClick={handleShare}
+               className="border-white/10 bg-white/5 hover:bg-white/10 text-white backdrop-blur-md gap-2 transition-all"
+             >
+               {copied ? <Check className="h-4 w-4 text-green-400" /> : <Share2 className="h-4 w-4" />}
+               {copied ? "Link Copied!" : "Share"}
              </Button>
-             <Button className="bg-blue-600 hover:bg-blue-500 text-white shadow-[0_0_20px_rgba(59,130,246,0.4)] gap-2 border-0">
+             <Button
+               onClick={handleExportPDF}
+               disabled={data?.matched === false || (data?.doctor?.ratings?.totalReviews ?? 0) === 0}
+               className="bg-blue-600 hover:bg-blue-500 disabled:opacity-40 text-white shadow-[0_0_20px_rgba(59,130,246,0.4)] gap-2 border-0"
+             >
                <Download className="h-4 w-4" /> Export PDF
              </Button>
           </div>
