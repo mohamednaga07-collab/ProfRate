@@ -10,28 +10,99 @@ import { useTranslation } from "react-i18next";
 import { Button } from "@/components/ui/button";
 import { useState } from "react";
 
+interface Doctor {
+  id: number;
+  name: string;
+  ratings?: {
+    overallRating: number;
+    totalReviews: number;
+    avgTeachingQuality: number;
+    avgAvailability: number;
+    avgCommunication: number;
+    avgKnowledge: number;
+    avgFairness: number;
+    avgEngagement?: number;
+    avgHelpfulness?: number;
+    avgCourseOrganization?: number;
+  };
+}
+
+interface Review {
+  id: number;
+  doctorId: number;
+  teachingQuality: number;
+  availability: number;
+  communication: number;
+  knowledge: number;
+  fairness: number;
+  engagement?: number;
+  helpfulness?: number;
+  courseOrganization?: number;
+  overallScore?: number;
+  comment?: string;
+  createdAt: string;
+}
+
 export default function TeacherPerformance() {
   const { user } = useAuth();
   const { t } = useTranslation();
   const [copied, setCopied] = useState(false);
 
-  // Fetch teacher feedback for stats
-  const { data, isLoading } = useQuery({
-    queryKey: ["/api/teacher/feedback"],
+  // ─── USE THE EXACT SAME DATA SOURCE AS THE HOME PAGE ───
+  const { data: doctors = [], isLoading: doctorsLoading } = useQuery({
+    queryKey: ["/api/doctors"],
     queryFn: async () => {
-      const res = await fetch("/api/teacher/feedback");
-      if (!res.ok) throw new Error("Failed");
-      return res.json();
+      const res = await fetch("/api/doctors");
+      if (!res.ok) throw new Error("Failed to fetch doctors");
+      return res.json() as Promise<Doctor[]>;
     },
   });
 
-  // Share: copy a search link for this teacher's public profile to clipboard
+  // ─── MATCH DOCTOR USING SAME LOGIC AS TeacherDashboard HOME PAGE ───
+  const normalizeName = (name: string) => name.replace(/^(Dr\.?|Prof\.?)\s+/i, "").trim().toLowerCase();
+  const teacherFullName = [user?.firstName, user?.lastName].filter(Boolean).join(" ").trim();
+  const normalizedTeacher = teacherFullName.toLowerCase();
+
+  let matchedDoctor: Doctor | null = null;
+
+  if (user?.role === "teacher") {
+    if (user.linkedDoctorId) {
+      const doc = doctors.find(d => Number(d.id) === Number(user.linkedDoctorId));
+      if (doc) matchedDoctor = doc;
+    }
+    if (!matchedDoctor && normalizedTeacher) {
+      const exact = doctors.find(d => normalizeName(d.name) === normalizedTeacher);
+      if (exact) {
+        matchedDoctor = exact;
+      } else {
+        const fuzzy = doctors.find(d =>
+          normalizeName(d.name).includes(normalizedTeacher) || normalizedTeacher.includes(normalizeName(d.name))
+        );
+        if (fuzzy) matchedDoctor = fuzzy;
+      }
+    }
+  }
+
+  const matched = !!matchedDoctor;
+  const ratings = matchedDoctor?.ratings;
+
+  // ─── FETCH ACTUAL REVIEWS FOR THE MATCHED DOCTOR ───
+  const { data: reviews = [] } = useQuery({
+    queryKey: ["/api/doctors", matchedDoctor?.id, "reviews"],
+    queryFn: async () => {
+      const res = await fetch(`/api/doctors/${matchedDoctor!.id}/reviews`);
+      if (!res.ok) throw new Error("Failed");
+      return res.json() as Promise<Review[]>;
+    },
+    enabled: !!matchedDoctor,
+  });
+
+  // Share: copy a search link to clipboard
   const handleShare = async () => {
-    const doctorName = data?.doctor?.name ?? user?.username ?? "";
-    const url = `${window.location.origin}/?search=${encodeURIComponent(doctorName)}`;
-    try {
-      await navigator.clipboard.writeText(url);
-    } catch {
+    const name = matchedDoctor?.name ?? teacherFullName ?? "";
+    const url = `${window.location.origin}/?search=${encodeURIComponent(name)}`;
+    try { await navigator.clipboard.writeText(url); }
+    catch {
       const ta = document.createElement("textarea");
       ta.value = url; document.body.appendChild(ta); ta.select();
       document.execCommand("copy"); document.body.removeChild(ta);
@@ -40,16 +111,12 @@ export default function TeacherPerformance() {
     setTimeout(() => setCopied(false), 2500);
   };
 
-  // Export PDF: open browser print dialog (user can save as PDF)
+  // Export PDF via browser print dialog
   const handleExportPDF = () => window.print();
 
-  const reviews = data?.reviews ?? [];
-  const ratings = data?.doctor?.ratings;
-  
-  // Build real trajectory from actual reviews grouped by month
+  // ─── CHART DATA FROM ACTUAL REVIEWS ───
   const chartData = (() => {
     if (!reviews || reviews.length === 0) {
-      // No reviews — show flat zero line over last 6 months
       const months: { name: string; score: number }[] = [];
       for (let i = 5; i >= 0; i--) {
         const d = new Date();
@@ -58,9 +125,8 @@ export default function TeacherPerformance() {
       }
       return months;
     }
-    // Group reviews by month and compute average overallScore per month
     const byMonth: Record<string, number[]> = {};
-    reviews.forEach((r: any) => {
+    reviews.forEach((r: Review) => {
       const d = new Date(r.createdAt);
       const key = d.toLocaleString("default", { month: "short", year: "2-digit" });
       if (!byMonth[key]) byMonth[key] = [];
@@ -75,9 +141,7 @@ export default function TeacherPerformance() {
       }));
   })();
 
-  // Map to 8-axis Octagon "Skills Radar"
-  // Note: we'll multiply normalized / 10 scales by 1 if out of 10 or convert appropriately.
-  // Assuming the DB stores submetrics over 5 or 10, let's normalize to a /10 scale.
+  // 8-axis Radar
   const radarData = [
     { subject: t("doctorProfile.factorsShort.teaching", { defaultValue: "Teaching" }), A: (ratings?.avgTeachingQuality ?? 0) * 2, fullMark: 10 },
     { subject: t("doctorProfile.factorsShort.availability", { defaultValue: "Availability" }), A: (ratings?.avgAvailability ?? 0) * 2, fullMark: 10 },
@@ -105,7 +169,7 @@ export default function TeacherPerformance() {
               <p className="text-blue-200/70 text-lg">{t("teacherPerformance.subtitle", { defaultValue: "Track your ratings and engagement over time" })}</p>
             </div>
           </div>
-          <div className="flex gap-3">
+          <div className="flex gap-3 print:hidden">
              <Button
                variant="outline"
                onClick={handleShare}
@@ -116,7 +180,7 @@ export default function TeacherPerformance() {
              </Button>
              <Button
                onClick={handleExportPDF}
-               disabled={data?.matched === false || (data?.doctor?.ratings?.totalReviews ?? 0) === 0}
+               disabled={!matched || reviews.length === 0}
                className="bg-blue-600 hover:bg-blue-500 disabled:opacity-40 text-white shadow-[0_0_20px_rgba(59,130,246,0.4)] gap-2 border-0"
              >
                <Download className="h-4 w-4" /> Export PDF
@@ -124,11 +188,11 @@ export default function TeacherPerformance() {
           </div>
         </motion.div>
 
-        {isLoading ? (
+        {doctorsLoading ? (
           <div className="flex justify-center py-32">
             <div className="h-12 w-12 animate-spin rounded-full border-4 border-blue-500 border-t-transparent shadow-[0_0_15px_rgba(59,130,246,0.5)]" />
           </div>
-        ) : data?.matched === false ? (
+        ) : !matched ? (
           <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }}>
             <Alert className="border-amber-500/30 bg-amber-500/10 backdrop-blur-xl mb-6 py-8 shadow-2xl relative overflow-hidden">
               <div className="absolute top-0 right-0 w-64 h-64 bg-amber-500/10 rounded-full blur-3xl -mr-20 -mt-20 pointer-events-none" />
@@ -139,7 +203,7 @@ export default function TeacherPerformance() {
                 </AlertDescription>
                 <div className="mt-4 text-sm text-amber-200/70 flex flex-col gap-2">
                   <p className="flex items-center gap-2">
-                    System searched for profile matching: <code className="bg-amber-500/20 px-2 py-1 rounded-md font-mono text-amber-300">"{data?.searchedName || user?.username}"</code>
+                    System searched for profile matching: <code className="bg-amber-500/20 px-2 py-1 rounded-md font-mono text-amber-300">"{teacherFullName || user?.username}"</code>
                   </p>
                   <p className="border-l-2 border-amber-500/50 pl-3 italic opacity-80">
                     Tip: Go to <strong>Profile Settings</strong> and update your First Name and Last Name to match your professor entry.

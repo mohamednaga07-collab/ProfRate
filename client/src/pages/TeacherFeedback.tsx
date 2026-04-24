@@ -10,8 +10,26 @@ import { useTranslation } from "react-i18next";
 import { RadarChart, PolarGrid, PolarAngleAxis, PolarRadiusAxis, Radar, ResponsiveContainer, Tooltip as RechartsTooltip } from "recharts";
 import { Button } from "@/components/ui/button";
 
+interface Doctor {
+  id: number;
+  name: string;
+  ratings?: {
+    overallRating: number;
+    totalReviews: number;
+    avgTeachingQuality: number;
+    avgAvailability: number;
+    avgCommunication: number;
+    avgKnowledge: number;
+    avgFairness: number;
+    avgEngagement?: number;
+    avgHelpfulness?: number;
+    avgCourseOrganization?: number;
+  };
+}
+
 interface Review {
   id: number;
+  doctorId: number;
   teachingQuality: number;
   availability: number;
   communication: number;
@@ -26,13 +44,6 @@ interface Review {
   createdAt: string;
 }
 
-interface FeedbackResponse {
-  matched: boolean;
-  doctor: { id: number; name: string; ratings: any } | null;
-  reviews: Review[];
-  searchedName?: string;
-}
-
 function getCategoryAvg(catSubScores: Record<string, number> | undefined) {
   if (!catSubScores) return 0;
   const vals = Object.values(catSubScores);
@@ -43,18 +54,57 @@ export default function TeacherFeedback() {
   const { user } = useAuth();
   const { t } = useTranslation();
 
-  const { data, isLoading } = useQuery({
-    queryKey: ["/api/teacher/feedback"],
+  // ─── USE THE EXACT SAME DATA SOURCE AS THE HOME PAGE ───
+  const { data: doctors = [], isLoading: doctorsLoading } = useQuery({
+    queryKey: ["/api/doctors"],
     queryFn: async () => {
-      const res = await fetch("/api/teacher/feedback");
-      if (!res.ok) throw new Error("Failed");
-      return res.json() as Promise<FeedbackResponse>;
+      const res = await fetch("/api/doctors");
+      if (!res.ok) throw new Error("Failed to fetch doctors");
+      return res.json() as Promise<Doctor[]>;
     },
   });
 
-  const reviews = data?.reviews ?? [];
-  const avgOverall = data?.doctor?.ratings?.overallRating ?? 0;
-  const ratings = data?.doctor?.ratings;
+  // ─── MATCH DOCTOR USING SAME LOGIC AS TeacherDashboard HOME PAGE ───
+  const normalizeName = (name: string) => name.replace(/^(Dr\.?|Prof\.?)\s+/i, "").trim().toLowerCase();
+  const teacherFullName = [user?.firstName, user?.lastName].filter(Boolean).join(" ").trim();
+  const normalizedTeacher = teacherFullName.toLowerCase();
+
+  let matchedDoctor: Doctor | null = null;
+
+  if (user?.role === "teacher") {
+    if (user.linkedDoctorId) {
+      const doc = doctors.find(d => Number(d.id) === Number(user.linkedDoctorId));
+      if (doc) matchedDoctor = doc;
+    }
+    if (!matchedDoctor && normalizedTeacher) {
+      const exact = doctors.find(d => normalizeName(d.name) === normalizedTeacher);
+      if (exact) {
+        matchedDoctor = exact;
+      } else {
+        const fuzzy = doctors.find(d =>
+          normalizeName(d.name).includes(normalizedTeacher) || normalizedTeacher.includes(normalizeName(d.name))
+        );
+        if (fuzzy) matchedDoctor = fuzzy;
+      }
+    }
+  }
+
+  const matched = !!matchedDoctor;
+  const ratings = matchedDoctor?.ratings;
+  const avgOverall = ratings?.overallRating ?? 0;
+
+  // ─── FETCH ACTUAL REVIEWS FOR THE MATCHED DOCTOR ───
+  const { data: reviews = [] } = useQuery({
+    queryKey: ["/api/doctors", matchedDoctor?.id, "reviews"],
+    queryFn: async () => {
+      const res = await fetch(`/api/doctors/${matchedDoctor!.id}/reviews`);
+      if (!res.ok) throw new Error("Failed");
+      return res.json() as Promise<Review[]>;
+    },
+    enabled: !!matchedDoctor,
+  });
+
+  const commented = reviews.filter((r: Review) => r.comment?.trim());
 
   // Export reviews to a real downloadable CSV file
   const handleExportCSV = () => {
@@ -73,16 +123,12 @@ export default function TeacherFeedback() {
     const url = URL.createObjectURL(blob);
     const a = document.createElement("a");
     a.href = url;
-    a.download = `feedback_${data?.doctor?.name ?? "report"}_${new Date().toISOString().slice(0,10)}.csv`;
+    a.download = `feedback_${matchedDoctor?.name ?? "report"}_${new Date().toISOString().slice(0,10)}.csv`;
     a.click();
     URL.revokeObjectURL(url);
   };
 
-  const commented = reviews.filter((r: Review) => r.comment?.trim());
-  const noComment = reviews.filter((r: Review) => !r.comment?.trim());
-
-
-  // Radar chart data strictly for student perception
+  // Radar chart data
   const radarData = [
     { subject: t("doctorProfile.factorsShort.teaching", { defaultValue: "Teaching" }), score: (ratings?.avgTeachingQuality ?? 0) * 2, fullMark: 10 },
     { subject: t("doctorProfile.factorsShort.availability", { defaultValue: "Availability" }), score: (ratings?.avgAvailability ?? 0) * 2, fullMark: 10 },
@@ -121,7 +167,7 @@ export default function TeacherFeedback() {
               <p className="text-purple-200/70 text-lg">{t("teacherFeedback.subtitle", { defaultValue: "Anonymous reviews left by your students" })}</p>
             </div>
           </div>
-          <div className="flex gap-3">
+          <div className="flex gap-3 print:hidden">
              <Button
                onClick={handleExportCSV}
                disabled={reviews.length === 0}
@@ -132,11 +178,11 @@ export default function TeacherFeedback() {
           </div>
         </motion.div>
 
-        {isLoading ? (
+        {doctorsLoading ? (
           <div className="flex justify-center py-32">
             <div className="h-12 w-12 animate-spin rounded-full border-4 border-purple-500 border-t-transparent shadow-[0_0_15px_rgba(168,85,247,0.5)]" />
           </div>
-        ) : data?.matched === false ? (
+        ) : !matched ? (
           <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }}>
             <Alert className="border-amber-500/30 bg-amber-500/10 backdrop-blur-xl mb-6 py-8 shadow-2xl relative overflow-hidden">
               <div className="absolute top-0 right-0 w-64 h-64 bg-amber-500/10 rounded-full blur-3xl -mr-20 -mt-20 pointer-events-none" />
@@ -147,7 +193,7 @@ export default function TeacherFeedback() {
                 </AlertDescription>
                 <div className="mt-4 text-sm text-amber-200/70 flex flex-col gap-2">
                   <p className="flex items-center gap-2">
-                    System searched for profile matching: <code className="bg-amber-500/20 px-2 py-1 rounded-md font-mono text-amber-300">"{data?.searchedName || user?.username}"</code>
+                    System searched for profile matching: <code className="bg-amber-500/20 px-2 py-1 rounded-md font-mono text-amber-300">"{teacherFullName || user?.username}"</code>
                   </p>
                   <p className="border-l-2 border-amber-500/50 pl-3 italic opacity-80">
                     Tip: Go to <strong>Profile Settings</strong> and update your First Name and Last Name to match your university registration.
