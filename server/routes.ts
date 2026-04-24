@@ -1239,6 +1239,10 @@ export async function registerRoutes(httpServer: Server, app: Express): Promise<
         return res.status(400).json({ message: "Missing required fields" });
       }
 
+      if (!user) {
+        return res.status(401).json({ message: "Not authenticated" });
+      }
+
       // 1. Role enforcement logic:
       // Admins can message anyone, and anyone can message admins.
       // Students can initiate to teachers.
@@ -1246,20 +1250,23 @@ export async function registerRoutes(httpServer: Server, app: Express): Promise<
       const receiver = await storage.getUser(receiverId);
       if (!receiver) return res.status(404).json({ message: "User not found" });
 
-      const isAdminInvolved = user.role === "admin" || receiver.role === "admin";
+      const userRole = user?.role || "student";
+      const receiverRole = receiver?.role || "student";
+
+      const isAdminInvolved = userRole === "admin" || receiverRole === "admin";
 
       if (!isAdminInvolved) {
-        if (user.role === "teacher" && receiver.role !== "student") {
+        if (userRole === "teacher" && receiverRole !== "student") {
            return res.status(403).json({ message: "Teachers can only message students or admins" });
         }
-        if (user.role === "student" && receiver.role !== "teacher") {
+        if (userRole === "student" && receiverRole !== "teacher") {
            return res.status(403).json({ message: "Students can only message teachers or admins" });
         }
         
-        if (user.role === "teacher") {
+        if (userRole === "teacher") {
           // Enforce teacher can only reply
           const receivedFromStudent = await storage.getMessages(user.id);
-          const hasHistory = receivedFromStudent.some(m => m.senderId === receiverId);
+          const hasHistory = receivedFromStudent.some(m => String(m.senderId) === String(receiverId));
           if (!hasHistory) {
             return res.status(403).json({ message: "Teachers can only reply to students who have messaged them first." });
           }
