@@ -199,36 +199,37 @@ export default function AdminUsers() {
                       </span>
                   </td>
                   <td className="px-6 py-4 text-right">
-                    <Dialog open={isDialogOpen && selectedUser?.id === user.id} onOpenChange={(open) => {
-                        if (!open) {
-                            setIsDialogOpen(false);
-                            setSelectedUser(null);
-                        }
-                    }}>
-                        <DialogTrigger asChild>
-                            <Button 
-                                variant="outline" 
-                                size="sm" 
-                                className="h-8" 
-                                onClick={() => openEditDialog(user)}
-                                disabled={currentUser?.id === user.id}
-                                title={currentUser?.id === user.id ? t("admin.tooltips.cannotEditSelf", { defaultValue: "You cannot edit your own role" }) : t("admin.actions.editRole", { defaultValue: "Edit Details" })}
-                            >
-                                <Edit className="h-3.5 w-3.5 mr-2" />
-                                Edit
-                            </Button>
-                        </DialogTrigger>
-                        <Button
-                          variant="outline"
-                          size="sm"
-                          className="h-8 ml-2"
-                          onClick={() => setLocation(`/messages?userId=${user.id}`)}
-                          disabled={currentUser?.id === user.id}
-                        >
-                          <MessageSquare className="h-3.5 w-3.5 mr-2" />
-                          Message
-                        </Button>
-                        <DialogContent>
+                    <div className="flex items-center justify-end gap-2">
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        className="h-8"
+                        onClick={() => setLocation(`/messages?userId=${user.id}`)}
+                        disabled={currentUser?.id === user.id}
+                      >
+                        <MessageSquare className="h-3.5 w-3.5 mr-2" />
+                        Message
+                      </Button>
+                      <Dialog open={isDialogOpen && selectedUser?.id === user.id} onOpenChange={(open) => {
+                          if (!open) {
+                              setIsDialogOpen(false);
+                              setSelectedUser(null);
+                          }
+                      }}>
+                          <DialogTrigger asChild>
+                              <Button 
+                                  variant="outline" 
+                                  size="sm" 
+                                  className="h-8" 
+                                  onClick={() => openEditDialog(user)}
+                                  disabled={currentUser?.id === user.id}
+                                  title={currentUser?.id === user.id ? t("admin.tooltips.cannotEditSelf", { defaultValue: "You cannot edit your own role" }) : t("admin.actions.editRole", { defaultValue: "Edit Details" })}
+                              >
+                                  <Edit className="h-3.5 w-3.5 mr-2" />
+                                  Edit
+                              </Button>
+                          </DialogTrigger>
+                          <DialogContent>
                             <DialogHeader>
                                 <DialogTitle>Edit User Details</DialogTitle>
                             </DialogHeader>
@@ -328,6 +329,7 @@ export default function AdminUsers() {
                             </DialogFooter>
                         </DialogContent>
                     </Dialog>
+                    </div>
                   </td>
                 </tr>
               ))}

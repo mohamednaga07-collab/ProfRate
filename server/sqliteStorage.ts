@@ -93,6 +93,21 @@ export class SqliteStorage implements IStorage {
         timestamp TEXT DEFAULT CURRENT_TIMESTAMP,
         FOREIGN KEY (userId) REFERENCES users(id) ON DELETE SET NULL
       );
+
+      CREATE TABLE IF NOT EXISTS messages (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        senderId TEXT NOT NULL,
+        receiverId TEXT,
+        targetDoctorId INTEGER,
+        title TEXT DEFAULT 'Message',
+        content TEXT NOT NULL,
+        type TEXT DEFAULT 'direct',
+        isAnonymous INTEGER DEFAULT 0,
+        isRead INTEGER DEFAULT 0,
+        createdAt TEXT DEFAULT CURRENT_TIMESTAMP,
+        FOREIGN KEY (senderId) REFERENCES users(id),
+        FOREIGN KEY (receiverId) REFERENCES users(id)
+      );
     `);
 
     try {
