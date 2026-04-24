@@ -1095,6 +1095,24 @@ export async function registerRoutes(httpServer: Server, app: Express): Promise<
     }
   });
 
+  // ─── User lookup for messaging ───
+  app.get("/api/users/:id", isAuthenticated, async (req, res) => {
+    try {
+      const targetUser = await storage.getUser(req.params.id);
+      if (!targetUser) return res.status(404).json({ message: "User not found" });
+      // Only return safe, non-sensitive fields
+      res.json({
+        id: targetUser.id,
+        firstName: targetUser.firstName,
+        lastName: targetUser.lastName,
+        role: targetUser.role,
+        profileImageUrl: targetUser.profileImageUrl
+      });
+    } catch (error) {
+      res.status(500).json({ message: "Failed to fetch user" });
+    }
+  });
+
   // ─── Messaging Routes ───
   const messageRateLimiter = new Map<string, number>();
 

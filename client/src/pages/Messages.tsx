@@ -8,62 +8,56 @@ import { ScrollArea } from "@/components/ui/scroll-area";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { useToast } from "@/hooks/use-toast";
 import { motion, AnimatePresence } from "framer-motion";
-import { useLocation } from "wouter";
+import { apiRequest } from "@/lib/queryClient";
 
 export default function Messages() {
-  const [, setLocation] = useLocation();
   const { user } = useAuth();
   const { toast } = useToast();
   const queryClient = useQueryClient();
-  const [selectedUserId, setSelectedUserId] = useState<string | null>(null);
+  const [selectedUserId, setSelectedUserId] = useState<string | number | null>(null);
   const [messageText, setMessageText] = useState("");
   const scrollRef = useRef<HTMLDivElement>(null);
 
-  // Auto-scroll to bottom of chat
-  useEffect(() => {
-    if (scrollRef.current) {
-      scrollRef.current.scrollIntoView({ behavior: "smooth" });
-    }
-  }, [messageText]); // actually we want to trigger this when messages change, handled below
+  // Read userId from URL search params
+  const urlParams = new URLSearchParams(window.location.search);
+  const initialUserId = urlParams.get('userId') || urlParams.get('user');
 
   // Fetch conversations (left sidebar)
   const { data: conversations = [], isLoading: loadingConversations } = useQuery<any[]>({
     queryKey: ["/api/conversations"],
   });
 
-  const urlParams = new URLSearchParams(window.location.search);
-  const initialUserId = urlParams.get('userId') || urlParams.get('user');
-
-  // Select first conversation automatically if none selected, OR select from URL
-  useEffect(() => {
-    if (initialUserId) {
-      setSelectedUserId(initialUserId);
-    } else if (!selectedUserId && conversations.length > 0) {
-      setSelectedUserId(conversations[0].id);
-    }
-  }, [conversations, selectedUserId, initialUserId]);
-
   // If the initialUserId is not in conversations (new chat), fetch their info
   const { data: newUserInfo } = useQuery({
     queryKey: ["/api/users", initialUserId],
-    enabled: !!initialUserId && !conversations.some((c: any) => c.id === initialUserId),
+    enabled: !!initialUserId && !conversations.some((c: any) => String(c.id) === String(initialUserId)),
     queryFn: async () => {
-      const res = await fetch(`/api/users/${initialUserId}`);
+      const res = await fetch(`/api/users/${initialUserId}`, { credentials: "include" });
       if (!res.ok) return null;
       return res.json();
     }
   });
 
+  // Build display list: existing conversations + possibly the new target user
   const displayConversations = [...conversations];
-  if (newUserInfo && !displayConversations.some(c => c.id === newUserInfo.id)) {
+  if (newUserInfo && !displayConversations.some(c => String(c.id) === String(newUserInfo.id))) {
     displayConversations.unshift(newUserInfo);
   }
+
+  // Select from URL or first conversation
+  useEffect(() => {
+    if (initialUserId && !selectedUserId) {
+      setSelectedUserId(initialUserId);
+    } else if (!selectedUserId && conversations.length > 0) {
+      setSelectedUserId(conversations[0].id);
+    }
+  }, [conversations, initialUserId]);
 
   // Fetch messages for selected conversation (right panel)
   const { data: messages = [], isLoading: loadingMessages } = useQuery<any[]>({
     queryKey: ["/api/messages", selectedUserId],
     enabled: !!selectedUserId,
-    refetchInterval: 3000, // Poll every 3 seconds for new messages
+    refetchInterval: 3000,
   });
 
   // Scroll to bottom when new messages arrive
@@ -73,21 +67,13 @@ export default function Messages() {
     }
   }, [messages]);
 
-  // Send message mutation
+  // Send message mutation — uses apiRequest which includes CSRF token
   const sendMessageMutation = useMutation({
     mutationFn: async (content: string) => {
-      const res = await fetch("/api/messages", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          receiverId: selectedUserId,
-          content,
-        }),
+      const res = await apiRequest("POST", "/api/messages", {
+        receiverId: selectedUserId,
+        content,
       });
-      if (!res.ok) {
-        const err = await res.json();
-        throw new Error(err.message || "Failed to send message");
-      }
       return res.json();
     },
     onSuccess: () => {
@@ -110,7 +96,29 @@ export default function Messages() {
     sendMessageMutation.mutate(messageText.trim());
   };
 
-  const selectedUser = displayConversations.find((c: any) => c.id === selectedUserId);
+  // Find the selected user in display list (compare as strings to handle number/string mismatch)
+  const selectedUser = displayConversations.find((c: any) => String(c.id) === String(selectedUserId));
+
+  // Contact Support handler
+  const handleContactSupport = async () => {
+    try {
+      const res = await fetch("/api/admin-contact", { credentials: "include" });
+      if (res.ok) {
+        const adminInfo = await res.json();
+        // Add to display list if not present
+        if (!displayConversations.some(c => String(c.id) === String(adminInfo.id))) {
+          displayConversations.unshift(adminInfo);
+        }
+        setSelectedUserId(adminInfo.id);
+        // Update URL without full reload
+        window.history.replaceState(null, "", `/messages?userId=${adminInfo.id}`);
+      } else {
+        toast({ title: "Error", description: "Could not reach support.", variant: "destructive" });
+      }
+    } catch {
+      toast({ title: "Error", description: "Could not reach support.", variant: "destructive" });
+    }
+  };
 
   return (
     <div className="container mx-auto p-4 max-w-6xl mt-20 h-[calc(100vh-120px)] flex">
@@ -128,17 +136,11 @@ export default function Messages() {
           </div>
           
           <ScrollArea className="flex-1">
-            <div className="p-2 pb-0">
-              {user?.role !== "admin" && (
+            {/* Contact Support button (visible to students and teachers) */}
+            {user?.role !== "admin" && (
+              <div className="p-2 pb-0">
                 <button
-                  onClick={async () => {
-                    const res = await fetch("/api/admin-contact");
-                    if (res.ok) {
-                      const adminInfo = await res.json();
-                      setLocation(`/messages?userId=${adminInfo.id}`);
-                      setSelectedUserId(adminInfo.id);
-                    }
-                  }}
+                  onClick={handleContactSupport}
                   className="w-full text-left p-3 rounded-xl transition-all duration-200 flex items-center gap-3 mb-2 bg-secondary/50 hover:bg-secondary text-secondary-foreground"
                 >
                   <div className="bg-primary text-primary-foreground h-10 w-10 rounded-full flex items-center justify-center border-2 border-background">
@@ -151,8 +153,8 @@ export default function Messages() {
                     </p>
                   </div>
                 </button>
-              )}
-            </div>
+              </div>
+            )}
             
             {loadingConversations ? (
               <div className="flex justify-center p-8 text-muted-foreground">
@@ -181,14 +183,14 @@ export default function Messages() {
                     key={conv.id}
                     onClick={() => setSelectedUserId(conv.id)}
                     className={`w-full text-left p-3 rounded-xl transition-all duration-200 flex items-center gap-3 ${
-                      selectedUserId === conv.id
+                      String(selectedUserId) === String(conv.id)
                         ? "bg-primary text-primary-foreground shadow-md"
                         : "hover:bg-muted"
                     }`}
                   >
-                    <Avatar className={`h-10 w-10 border-2 ${selectedUserId === conv.id ? 'border-primary-foreground/20' : 'border-background'}`}>
+                    <Avatar className={`h-10 w-10 border-2 ${String(selectedUserId) === String(conv.id) ? 'border-primary-foreground/20' : 'border-background'}`}>
                       <AvatarImage src={conv.profileImageUrl} />
-                      <AvatarFallback className={selectedUserId === conv.id ? "bg-primary-foreground/20 text-white" : ""}>
+                      <AvatarFallback className={String(selectedUserId) === String(conv.id) ? "bg-primary-foreground/20 text-white" : ""}>
                         {conv.firstName?.[0]}{conv.lastName?.[0]}
                       </AvatarFallback>
                     </Avatar>
@@ -196,7 +198,7 @@ export default function Messages() {
                       <p className="font-semibold truncate">
                         {conv.firstName} {conv.lastName}
                       </p>
-                      <p className={`text-xs capitalize flex items-center gap-1 ${selectedUserId === conv.id ? 'text-primary-foreground/80' : 'text-muted-foreground'}`}>
+                      <p className={`text-xs capitalize flex items-center gap-1 ${String(selectedUserId) === String(conv.id) ? 'text-primary-foreground/80' : 'text-muted-foreground'}`}>
                         {conv.role === 'teacher' ? <ShieldCheck className="w-3 h-3" /> : <UserIcon className="w-3 h-3" />}
                         {conv.role}
                       </p>
@@ -223,6 +225,7 @@ export default function Messages() {
                   <p className="text-xs text-muted-foreground flex items-center gap-1 capitalize">
                     {selectedUser.role}
                     {selectedUser.role === 'teacher' && <span className="text-green-500 flex items-center gap-1 ml-2"><span className="w-2 h-2 rounded-full bg-green-500"></span> Verified Educator</span>}
+                    {selectedUser.role === 'admin' && <span className="text-red-500 flex items-center gap-1 ml-2"><span className="w-2 h-2 rounded-full bg-red-500"></span> Platform Admin</span>}
                   </p>
                 </div>
               </div>
@@ -234,15 +237,16 @@ export default function Messages() {
                     <Loader2 className="h-6 w-6 animate-spin text-primary" />
                   </div>
                 ) : messages.length === 0 ? (
-                  <div className="h-full flex flex-col items-center justify-center text-muted-foreground space-y-4 opacity-50">
+                  <div className="h-full flex flex-col items-center justify-center text-muted-foreground space-y-4 opacity-50 py-16">
                     <MessageCircle className="w-16 h-16" />
                     <p>This is the beginning of your direct conversation.</p>
+                    <p className="text-sm">Type a message below to get started.</p>
                   </div>
                 ) : (
                   <div className="space-y-4 pb-4">
                     <AnimatePresence initial={false}>
                       {messages.map((msg: any) => {
-                        const isMe = msg.senderId === user?.id;
+                        const isMe = String(msg.senderId) === String(user?.id);
                         return (
                           <motion.div
                             key={msg.id}
@@ -317,4 +321,3 @@ export default function Messages() {
     </div>
   );
 }
-
