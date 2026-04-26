@@ -532,6 +532,20 @@ export class MemoryStorage implements IStorage {
   }
 
   async createMessage(data: InsertMessage): Promise<Message> {
+    // Prevent rapid duplicate messages (same sender/receiver/content within 5s)
+    try {
+      const now = Date.now();
+      for (const m of Array.from(this.messages.values()).reverse()) {
+        const age = now - new Date(m.createdAt).getTime();
+        if (age > 5000) break; // stop checking older messages
+        if (m.senderId === data.senderId && m.receiverId === data.receiverId && m.content === data.content) {
+          return m;
+        }
+      }
+    } catch (e) {
+      // ignore and continue to create
+    }
+
     const id = this.nextMessageId++;
     const msg = { id, ...data, isRead: false, createdAt: new Date() } as Message;
     this.messages.set(id, msg);

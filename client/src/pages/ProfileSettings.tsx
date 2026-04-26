@@ -8,11 +8,10 @@ import { Label } from "@/components/ui/label";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
 import { useToast } from "@/hooks/use-toast";
-import { Loader2, User, Mail, Shield, Camera, Lock, BookOpen, Star, Eye, EyeOff, Settings, Palette } from "lucide-react";
+import { Loader2, User, Mail, Shield, Camera, Lock, BookOpen, Star, Eye, EyeOff } from "lucide-react";
 import { useTranslation } from "react-i18next";
 import { apiRequest, queryClient } from "@/lib/queryClient";
 import { motion, AnimatePresence } from "framer-motion";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 
 // Role-based theme configuration
 const roleThemes = {
@@ -47,6 +46,15 @@ const headerVariants = {
   animate: { opacity: 1, y: 0, transition: { duration: 0.5, delay: 0.1 } },
 };
 
+const cardVariants = {
+  initial: { opacity: 0, scale: 0.95 },
+  animate: (index: number) => ({ 
+    opacity: 1, 
+    scale: 1, 
+    transition: { duration: 0.3, delay: 0.2 + index * 0.1 } 
+  }),
+};
+
 export default function ProfileSettings() {
   const { user } = useAuth();
   const { t } = useTranslation();
@@ -59,13 +67,6 @@ export default function ProfileSettings() {
   const [confirmPassword, setConfirmPassword] = useState("");
   const [isChangingUsername, setIsChangingUsername] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
-
-  // Change Name State
-  const [firstName, setFirstName] = useState("");
-  const [lastName, setLastName] = useState("");
-  const [nameConfirmPassword, setNameConfirmPassword] = useState("");
-  const [isChangingName, setIsChangingName] = useState(false);
-  const [showNameConfirmPassword, setShowNameConfirmPassword] = useState(false);
 
   const compressImage = (base64Str: string, maxWidth = 800, maxHeight = 800): Promise<string> => {
     return new Promise((resolve) => {
@@ -111,6 +112,7 @@ export default function ProfileSettings() {
       return;
     }
 
+    // Backend handles up to 15-20MB, but we'll compress for speed
     if (file.size > 20 * 1024 * 1024) {
       toast({
         title: t("profile.upload.error.size"),
@@ -122,21 +124,26 @@ export default function ProfileSettings() {
 
     try {
       setIsUploading(true);
+
+      // Convert to base64
       const reader = new FileReader();
       reader.onload = async () => {
         try {
           let imageData = reader.result as string;
 
+          // Compress if not a GIF
           if (file.type !== 'image/gif') {
             imageData = await compressImage(imageData);
           }
 
+          // Optimistic Update: Update global user cache IMMEDIATELY
+          // This syncs Header, Sidebar, and Profile Page instantly
           queryClient.setQueryData(["/api/auth/user"], (oldUser: any) => {
             if (!oldUser) return oldUser;
             return {
               ...oldUser,
-              profileImageUrl: imageData,
-              updatedAt: new Date().toISOString()
+              profileImageUrl: imageData, // Use base64 immediately
+              updatedAt: new Date().toISOString() // Force re-render of URLs checking timestamps
             };
           });
 
@@ -144,6 +151,7 @@ export default function ProfileSettings() {
             imageData,
           });
 
+          // Invalidate queries
           queryClient.invalidateQueries({ queryKey: ["/api/auth/user"] });
           queryClient.invalidateQueries({ queryKey: ["/api/doctors"] });
 
@@ -225,46 +233,6 @@ export default function ProfileSettings() {
     }
   };
 
-  const handleChangeName = async (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!firstName || !lastName || !nameConfirmPassword) return;
-
-    try {
-      setIsChangingName(true);
-      const res: any = await apiRequest("POST", "/api/auth/update-name", {
-         firstName,
-         lastName,
-         currentPassword: nameConfirmPassword
-      });
-      const data = await res.json();
-      
-      if (res.ok) {
-        queryClient.setQueryData(["/api/auth/user"], data.user);
-        toast({
-          title: t("profile.name.success", { defaultValue: "Name Updated" }),
-          description: data.message || "Your name has been updated successfully.",
-        });
-        setFirstName("");
-        setLastName("");
-        setNameConfirmPassword("");
-        if (user?.role === "teacher") {
-          queryClient.invalidateQueries({ queryKey: ["/api/teacher/stats"] });
-          queryClient.invalidateQueries({ queryKey: ["/api/teacher/feedback"] });
-        }
-      } else {
-        throw new Error(data.message || "Failed to update name");
-      }
-    } catch (error: any) {
-       toast({
-        title: t("profile.name.error", { defaultValue: "Error" }),
-        description: error.message,
-        variant: "destructive",
-      });
-    } finally {
-      setIsChangingName(false);
-    }
-  };
-
   if (!user) {
     return (
       <div className="min-h-screen bg-background">
@@ -276,6 +244,7 @@ export default function ProfileSettings() {
     );
   }
 
+  // Get role theme (default to student if role not found)
   const userRole = (user.role || "student") as keyof typeof roleThemes;
   const theme = roleThemes[userRole];
   const RoleIcon = theme.icon;
@@ -288,7 +257,7 @@ export default function ProfileSettings() {
       animate="animate"
     >
       <Header />
-      <main className="container mx-auto px-4 py-8 max-w-5xl">
+      <main className="container mx-auto px-4 py-8 max-w-4xl">
         {/* Animated Gradient Header Banner */}
         <motion.div
           variants={headerVariants}
@@ -298,303 +267,217 @@ export default function ProfileSettings() {
         >
           <div className="absolute inset-0 bg-black/10" />
           
+          {/* Background decoration circles */}
           <div className="absolute top-0 right-0 w-32 h-32 bg-white/10 rounded-full -mr-16 -mt-16" />
           <div className="absolute bottom-0 left-0 w-24 h-24 bg-white/10 rounded-full -ml-12 -mb-12" />
           
           <div className="relative z-10">
-            <div className="flex items-center gap-6">
-               <div className="relative group cursor-pointer" onClick={triggerFileInput}>
-                 <Avatar className="h-24 w-24 border-4 border-background shadow-2xl transition-transform hover:scale-105">
-                   <AvatarImage 
-                     src={user.profileImageUrl?.includes("...") 
-                       ? `/api/profile-image/user/${user.id}?v=${user.updatedAt ? new Date(user.updatedAt).getTime() : '1'}` 
-                       : user.profileImageUrl ?? undefined} 
-                     alt={user.username || "User"} 
-                     className="object-cover" 
-                   />
-                   <AvatarFallback className="text-3xl bg-primary/10 text-primary font-bold">
-                     {(user.username || "U").substring(0, 2).toUpperCase()}
-                   </AvatarFallback>
-                 </Avatar>
-                 <div className="absolute inset-0 bg-black/40 rounded-full flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity">
-                   <Camera className="h-6 w-6 text-white" />
-                 </div>
-                 {isUploading && (
-                   <div className="absolute inset-0 bg-black/60 rounded-full flex items-center justify-center z-10">
-                     <Loader2 className="h-6 w-6 text-white animate-spin" />
-                   </div>
-                 )}
-               </div>
-               <input
-                 type="file"
-                 title="Profile picture upload"
-                 ref={fileInputRef}
-                 className="hidden"
-                 accept="image/jpeg,image/png,image/webp"
-                 onChange={handleFileChange}
-               />
-               <div>
-                 <h1 className="text-3xl font-bold text-white mb-2">
-                   {user.firstName && user.lastName 
-                     ? `${user.firstName} ${user.lastName}` 
-                     : user.username}
-                 </h1>
-                 <div className="flex items-center gap-3">
-                    <Badge variant={theme.badgeVariant} className="text-white font-semibold shadow-lg">
-                      <RoleIcon className="h-3 w-3 mr-1" />
-                      {t(`profile.roles.${userRole}`)}
-                    </Badge>
-                    <span className="text-white/80 font-medium">@{user.username}</span>
-                 </div>
-               </div>
+            {/* Avatar overlapping banner */}
+            <div className="absolute -bottom-8 left-8">
+              <div className="relative group cursor-pointer" onClick={triggerFileInput}>
+                <Avatar className="h-32 w-32 border-4 border-background shadow-2xl transition-transform hover:scale-105">
+                  <AvatarImage 
+                    src={user.profileImageUrl?.includes("...") 
+                      ? `/api/profile-image/user/${user.id}?v=${user.updatedAt ? new Date(user.updatedAt).getTime() : '1'}` 
+                      : user.profileImageUrl ?? undefined} 
+                    alt={user.username || "User"} 
+                    className="object-cover" 
+                  />
+                  <AvatarFallback className="text-4xl bg-primary/10 text-primary font-bold">
+                    {(user.username || "U").substring(0, 2).toUpperCase()}
+                  </AvatarFallback>
+                </Avatar>
+                <div className="absolute inset-0 bg-black/40 rounded-full flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity">
+                  <Camera className="h-8 w-8 text-white" />
+                </div>
+                {isUploading && (
+                  <div className="absolute inset-0 bg-black/60 rounded-full flex items-center justify-center z-10">
+                    <Loader2 className="h-8 w-8 text-white animate-spin" />
+                  </div>
+                )}
+              </div>
+              <input
+                type="file"
+                title="Profile picture upload"
+                ref={fileInputRef}
+                className="hidden"
+                accept="image/jpeg,image/png,image/webp"
+                onChange={handleFileChange}
+              />
+            </div>
+
+            {/* User Info - Right side */}
+            <div className="ml-48 flex items-center justify-between">
+              <div>
+                <motion.div 
+                  initial={{ opacity: 0, x: -20 }}
+                  animate={{ opacity: 1, x: 0 }}
+                  transition={{ delay: 0.3 }}
+                  className="flex items-center gap-3"
+                >
+                  <h1 className="text-3xl font-bold text-white">
+                    {user.firstName && user.lastName 
+                      ? `${user.firstName} ${user.lastName}` 
+                      : user.username}
+                  </h1>
+                  <Badge variant={theme.badgeVariant} className="text-white font-semibold">
+                    <RoleIcon className="h-3 w-3 mr-1" />
+                    {t(`profile.roles.${userRole}`)}
+                  </Badge>
+                </motion.div>
+                <motion.p 
+                  initial={{ opacity: 0, x: -20 }}
+                  animate={{ opacity: 1, x: 0 }}
+                  transition={{ delay: 0.4 }}
+                  className="text-white/80 mt-1"
+                >
+                  @{user.username}
+                </motion.p>
+              </div>
             </div>
           </div>
         </motion.div>
 
-        {/* Tabs Interface */}
-        <Tabs defaultValue="general" className="w-full">
-          <TabsList className="grid w-full grid-cols-3 mb-8 bg-card/50 backdrop-blur-md p-1 h-auto rounded-xl border border-white/5 shadow-lg">
-            <TabsTrigger value="general" className="py-3 data-[state=active]:bg-primary data-[state=active]:text-primary-foreground rounded-lg transition-all">
-              <User className="w-4 h-4 mr-2" />
-              General Info
-            </TabsTrigger>
-            <TabsTrigger value="security" className="py-3 data-[state=active]:bg-primary data-[state=active]:text-primary-foreground rounded-lg transition-all">
-              <Shield className="w-4 h-4 mr-2" />
-              Security
-            </TabsTrigger>
-            <TabsTrigger value="appearance" className="py-3 data-[state=active]:bg-primary data-[state=active]:text-primary-foreground rounded-lg transition-all">
-              <Palette className="w-4 h-4 mr-2" />
-              Appearance
-            </TabsTrigger>
-          </TabsList>
+        {/* Spacer for overlapping avatar */}
+        <div className="h-8" />
 
-          {/* TAB 1: General Info */}
-          <TabsContent value="general" className="space-y-6">
-            <div className="grid md:grid-cols-2 gap-6">
-              {/* Personal Information (Read-only) */}
-              <Card className="border border-white/5 shadow-xl bg-card/50 backdrop-blur-sm overflow-hidden h-fit">
-                <CardHeader className="border-b bg-muted/30 pb-4">
-                  <CardTitle className="flex items-center gap-2 text-lg">
-                    <Settings className={`h-5 w-5 ${theme.accent}`} />
-                    Account Details
-                  </CardTitle>
-                </CardHeader>
-                <CardContent className="pt-6 space-y-6">
-                  <div className="space-y-1">
-                    <Label className="text-muted-foreground flex items-center gap-2"><User className="h-3 w-3"/> Username</Label>
-                    <div className="font-medium text-lg bg-muted/30 p-2 rounded-md">{user.username}</div>
+        {/* Personal Information Card */}
+        <motion.div
+          custom={0}
+          variants={cardVariants}
+          initial="initial"
+          animate="animate"
+        >
+          <Card className="mb-6 border-0 shadow-xl bg-card/50 backdrop-blur-sm overflow-hidden">
+            <CardHeader className="border-b bg-muted/30">
+              <CardTitle className="flex items-center gap-2">
+                <User className={`h-5 w-5 ${theme.accent}`} />
+                {t("profile.personalInfo")}
+              </CardTitle>
+              <CardDescription>{t("profile.personalInfoDesc")}</CardDescription>
+            </CardHeader>
+            <CardContent className="pt-6">
+              <div className="grid gap-6 md:grid-cols-2">
+                <div className="space-y-2">
+                  <Label className={`flex items-center gap-2 font-semibold ${theme.accent}`}>
+                    <User className="h-4 w-4" />
+                    {t("auth.username")}
+                  </Label>
+                  <div className="p-3 rounded-lg bg-muted/50 border border-border/50">
+                    <p className="font-medium">{user.username}</p>
                   </div>
-                  <div className="space-y-1">
-                    <Label className="text-muted-foreground flex items-center gap-2"><Mail className="h-3 w-3"/> Email Address</Label>
-                    <div className="font-medium text-lg bg-muted/30 p-2 rounded-md">{user.email}</div>
+                </div>
+                <div className="space-y-2">
+                  <Label className={`flex items-center gap-2 font-semibold ${theme.accent}`}>
+                    <Mail className="h-4 w-4" />
+                    {t("profile.email")}
+                  </Label>
+                  <div className="p-3 rounded-lg bg-muted/50 border border-border/50">
+                    <p className="font-medium truncate">{user.email}</p>
                   </div>
-                  <div className="space-y-1">
-                    <Label className="text-muted-foreground flex items-center gap-2"><Shield className="h-3 w-3"/> Current Role</Label>
-                    <div className="pt-1">
-                      <Badge variant={theme.badgeVariant} className="text-sm px-3 py-1">
-                        {t(`profile.roles.${userRole}`)}
-                      </Badge>
-                    </div>
+                </div>
+                <div className="space-y-2">
+                  <Label className={`flex items-center gap-2 font-semibold ${theme.accent}`}>
+                    <RoleIcon className="h-4 w-4" />
+                    {t("profile.role")}
+                  </Label>
+                  <div className="p-3 rounded-lg bg-muted/50 border border-border/50">
+                    <Badge variant={theme.badgeVariant} className="font-semibold">
+                      {t(`profile.roles.${userRole}`)}
+                    </Badge>
                   </div>
-                </CardContent>
-              </Card>
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+        </motion.div>
 
-              {/* Change Full Name */}
-              <Card className="border border-white/5 shadow-xl bg-card/50 backdrop-blur-sm overflow-hidden h-fit">
-                <CardHeader className="border-b bg-muted/30 pb-4">
-                  <CardTitle className="flex items-center gap-2 text-lg">
-                    <User className={`h-5 w-5 ${theme.accent}`} />
-                    {t("profile.changeName.title", { defaultValue: "Update Full Name" })}
-                  </CardTitle>
-                  <CardDescription>
-                    {t("profile.changeName.desc", { defaultValue: "Update your real first and last name. This is crucial for linking your professor profile correctly." })}
-                  </CardDescription>
-                </CardHeader>
-                <CardContent className="pt-6">
-                  <form onSubmit={handleChangeName} className="space-y-5">
-                    <div className="grid grid-cols-2 gap-4">
-                      <div className="space-y-2">
-                        <Label htmlFor="first-name" className="font-semibold text-sm">
-                          {t("profile.changeName.firstLabel", "First Name")}
-                        </Label>
-                        <div className="relative">
-                          <User className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
-                          <Input 
-                            id="first-name"
-                            value={firstName} 
-                            onChange={(e) => setFirstName(e.target.value)} 
-                            placeholder={user.firstName || "First name"}
-                            className="pl-10 bg-background/50 border-white/10 focus-visible:ring-primary"
-                          />
-                        </div>
-                      </div>
-                      <div className="space-y-2">
-                        <Label htmlFor="last-name" className="font-semibold text-sm">
-                          {t("profile.changeName.lastLabel", "Last Name")}
-                        </Label>
-                        <div className="relative">
-                          <User className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
-                          <Input 
-                            id="last-name"
-                            value={lastName} 
-                            onChange={(e) => setLastName(e.target.value)} 
-                            placeholder={user.lastName || "Last name"}
-                            className="pl-10 bg-background/50 border-white/10 focus-visible:ring-primary"
-                          />
-                        </div>
-                      </div>
-                    </div>
-                    <div className="space-y-2">
-                      <Label htmlFor="name-confirm-pass" className="font-semibold text-sm">
-                        {t("profile.changeName.passwordLabel", { defaultValue: "Verify with Password" })}
-                      </Label>
-                      <div className="relative">
-                        <Lock className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
-                        <Input 
-                          id="name-confirm-pass"
-                          type={showNameConfirmPassword ? "text" : "password"}
-                          value={nameConfirmPassword} 
-                          onChange={(e) => setNameConfirmPassword(e.target.value)} 
-                          placeholder={t("profile.changeUsername.passwordPlaceholder", { defaultValue: "Enter current password" })}
-                          className="pl-10 pr-10 bg-background/50 border-white/10 focus-visible:ring-primary"
-                        />
-                        <button
-                          type="button"
-                          onClick={() => setShowNameConfirmPassword((s) => !s)}
-                          className="absolute right-3 top-3 p-1 text-muted-foreground hover:text-primary transition-colors"
-                        >
-                           {showNameConfirmPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
-                        </button>
-                      </div>
-                    </div>
-                    <Button 
-                      type="submit" 
-                      disabled={isChangingName || !firstName || !lastName || !nameConfirmPassword}
-                      className={`w-full bg-gradient-to-r ${theme.gradient} hover:opacity-90 transition-all shadow-md`}
-                    >
-                      {isChangingName ? (
-                        <><Loader2 className="mr-2 h-4 w-4 animate-spin" /> Saving...</>
-                      ) : (
-                        t("profile.changeName.submit", { defaultValue: "Update Name" })
-                      )}
-                    </Button>
-                  </form>
-                </CardContent>
-              </Card>
-            </div>
-          </TabsContent>
-
-          {/* TAB 2: Security */}
-          <TabsContent value="security" className="space-y-6">
-            <Card className="border border-white/5 shadow-xl bg-card/50 backdrop-blur-sm overflow-hidden max-w-2xl">
-              <CardHeader className="border-b bg-muted/30 pb-4">
-                <CardTitle className="flex items-center gap-2 text-lg">
-                  <Shield className={`h-5 w-5 ${theme.accent}`} />
-                  {t("profile.changeUsername.title", { defaultValue: "Change Username" })}
-                </CardTitle>
-                <CardDescription>
-                  {t("profile.changeUsername.desc", { defaultValue: "Update your display name. Requires password verification." })}
-                </CardDescription>
-              </CardHeader>
-              <CardContent className="pt-6">
-                <form onSubmit={handleChangeUsername} className="space-y-5">
-                  <div className="space-y-2">
-                    <Label htmlFor="new-username" className="font-semibold text-sm">
-                      {t("profile.changeUsername.newLabel", "New Username")}
-                    </Label>
-                    <div className="relative">
-                      <User className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
-                      <Input 
+        {/* Change Username Card */}
+        <motion.div
+          custom={1}
+          variants={cardVariants}
+          initial="initial"
+          animate="animate"
+        >
+          <Card className="mb-6 border-0 shadow-xl bg-card/50 backdrop-blur-sm overflow-hidden">
+            <CardHeader className="border-b bg-muted/30">
+              <CardTitle className="flex items-center gap-2">
+                <User className={`h-5 w-5 ${theme.accent}`} />
+                {t("profile.changeUsername.title", { defaultValue: "Change Username" })}
+              </CardTitle>
+              <CardDescription>
+                {t("profile.changeUsername.desc", { defaultValue: "Update your display name. Requires password verification." })}
+              </CardDescription>
+            </CardHeader>
+            <CardContent className="pt-6">
+              <form onSubmit={handleChangeUsername} className="space-y-4">
+                 <div className="space-y-2">
+                   <Label htmlFor="new-username" className="font-semibold">
+                     {t("profile.changeUsername.newLabel", "New Username")}
+                   </Label>
+                   <div className="relative">
+                     <User className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
+                     <Input 
                         id="new-username"
                         value={newUsername} 
                         onChange={(e) => setNewUsername(e.target.value)} 
                         placeholder={t("profile.changeUsername.newPlaceholder", { defaultValue: "Enter new username" })}
-                        className="pl-10 bg-background/50 border-white/10 focus-visible:ring-primary"
-                      />
-                    </div>
-                  </div>
-                  <div className="space-y-2">
-                    <Label htmlFor="confirm-pass" className="font-semibold text-sm">
-                      {t("profile.changeUsername.passwordLabel", { defaultValue: "Verify with Password" })}
-                    </Label>
-                    <div className="relative">
-                      <Lock className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
-                      <Input 
+                        className="pl-10 bg-background"
+                     />
+                   </div>
+                 </div>
+                 <div className="space-y-2">
+                   <Label htmlFor="confirm-pass" className="font-semibold">
+                     {t("profile.changeUsername.passwordLabel", { defaultValue: "Verify with Password" })}
+                   </Label>
+                   <div className="relative">
+                     <Lock className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
+                     <Input 
                         id="confirm-pass"
                         type={showConfirmPassword ? "text" : "password"}
                         value={confirmPassword} 
                         onChange={(e) => setConfirmPassword(e.target.value)} 
                         placeholder={t("profile.changeUsername.passwordPlaceholder", { defaultValue: "Enter current password" })}
-                        className="pl-10 pr-10 bg-background/50 border-white/10 focus-visible:ring-primary"
-                      />
-                      <button
-                        type="button"
-                        onClick={() => setShowConfirmPassword((s) => !s)}
-                        className="absolute right-3 top-3 p-1 text-muted-foreground hover:text-primary transition-colors"
-                      >
-                        {showConfirmPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
-                      </button>
-                    </div>
-                  </div>
-                  <Button 
-                    type="submit" 
-                    disabled={isChangingUsername || !newUsername || !confirmPassword}
-                    className={`w-full bg-gradient-to-r ${theme.gradient} hover:opacity-90 transition-all shadow-md`}
-                  >
-                    {isChangingUsername ? (
-                      <><Loader2 className="mr-2 h-4 w-4 animate-spin" /> Saving...</>
-                    ) : (
-                      t("profile.changeUsername.submit", { defaultValue: "Update Username" })
-                    )}
-                  </Button>
-                </form>
-              </CardContent>
-            </Card>
-          </TabsContent>
-
-          {/* TAB 3: Appearance */}
-          <TabsContent value="appearance" className="space-y-6">
-             <Card className="border border-white/5 shadow-xl bg-card/50 backdrop-blur-sm overflow-hidden max-w-2xl">
-              <CardHeader className="border-b bg-muted/30 pb-4">
-                <CardTitle className="flex items-center gap-2 text-lg">
-                  <Camera className={`h-5 w-5 ${theme.accent}`} />
-                  Profile Picture
-                </CardTitle>
-                <CardDescription>
-                  Upload a custom avatar. Recommended size: 800x800px.
-                </CardDescription>
-              </CardHeader>
-              <CardContent className="pt-8 pb-8 flex flex-col items-center justify-center gap-6">
-                 <div className="relative group cursor-pointer" onClick={triggerFileInput}>
-                   <Avatar className="h-40 w-40 border-4 border-muted shadow-2xl transition-transform hover:scale-105">
-                     <AvatarImage 
-                       src={user.profileImageUrl?.includes("...") 
-                         ? `/api/profile-image/user/${user.id}?v=${user.updatedAt ? new Date(user.updatedAt).getTime() : '1'}` 
-                         : user.profileImageUrl ?? undefined} 
-                       alt={user.username || "User"} 
-                       className="object-cover" 
+                        className="pl-10 pr-10 bg-background"
                      />
-                     <AvatarFallback className="text-5xl bg-primary/10 text-primary font-bold">
-                       {(user.username || "U").substring(0, 2).toUpperCase()}
-                     </AvatarFallback>
-                   </Avatar>
-                   <div className="absolute inset-0 bg-black/50 rounded-full flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity">
-                     <Camera className="h-10 w-10 text-white" />
+                     <button
+                       type="button"
+                       onClick={() => setShowConfirmPassword((s) => !s)}
+                       className="absolute right-3 top-3 p-1 text-muted-foreground hover:text-primary transition-colors"
+                       aria-label={showConfirmPassword ? t("auth.hidePassword", { defaultValue: "Hide password" }) : t("auth.showPassword", { defaultValue: "Show password" })}
+                     >
+                       <AnimatePresence mode="wait" initial={false}>
+                         <motion.div
+                           key={showConfirmPassword ? "hide" : "show"}
+                           initial={{ opacity: 0, scale: 0.8 }}
+                           animate={{ opacity: 1, scale: 1 }}
+                           exit={{ opacity: 0, scale: 0.8 }}
+                           transition={{ duration: 0.15 }}
+                         >
+                           {showConfirmPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+                         </motion.div>
+                       </AnimatePresence>
+                     </button>
                    </div>
-                   {isUploading && (
-                     <div className="absolute inset-0 bg-black/60 rounded-full flex items-center justify-center z-10">
-                       <Loader2 className="h-10 w-10 text-white animate-spin" />
-                     </div>
-                   )}
                  </div>
-                 <Button onClick={triggerFileInput} variant="outline" className="w-48 shadow-sm">
-                   {isUploading ? "Uploading..." : "Change Picture"}
+                 <Button 
+                   type="submit" 
+                   disabled={isChangingUsername || !newUsername || !confirmPassword}
+                   className={`w-full bg-gradient-to-r ${theme.gradient} hover:opacity-90 transition-opacity`}
+                 >
+                   {isChangingUsername ? (
+                      <>
+                        <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                        {t("common.saving", { defaultValue: "Saving..." })}
+                      </>
+                   ) : (
+                      t("profile.changeUsername.submit", { defaultValue: "Update Username" })
+                   )}
                  </Button>
-              </CardContent>
-            </Card>
-          </TabsContent>
-
-        </Tabs>
+              </form>
+            </CardContent>
+          </Card>
+        </motion.div>
       </main>
     </motion.div>
   );

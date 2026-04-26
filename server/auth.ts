@@ -189,20 +189,19 @@ export function validatePasswordStrength(password: string): {
 }
 
 /**
- * Sanitize username to prevent injection attacks — preserves case (teacher ≠ Teacher)
+ * Sanitize username to prevent injection attacks
  */
 export function sanitizeUsername(username: string): string {
-  // Strip dangerous chars but preserve case — allows alphanumeric, dots, underscores, hyphens, @
-  return username.replace(/[^a-zA-Z0-9._\-@]/g, "");
+  // Allow alphanumeric, dots, underscores, hyphens, and @ (for email as username)
+  return username.toLowerCase().replace(/[^a-z0-9._\-@]/g, "");
 }
 
 /**
- * Check if username is valid format — case-sensitive (teacher ≠ Teacher)
+ * Check if username is valid format
  */
 export function isValidUsername(username: string): boolean {
   if (!username || username.length < 3 || username.length > 30) return false;
-  return /^[a-zA-Z0-9._\-@]+$/.test(username);
-}
+  return /^[a-z0-9._\-@]+$/.test(username.toLowerCase());}
 
 /**
  * Validate email format (basic check)

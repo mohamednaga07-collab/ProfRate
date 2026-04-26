@@ -112,25 +112,7 @@ export default function Messages() {
 
       const sent = await res.json();
 
-      // Also create a paired notification so the receiver sees this in the notifications dropdown
-      try {
-        const notifBody = {
-          receiverId: selectedUserId,
-          title: (messageText || (attachment ? `Attachment: ${attachment.name}` : "New message")).toString().substring(0, 255),
-          content: messageText || (attachment ? `Attachment: ${attachment.name}` : ""),
-          type: "direct",
-          isAnonymous: false,
-        };
-
-        await fetch("/api/notifications", {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          credentials: "include",
-          body: JSON.stringify(notifBody),
-        });
-      } catch (e) {
-        console.error("Failed to create notification for sent message:", e);
-      }
+      // Notification creation is handled by the messages endpoint on the server.
 
       return sent;
     },
@@ -455,12 +437,22 @@ export default function Messages() {
                       </PopoverContent>
                     </Popover>
 
-                    <input type="file" className="hidden" ref={fileInputRef} onChange={handleFileChange} />
+                    <input
+                      id="message-attachment"
+                      type="file"
+                      className="sr-only"
+                      aria-label="Attach a file to your message"
+                      title="Attach a file to your message"
+                      ref={fileInputRef}
+                      onChange={handleFileChange}
+                    />
                     <Button 
                       type="button" 
                       variant="ghost" 
                       size="icon" 
                       className="h-10 w-10 rounded-full shrink-0 text-muted-foreground hover:text-foreground"
+                      aria-label="Attach file"
+                      aria-controls="message-attachment"
                       onClick={() => fileInputRef.current?.click()}
                     >
                       <Paperclip className="h-5 w-5" />

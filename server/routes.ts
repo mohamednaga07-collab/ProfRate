@@ -10,28 +10,6 @@ import { randomUUID } from "crypto";
 import crypto from "crypto";
 import { sendEmail, generateForgotPasswordEmailHtml, generateForgotUsernameEmailHtml, generateVerificationEmailHtml } from "./email";
 import os from "os";
-import multer from "multer";
-import path from "path";
-import fs from "fs";
-
-// Configure multer for 50MB file uploads (saving to server/uploads)
-const uploadDir = path.join(process.cwd(), "server", "uploads");
-if (!fs.existsSync(uploadDir)) {
-  fs.mkdirSync(uploadDir, { recursive: true });
-}
-const storageConfig = multer.diskStorage({
-  destination: function (req, file, cb) {
-    cb(null, uploadDir);
-  },
-  filename: function (req, file, cb) {
-    const uniqueSuffix = Date.now() + '-' + Math.round(Math.random() * 1E9);
-    cb(null, uniqueSuffix + path.extname(file.originalname));
-  }
-});
-const upload = multer({ 
-  storage: storageConfig,
-  limits: { fileSize: 50 * 1024 * 1024 } // 50 MB limit
-});
 
 // Guard to prevent simultaneous duplicate registration requests
 const pendingRegistrations = new Set<string>();
@@ -119,7 +97,6 @@ async function seedSampleData() {
         { name: "Dr. Emily Williams", department: "Physics", title: "Assistant Professor", bio: "Researcher in quantum mechanics with a passion for undergraduate education." },
         { name: "Dr. James Anderson", department: "Computer Science", title: "Professor", bio: "Database systems and software engineering specialist. Industry experience at major tech companies." },
         { name: "Dr. Lisa Martinez", department: "Biology", title: "Associate Professor", bio: "Molecular biology researcher focused on making science accessible to all students." },
-        { name: "Dr. Sample Teacher", department: "Software Engineering", title: "Professor", bio: "Sample professor account generated for demonstration purposes." },
       ];
 
       for (const doctor of sampleDoctors) {
@@ -620,17 +597,16 @@ export async function registerRoutes(httpServer: Server, app: Express): Promise<
         return res.status(403).json({ message: "Incorrect current password" });
       }
 
-      // 4. Check if new username is taken — sanitize FIRST then check to avoid self-match
-      const sanitizedNew = sanitizeUsername(newUsername);
-      const existingUser = await storage.getUserByUsername(sanitizedNew);
-      if (existingUser && existingUser.id !== userId) {
+      // 4. Check if new username is taken
+      const existingUser = await storage.getUserByUsername(newUsername);
+      if (existingUser) {
         return res.status(409).json({ message: "Username already taken" });
       }
 
-      // 5. Update Username — always store sanitized (lowercase) to match login lookup
-      const updatedUser = await storage.updateUser(userId, { username: sanitizedNew });
+      // 5. Update Username
+      const updatedUser = await storage.updateUser(userId, { username: newUsername });
 
-      console.log(`✅ User ${user.username} changed username to ${sanitizedNew}`);
+      console.log(`✅ User ${user.username} changed username to ${newUsername}`);
       
       // Don't send password back
       const { password: _, ...safeUser } = updatedUser as any;
@@ -639,60 +615,6 @@ export async function registerRoutes(httpServer: Server, app: Express): Promise<
     } catch (error) {
       console.error("Error changing username:", error);
       res.status(500).json({ message: "Failed to update username" });
-    }
-  });
-
-  // Update Full Name Endpoint
-  app.post("/api/auth/update-name", isAuthenticated, validateCsrfHeader, async (req: any, res) => {
-    try {
-      const { firstName, lastName, currentPassword } = req.body;
-      const userId = getUserId(req);
-
-      if (!userId) return res.status(401).json({ message: "Unauthorized" });
-      if (!firstName || !lastName || !currentPassword) {
-        return res.status(400).json({ message: "First name, last name, and current password are required" });
-      }
-
-      let user = await storage.getUser(userId);
-      if (!user) return res.status(404).json({ message: "User not found" });
-
-      if (!user.password) {
-        return res.status(400).json({ message: "Account verification failed." });
-      }
-      const isPasswordValid = await verifyPassword(currentPassword, user.password);
-      if (!isPasswordValid) {
-        return res.status(403).json({ message: "Incorrect current password" });
-      }
-
-      user = await storage.updateUser(userId, { firstName, lastName });
-      
-      if (user.role === "teacher") {
-        const allDoctors = await storage.getAllDoctors();
-        const fullName = `${firstName} ${lastName}`.trim().toLowerCase();
-        let matchedDoc: any = allDoctors.find(d => d.name.toLowerCase() === fullName || d.name.toLowerCase() === `dr. ${fullName}`);
-        
-        if (!matchedDoc && fullName === "sample teacher") {
-           matchedDoc = await storage.createDoctor({
-             name: "Dr. Sample Teacher",
-             department: "Software Engineering",
-             title: "Professor",
-             bio: "Sample professor account generated for demonstration purposes."
-           });
-        }
-        
-        if (matchedDoc) {
-           await storage.linkUserToDoctor(user.id, matchedDoc.id);
-           user.linkedDoctorId = matchedDoc.id;
-        }
-      }
-
-      console.log(`✅ User ${user.username} changed name to ${firstName} ${lastName}`);
-      
-      const { password: _, ...safeUser } = user as any;
-      res.json({ user: safeUser, message: "Name updated successfully." });
-    } catch (error) {
-      console.error("Error updating name:", error);
-      res.status(500).json({ message: "Failed to update name" });
     }
   });
 
@@ -1114,422 +1036,6 @@ export async function registerRoutes(httpServer: Server, app: Express): Promise<
     } catch (error) {
       console.error("Error deleting doctor:", error);
       res.status(500).json({ message: "Failed to delete doctor" });
-    }
-  });
-
-  // ─── User lookup for messaging ───
-  app.get("/api/users/:id", isAuthenticated, async (req, res) => {
-    try {
-      const targetUser = await storage.getUser(req.params.id);
-      if (!targetUser) return res.status(404).json({ message: "User not found" });
-      // Only return safe, non-sensitive fields
-      res.json({
-        id: targetUser.id,
-        firstName: targetUser.firstName,
-        lastName: targetUser.lastName,
-        role: targetUser.role,
-        profileImageUrl: targetUser.profileImageUrl
-      });
-    } catch (error) {
-      res.status(500).json({ message: "Failed to fetch user" });
-    }
-  });
-
-  // ─── Messaging Routes ───
-  const messageRateLimiter = new Map<string, number>();
-
-  app.get("/api/messages/:otherUserId", isAuthenticated, async (req, res) => {
-    try {
-      let user = req.user as any;
-      if (!user && req.session?.userId) {
-        user = await storage.getUser(req.session.userId);
-      }
-      if (!user) return res.status(401).json({ message: "Not authenticated" });
-      const otherUserId = req.params.otherUserId;
-      // Get all messages where user is sender or receiver
-      const allMessages = await storage.getMessages(user.id);
-      const sentMessages = await storage.getSentMessages(user.id);
-      
-      const combined = [...allMessages, ...sentMessages].filter(m => 
-        (m.senderId === user.id && m.receiverId === otherUserId) || 
-        (m.senderId === otherUserId && m.receiverId === user.id)
-      ).sort((a, b) => new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime());
-      
-      // Deduplicate by ID
-      const uniqueMessages = Array.from(new Map(combined.map(m => [m.id, m])).values());
-      
-      // Flatten first attachment onto each message for easy frontend access
-      const messagesWithAttachments = await Promise.all(
-        uniqueMessages.map(async (msg) => {
-          try {
-            const attachments = await storage.getAttachmentsForMessage(msg.id);
-            const first = attachments[0];
-            return {
-              ...msg,
-              attachmentId: first?.id || null,
-              attachmentName: first?.filename || null,
-              attachmentType: first?.mimeType || null,
-            };
-          } catch {
-            return { ...msg, attachmentId: null, attachmentName: null, attachmentType: null };
-          }
-        })
-      );
-
-      // Mark messages from the other user as read
-      for (const msg of messagesWithAttachments) {
-        if (msg.senderId === otherUserId && msg.status !== 'read') {
-          try { await storage.markMessageRead(msg.id); } catch {}
-        }
-      }
-      
-      res.json(messagesWithAttachments);
-    } catch (error) {
-      console.error("Error fetching messages:", error);
-      res.status(500).json({ message: "Failed to fetch messages" });
-    }
-  });
-
-  app.get("/api/conversations", isAuthenticated, async (req: any, res) => {
-    try {
-      let user = req.user as any;
-      if (!user && req.session?.userId) {
-        user = await storage.getUser(req.session.userId);
-      }
-      if (!user) return res.status(401).json({ message: "Not authenticated" });
-      const received = await storage.getMessages(user.id);
-      const sent = await storage.getSentMessages(user.id);
-      
-      const all = [...received, ...sent];
-      const otherUserIds = new Set<string>();
-      
-      all.forEach(m => {
-        if (m.senderId && m.senderId !== user.id) otherUserIds.add(m.senderId);
-        if (m.receiverId && m.receiverId !== user.id) otherUserIds.add(m.receiverId);
-      });
-      
-      // Fetch user details for these users
-      const usersInfo = await Promise.all(
-        Array.from(otherUserIds).map(id => storage.getUser(id))
-      );
-      
-      // Filter out nulls and return basic info
-      res.json(usersInfo.filter(u => u !== undefined).map(u => ({
-        id: u?.id,
-        firstName: u?.firstName,
-        lastName: u?.lastName,
-        profileImageUrl: u?.profileImageUrl,
-        role: u?.role
-      })));
-    } catch (error) {
-      res.status(500).json({ message: "Failed to fetch conversations" });
-    }
-  });
-
-  app.get("/api/admin-contact", isAuthenticated, async (req, res) => {
-    try {
-      const db = (await import("./db")).db;
-      const { users } = await import("@shared/schema");
-      const { eq } = await import("drizzle-orm");
-      
-      const admin = await db.query.users.findFirst({
-        where: eq(users.role, "admin")
-      });
-
-      if (!admin) return res.status(404).json({ message: "No admin available" });
-      res.json({ id: admin.id, firstName: admin.firstName, lastName: admin.lastName, role: admin.role, profileImageUrl: admin.profileImageUrl });
-    } catch (error) {
-      res.status(500).json({ message: "Server error" });
-    }
-  });
-
-  app.get("/api/doctors/:id/teacher-user", isAuthenticated, async (req, res) => {
-    try {
-      const doctorId = parseInt(req.params.id);
-      const allDoctors = await storage.getAllDoctors();
-      const doctor = allDoctors.find((d: any) => d.id === doctorId);
-      if (!doctor) return res.status(404).json({ message: "Doctor not found" });
-
-      // Find user whose role is teacher and linkedDoctorId matches, OR name matches
-      const allUsersResponse = await storage.getStats(); // wait, we don't have getAllUsers().
-      // Let's use a query to users table directly since storage might not have a dedicated method
-      const db = (await import("./db")).db;
-      const { users } = await import("@shared/schema");
-      const { eq, and } = await import("drizzle-orm");
-      
-      let teacherUser = await db.query.users.findFirst({
-        where: and(eq(users.role, "teacher"), eq(users.linkedDoctorId, doctorId))
-      });
-
-      if (!teacherUser) {
-        // Fallback name matching
-        const normalize = (name: string) => name.replace(/^(Dr\.?|Prof\.?)\s+/i, "").trim().toLowerCase();
-        const docName = normalize(doctor.name);
-        
-        const allTeachers = await db.query.users.findMany({
-          where: eq(users.role, "teacher")
-        });
-        
-        teacherUser = allTeachers.find((t: any) => {
-          const tName = [t.firstName, t.lastName].filter(Boolean).join(" ").trim().toLowerCase();
-          return tName === docName || docName.includes(tName) || tName.includes(docName);
-        });
-      }
-
-      if (!teacherUser) {
-        return res.status(404).json({ message: "No registered teacher found for this profile." });
-      }
-
-      res.json({ teacherUserId: teacherUser.id });
-    } catch (error) {
-      console.error("Error finding teacher user:", error);
-      res.status(500).json({ message: "Server error" });
-    }
-  });
-
-  app.post("/api/messages", isAuthenticated, upload.single("attachment"), async (req, res) => {
-    try {
-      let user = req.user as any;
-      if (!user && (req as any).session?.userId) {
-        user = await storage.getUser((req as any).session.userId);
-      }
-      const { receiverId, targetDoctorId, content } = req.body;
-      const file = (req as any).file;
-      
-      // If there are files but no content, allow it (just a file message)
-      if (!receiverId || (!content && !file)) {
-        return res.status(400).json({ message: "Message content or attachment is required" });
-      }
-
-      if (!user) {
-        return res.status(401).json({ message: "Not authenticated" });
-      }
-
-      // 1. Role enforcement logic
-      const receiver = await storage.getUser(receiverId);
-      if (!receiver) return res.status(404).json({ message: "User not found" });
-
-      const userRole = user?.role || "student";
-      const receiverRole = receiver?.role || "student";
-      const isAdminInvolved = userRole === "admin" || receiverRole === "admin";
-
-      if (!isAdminInvolved) {
-        if (userRole === "teacher" && receiverRole !== "student") {
-           return res.status(403).json({ message: "Teachers can only message students or admins" });
-        }
-        if (userRole === "student" && receiverRole !== "teacher") {
-           return res.status(403).json({ message: "Students can only message teachers or admins" });
-        }
-        if (userRole === "teacher") {
-          const receivedFromStudent = await storage.getMessages(user.id);
-          const hasHistory = receivedFromStudent.some(m => String(m.senderId) === String(receiverId));
-          if (!hasHistory) {
-            return res.status(403).json({ message: "Teachers can only reply to students who have messaged them first." });
-          }
-        }
-      }
-
-      // 2. Anti-spam delay (3 seconds between messages)
-      const now = Date.now();
-      const lastSent = messageRateLimiter.get(user.id) || 0;
-      if (now - lastSent < 3000) {
-        return res.status(429).json({ message: "Please wait a moment before sending another message." });
-      }
-      messageRateLimiter.set(user.id, now);
-
-      const message = await storage.createMessage({
-        senderId: user.id,
-        receiverId,
-        targetDoctorId,
-        title: "Direct Message",
-        content: content || "",
-        type: "direct"
-      });
-
-      // 3. Process single attachment for Dual Storage
-      let savedAttachment: any = null;
-      if (file) {
-        try {
-          const fileData = fs.readFileSync(file.path);
-          const base64Data = fileData.toString('base64');
-          
-          const attachment = await storage.addAttachment({
-            id: randomUUID(),
-            messageId: message.id,
-            filename: file.originalname,
-            mimeType: file.mimetype,
-            size: file.size,
-            data: base64Data
-          });
-          
-          // Don't send back the massive base64 string in the JSON response
-          const { data, ...safeAtt } = attachment;
-          savedAttachment = safeAtt;
-        } catch (fileErr) {
-          console.error("Error saving attachment:", fileErr);
-        }
-      }
-
-      res.status(201).json({
-        ...message,
-        attachmentId: savedAttachment?.id || null,
-        attachmentName: savedAttachment?.filename || null,
-        attachmentType: savedAttachment?.mimeType || null,
-      });
-    } catch (error: any) {
-      console.error("Error sending message:", error);
-      res.status(500).json({ message: error?.message || "Failed to send message" });
-    }
-  });
-
-  app.post("/api/messages/:id/read", isAuthenticated, validateCsrfHeader, async (req, res) => {
-    try {
-      await storage.markMessageRead(parseInt(req.params.id));
-      res.status(204).end();
-    } catch (error) {
-      res.status(500).json({ message: "Failed to mark as read" });
-    }
-  });
-
-  app.put("/api/messages/:id", isAuthenticated, validateCsrfHeader, async (req, res) => {
-    try {
-      let user = req.user as any;
-      if (!user && (req as any).session?.userId) {
-        user = await storage.getUser((req as any).session.userId);
-      }
-      const messageId = parseInt(req.params.id);
-      const { content } = req.body;
-      
-      // Check admin settings
-      const settings = await storage.getAppSettings();
-      const allowEditSetting = settings.find(s => s.key === "allowMessageEdit");
-      if (allowEditSetting && allowEditSetting.value === "false" && user.role !== "admin") {
-        return res.status(403).json({ message: "Message editing is disabled by administrators" });
-      }
-
-      await storage.updateMessage(messageId, { content, isEdited: true });
-      res.status(200).json({ message: "Message updated" });
-    } catch (error) {
-      res.status(500).json({ message: "Failed to update message" });
-    }
-  });
-
-  app.delete("/api/messages/:id", isAuthenticated, validateCsrfHeader, async (req, res) => {
-    try {
-      let user = req.user as any;
-      if (!user && (req as any).session?.userId) {
-        user = await storage.getUser((req as any).session.userId);
-      }
-      const messageId = parseInt(req.params.id);
-      
-      // Check admin settings
-      const settings = await storage.getAppSettings();
-      const allowDeleteSetting = settings.find(s => s.key === "allowMessageDelete");
-      if (allowDeleteSetting && allowDeleteSetting.value === "false" && user.role !== "admin") {
-        return res.status(403).json({ message: "Message deletion is disabled by administrators" });
-      }
-
-      await storage.deleteMessage(messageId);
-      res.status(200).json({ message: "Message deleted" });
-    } catch (error) {
-      res.status(500).json({ message: "Failed to delete message" });
-    }
-  });
-
-  app.get("/api/attachments/:id", isAuthenticated, async (req, res) => {
-    try {
-      const attachmentId = req.params.id;
-      const attachment = await storage.getAttachment(attachmentId);
-      if (!attachment) {
-        return res.status(404).json({ message: "Attachment not found" });
-      }
-
-      const filePath = path.join(uploadDir, attachment.filename);
-      
-      // Check if file exists on disk (ephemeral storage)
-      if (fs.existsSync(filePath)) {
-        return res.sendFile(filePath);
-      }
-
-      // If missing from disk, restore from DB and serve
-      const fileBuffer = Buffer.from(attachment.data, 'base64');
-      fs.writeFileSync(filePath, fileBuffer);
-      return res.sendFile(filePath);
-    } catch (error) {
-      console.error("Error serving attachment:", error);
-      res.status(500).json({ message: "Failed to load attachment" });
-    }
-  });
-
-  app.get("/api/settings", async (req, res) => {
-    try {
-      const settings = await storage.getAppSettings();
-      const settingsObj = settings.reduce((acc, curr) => {
-        acc[curr.key] = curr.value;
-        return acc;
-      }, {});
-      res.json(settingsObj);
-    } catch (error) {
-      res.status(500).json({ message: "Failed to fetch settings" });
-    }
-  });
-
-  app.post("/api/settings", isAuthenticated, validateCsrfHeader, async (req, res) => {
-    try {
-      let user = req.user as any;
-      if (!user && (req as any).session?.userId) {
-        user = await storage.getUser((req as any).session.userId);
-      }
-      
-      if (user?.role !== "admin") {
-        return res.status(403).json({ message: "Forbidden" });
-      }
-
-      const settings = req.body;
-      for (const [key, value] of Object.entries(settings)) {
-        await storage.updateAppSetting(key, String(value));
-      }
-      
-      res.status(200).json({ message: "Settings updated successfully" });
-    } catch (error) {
-      res.status(500).json({ message: "Failed to update settings" });
-    }
-  });
-
-  // DB Debug Route
-  app.get("/api/debug/db", async (req, res) => {
-    try {
-      if (process.env.DATABASE_URL) {
-        const { db } = await import("./db");
-        const { sql } = await import("drizzle-orm");
-        const result = await db.execute(sql`
-          SELECT table_name 
-          FROM information_schema.tables 
-          WHERE table_schema = 'public';
-        `);
-        return res.json({ tables: result.rows || result });
-      } else {
-        return res.json({ message: "Not using Postgres" });
-      }
-    } catch (error: any) {
-      return res.status(500).json({ error: error.message });
-    }
-  });
-
-  app.post("/api/debug/message", async (req, res) => {
-    try {
-      const { senderId, receiverId, content } = req.body;
-      const message = await storage.createMessage({
-        senderId,
-        receiverId,
-        targetDoctorId: null,
-        title: "Debug Message",
-        content,
-        type: "direct"
-      });
-      return res.json(message);
-    } catch (error: any) {
-      return res.status(500).json({ error: error.message, stack: error.stack });
     }
   });
 
@@ -2272,103 +1778,6 @@ export async function registerRoutes(httpServer: Server, app: Express): Promise<
     }
   });
 
-  // Update user details (Admin)
-  app.patch("/api/admin/users/:userId/details", isAdmin, validateCsrfHeader, async (req, res) => {
-    try {
-      const { userId } = req.params;
-      const { firstName, lastName, username, role } = req.body;
-      
-      const user = await storage.getUser(userId);
-      if (!user) {
-        return res.status(404).json({ message: "User not found" });
-      }
-
-      // If username is changing, ensure it's not taken
-      const sanitizedUsername = username ? sanitizeUsername(username) : undefined;
-      if (sanitizedUsername && sanitizedUsername !== user.username) {
-        const existing = await storage.getUserByUsername(sanitizedUsername);
-        if (existing && existing.id !== userId) {
-          return res.status(400).json({ message: "Username already taken" });
-        }
-      }
-
-      const updatedUser = await storage.updateUser(userId, {
-        firstName: firstName !== undefined ? firstName : user.firstName,
-        lastName: lastName !== undefined ? lastName : user.lastName,
-        username: sanitizedUsername !== undefined ? sanitizedUsername : user.username,
-        role: role !== undefined ? role : user.role,
-      });
-
-      // If user is a teacher or role changed to teacher, attempt to auto-link
-      if (updatedUser.role === "teacher") {
-        const allDoctors = await storage.getAllDoctors();
-        const normalize = (name: string) => name.replace(/^(Dr\.?|Prof\.?)\s+/i, "").trim().toLowerCase();
-        
-        const fName = updatedUser.firstName || "";
-        const lName = updatedUser.lastName || "";
-        const fullName = [fName, lName].filter(Boolean).join(" ").trim().toLowerCase();
-        const searchName = fullName || (updatedUser.username || "").trim().toLowerCase();
-        const normalizedSearchName = normalize(searchName);
-
-        let matchedDoctors = searchName ? allDoctors.filter(d => normalize(d.name) === normalizedSearchName) : [];
-        if (matchedDoctors.length === 0 && searchName) {
-           matchedDoctors = allDoctors.filter(d => {
-             const docName = normalize(d.name);
-             return docName.includes(normalizedSearchName) || normalizedSearchName.includes(docName);
-           });
-        }
-        
-        let linkedId = updatedUser.linkedDoctorId;
-
-        if (matchedDoctors.length > 0) {
-           linkedId = matchedDoctors[0].id;
-           await storage.linkUserToDoctor(userId, linkedId);
-           console.log(`✅ [Admin Auto-Link] Linked ${updatedUser.username} to doctor ID: ${linkedId}`);
-        } else if (updatedUser.username === "Sample_Teacher" || updatedUser.username === "Sample Teacher" || fullName === "sample teacher") {
-           // Development Fallback for the Sample Teacher account
-           try {
-             console.log(`[Admin Auto-Link] Development fallback triggered: Creating 'Dr. Sample Teacher' on the fly.`);
-             const newDoc = await storage.createDoctor({
-               name: "Dr. Sample Teacher",
-               department: "Software Engineering",
-               title: "Professor",
-               bio: "Sample professor account generated for demonstration purposes."
-             });
-             linkedId = newDoc.id;
-             await storage.linkUserToDoctor(userId, linkedId);
-             console.log(`✅ [Admin Auto-Link] Created & Linked to new doctor ID: ${linkedId}`);
-           } catch (err) {
-             console.error("Failed to create fallback sample doctor:", err);
-           }
-        }
-        
-        // Also apply role change if necessary since linkUserToDoctor might update it
-        if (role === "teacher") {
-          await storage.updateUserRole(userId, "teacher");
-        }
-      }
-
-      // Log the action
-      const adminUser = await storage.getUser(getUserId(req)!);
-      if (adminUser) {
-        await storage.logActivity({
-          userId: adminUser.id,
-          username: adminUser.username || "Unknown",
-          role: adminUser.role,
-          action: `Updated details for user ${updatedUser.username}`,
-          type: "admin_action",
-          ipAddress: req.ip,
-          userAgent: req.headers["user-agent"],
-        });
-      }
-
-      res.json({ message: "User updated successfully", user: updatedUser });
-    } catch (error: any) {
-      console.error("Error updating user details:", error);
-      res.status(500).json({ message: `Failed to update user: ${error.message}` });
-    }
-  });
-
   // Delete user
   app.delete("/api/admin/users/:userId", isAdmin, validateCsrfHeader, async (req, res) => {
     try {
@@ -2751,45 +2160,51 @@ export async function registerRoutes(httpServer: Server, app: Express): Promise<
       const user = req.user as any;
       if (!user) return res.status(401).json({ message: "Unauthorized" });
 
-      // Always fetch fresh user from DB in case linkedDoctorId was recently updated
-      const freshUser = await storage.getUser(user.id) ?? user;
       const allDoctors = await storage.getAllDoctors();
       
       let matchedDoctors: any[] = [];
-      const normalize = (name: string) => name.replace(/^(Dr\.?|Prof\.?)\s+/i, "").trim().toLowerCase();
-      const fullName = [freshUser.firstName, freshUser.lastName].filter(Boolean).join(" ").trim().toLowerCase();
-
-      // Mirror exactly what TeacherDashboard (home page) does:
-      // 1. If linkedDoctorId is set, use it directly — no second-guessing
-      if (freshUser.linkedDoctorId) {
-        const linkedId = Number(freshUser.linkedDoctorId);
-        const doc = allDoctors.find((d: any) => Number(d.id) === linkedId);
+      
+      // 1. Unbreakable Explicit Match
+      if (user.linkedDoctorId) {
+        const doc = allDoctors.find(d => d.id === user.linkedDoctorId);
         if (doc) matchedDoctors = [doc];
       }
 
-      // 2. Fallback to name match only if no explicit link
-      if (matchedDoctors.length === 0 && fullName) {
-        matchedDoctors = allDoctors.filter((d: any) => normalize(d.name) === normalize(fullName));
-        if (matchedDoctors.length === 0) {
-          matchedDoctors = allDoctors.filter((d: any) =>
+      // 2. Fallback to Fuzzy Name Match
+      if (matchedDoctors.length === 0) {
+        const fullName = [user.firstName, user.lastName].filter(Boolean).join(" ").trim().toLowerCase();
+        const normalize = (name: string) => name.replace(/^Dr\.?\s+/i, "").trim().toLowerCase();
+        
+        matchedDoctors = fullName ? allDoctors.filter(d => normalize(d.name) === fullName) : [];
+        if (matchedDoctors.length === 0 && fullName) {
+          matchedDoctors = allDoctors.filter(d => 
             normalize(d.name).includes(fullName) || fullName.includes(normalize(d.name))
           );
         }
       }
-
-      if (matchedDoctors.length === 0) {
-        return res.json({ rating: 0, students: 0, reviews: 0, matched: false });
+      
+      let rating = 0;
+      let reviews = 0;
+      
+      if (matchedDoctors.length > 0) {
+        rating = matchedDoctors[0].ratings?.overallRating ?? 0;
+        reviews = matchedDoctors[0].ratings?.totalReviews ?? 0;
+      } else {
+        // Fallback: show platform-wide averages so the teacher still sees meaningful data
+        const doctorsWithRatings = allDoctors.filter(d => d.ratings && (d.ratings.totalReviews ?? 0) > 0);
+        if (doctorsWithRatings.length > 0) {
+          const avgRating = doctorsWithRatings.reduce((s, d) => s + (d.ratings?.overallRating ?? 0), 0) / doctorsWithRatings.length;
+          const totalReviews = doctorsWithRatings.reduce((s, d) => s + (d.ratings?.totalReviews ?? 0), 0);
+          rating = parseFloat(avgRating.toFixed(1));
+          reviews = totalReviews;
+        }
       }
-
-      const doctor = matchedDoctors[0];
-      // Use doctor.ratings directly from the JOIN — same source as home page
-      const rating = doctor.ratings?.overallRating ?? 0;
-      const reviews = doctor.ratings?.totalReviews ?? 0;
-
-      const classes = await storage.getTeacherClasses?.({ userId: freshUser.id }) ?? [];
+      
+      // Calculate students count from teacherClasses table
+      const classes = await storage.getTeacherClasses?.({ userId: user.id }) ?? [];
       const students = classes.reduce((sum: number, c: any) => sum + (c.studentCount || 0), 0);
-
-      res.json({ rating, students, reviews, matched: true });
+      
+      res.json({ rating, students, reviews });
     } catch (err: any) {
       console.error(err);
       res.status(500).json({ message: "Failed to fetch teacher stats" });
@@ -2866,23 +2281,25 @@ export async function registerRoutes(httpServer: Server, app: Express): Promise<
 
       let matchedDoctors: any[] = [];
 
-      // Mirror exactly what TeacherDashboard (home page) does:
-      // 1. linkedDoctorId wins — trust it directly
+      // 0. Explicit Link Match (100% guarantee)
       if (user.linkedDoctorId) {
-        const linkedId = Number(user.linkedDoctorId);
-        const doc = allDoctors.find((d: any) => Number(d.id) === linkedId);
+        const doc = allDoctors.find(d => d.id === user.linkedDoctorId);
         if (doc) matchedDoctors = [doc];
       }
 
-      // 2. Fallback to name match only if no explicit link
+      // 1. Try exact match
+      if (matchedDoctors.length === 0) {
+        matchedDoctors = searchName
+          ? allDoctors.filter(d => normalize(d.name) === normalizedSearchName)
+          : [];
+      }
+
+      // 2. Try partial/fuzzy match if exact match fails
       if (matchedDoctors.length === 0 && searchName) {
-        matchedDoctors = allDoctors.filter((d: any) => normalize(d.name) === normalizedSearchName);
-        if (matchedDoctors.length === 0) {
-          matchedDoctors = allDoctors.filter((d: any) => {
-            const docName = normalize(d.name);
-            return docName.includes(normalizedSearchName) || normalizedSearchName.includes(docName);
-          });
-        }
+        matchedDoctors = allDoctors.filter(d => {
+          const docName = normalize(d.name);
+          return docName.includes(normalizedSearchName) || normalizedSearchName.includes(docName);
+        });
       }
 
       if (matchedDoctors.length === 0) {

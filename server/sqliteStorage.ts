@@ -491,7 +491,10 @@ export class SqliteStorage implements IStorage {
     if (receiverId === null) {
       return this.db.prepare("SELECT * FROM messages WHERE receiverId IS NULL ORDER BY createdAt ASC").all() as any[];
     }
-    return this.db.prepare("SELECT * FROM messages WHERE receiverId = ? OR senderId = ? ORDER BY createdAt ASC").all(receiverId, receiverId) as any[];
+
+    // Include broadcasts (receiverId IS NULL) when fetching notifications for a specific user,
+    // to match DatabaseStorage behavior where broadcasts are visible to all eligible users.
+    return this.db.prepare("SELECT * FROM messages WHERE (receiverId = ? OR receiverId IS NULL) ORDER BY createdAt ASC").all(receiverId) as any[];
   }
   
   async getSentMessages(senderId: string): Promise<any[]> {
@@ -499,14 +502,24 @@ export class SqliteStorage implements IStorage {
   }
   
   async createMessage(data: any): Promise<any> {
+    // Guard against rapid duplicate inserts (same sender/receiver/content within 5s)
+    try {
+      const dup = this.db.prepare(`
+        SELECT * FROM messages WHERE senderId = ? AND content = ? AND createdAt > datetime('now', '-5 seconds')
+          AND ((receiverId IS NULL AND ? IS NULL) OR receiverId = ?) LIMIT 1
+      `).get(data.senderId, data.content, data.receiverId, data.receiverId);
+
+      if (dup) return dup;
+    } catch (e) {
+      // ignore duplicate-check failures and proceed to insert
+    }
+
     const stmt = this.db.prepare(`
       INSERT INTO messages (senderId, receiverId, targetDoctorId, title, content, type, isAnonymous, isRead)
       VALUES (@senderId, @receiverId, @targetDoctorId, @title, @content, @type, @isAnonymous, @isRead)
       RETURNING *
     `);
-    
-    // SQLite doesn't natively support booleans, handle the mapping if necessary,
-    // though better-sqlite3 often handles 1/0 mapped to boolean if the schema expects it.
+
     const result = stmt.get({
       senderId: data.senderId,
       receiverId: data.receiverId,

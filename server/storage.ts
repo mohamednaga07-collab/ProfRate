@@ -540,8 +540,22 @@ export class DatabaseStorage implements IStorage {
   }
 
   async createMessage(data: InsertMessage): Promise<Message> {
-    const [msg] = await db.insert(messages).values(data).returning();
-    return msg;
+    try {
+      const threshold = new Date(Date.now() - 5000); // 5s window to avoid duplicates
+      const existing = await db.select().from(messages).where(
+        sql`${messages.senderId} = ${data.senderId} AND ${messages.content} = ${data.content} AND ${messages.createdAt} > ${threshold} AND ((${messages.receiverId} IS NULL AND ${data.receiverId} IS NULL) OR ${messages.receiverId} = ${data.receiverId})`
+      );
+      if (existing && existing.length > 0) {
+        return existing[0] as Message;
+      }
+
+      const [msg] = await db.insert(messages).values(data).returning();
+      return msg;
+    } catch (e) {
+      // Failsafe: if duplicate-checking query fails for any reason, fall back to simple insert
+      const [msg] = await db.insert(messages).values(data).returning();
+      return msg;
+    }
   }
 
   async updateMessage(id: number, data: Partial<InsertMessage>): Promise<Message> {
