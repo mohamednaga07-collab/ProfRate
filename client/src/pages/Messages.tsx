@@ -1,7 +1,7 @@
 import { useState, useEffect, useRef } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { useAuth } from "@/hooks/useAuth";
-import { Send, User as UserIcon, Clock, ShieldCheck, CheckCheck, Loader2, MessageCircle, Smile, Paperclip, X, Trash2, Edit2, Play, File as FileIcon, Image as ImageIcon, MoreVertical } from "lucide-react";
+import { Send, User as UserIcon, ShieldCheck, CheckCheck, Loader2, MessageCircle, Smile, Paperclip, X, Trash2, Edit2, Play, File as FileIcon, Image as ImageIcon, MoreVertical } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { ScrollArea } from "@/components/ui/scroll-area";
@@ -92,24 +92,47 @@ export default function Messages() {
         const res = await apiRequest("PUT", `/api/messages/${editingMessageId}`, { content: messageText.trim() });
         return res.json();
       }
-
       if (messageText.trim()) {
         formData.append("content", messageText.trim());
       }
       if (attachment) {
         formData.append("attachment", attachment);
       }
-      
+
       const res = await fetch("/api/messages", {
         method: "POST",
         body: formData,
+        credentials: "include",
       });
-      
+
       if (!res.ok) {
         const err = await res.text();
         throw new Error(err || "Failed to send message");
       }
-      return res.json();
+
+      const sent = await res.json();
+
+      // Also create a paired notification so the receiver sees this in the notifications dropdown
+      try {
+        const notifBody = {
+          receiverId: selectedUserId,
+          title: (messageText || (attachment ? `Attachment: ${attachment.name}` : "New message")).toString().substring(0, 255),
+          content: messageText || (attachment ? `Attachment: ${attachment.name}` : ""),
+          type: "direct",
+          isAnonymous: false,
+        };
+
+        await fetch("/api/notifications", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          credentials: "include",
+          body: JSON.stringify(notifBody),
+        });
+      } catch (e) {
+        console.error("Failed to create notification for sent message:", e);
+      }
+
+      return sent;
     },
     onSuccess: () => {
       setMessageText("");
@@ -374,7 +397,6 @@ export default function Messages() {
                             </div>
 
                             <div className={`flex items-center gap-1 mt-1 text-[10px] text-muted-foreground ${isMe ? "flex-row-reverse" : ""}`}>
-                              <Clock className="w-3 h-3" />
                               {new Date(msg.createdAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
                               {isMe && (
                                 msg.status === 'read' ? <CheckCheck className="w-3 h-3 ml-1 text-blue-500" /> :

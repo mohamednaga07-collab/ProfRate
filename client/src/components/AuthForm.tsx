@@ -702,6 +702,9 @@ export function AuthForm({ onSuccess, defaultTab = "login" }: AuthFormProps) {
                          Please check your inbox & spam
                       </p>
                     </div>
+                    <p className="text-sm text-muted-foreground mt-3 text-center">
+                      If you need assistance, contact support at <a href="mailto:mohamednaga07@gmail.com" className="text-primary">mohamednaga07@gmail.com</a>. We will usually respond within 48 hours.
+                    </p>
                   </motion.div>
                 </div>
 
