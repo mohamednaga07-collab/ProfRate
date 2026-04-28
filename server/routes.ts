@@ -4,7 +4,7 @@ import { storage } from "./storage";
 import { db } from "./db";
 import { eq } from "drizzle-orm";
 import { setupAuth, isAuthenticated } from "./antigravityAuth";
-import { insertDoctorSchema, insertReviewSchema, subScoresSchema, computeAllScores, session } from "@shared/schema";
+import { insertDoctorSchema, insertReviewSchema, subScoresSchema, computeAllScores, session, messages } from "@shared/schema";
 import { hashPassword, verifyPassword, validatePasswordStrength, sanitizeUsername, isValidUsername, isValidEmail, recordLoginAttempt, isAccountLocked, getLockoutTimeRemaining, clearLoginAttempts, generateCsrfToken, validateCsrfToken, clearCsrfToken, validateInputLength, validateFormInputs, MAX_INPUT_LENGTHS, validateCsrfHeader, sanitizeHtmlContent, loginLimiter, registerLimiter } from "./auth";
 import { randomUUID } from "crypto";
 import crypto from "crypto";
@@ -1950,6 +1950,7 @@ export async function registerRoutes(httpServer: Server, app: Express): Promise<
   app.post("/api/notifications", async (req: any, res) => {
     try {
       const userId = getUserId(req);
+      if (!userId) return res.status(401).json({ message: "Unauthorized" });
       const user = await storage.getUser(userId);
       if (!user) return res.status(404).json({ message: "User not found" });
 

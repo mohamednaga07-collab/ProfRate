@@ -64,6 +64,7 @@ import { fetchSystemHealth } from "@/lib/healthUtils";
 import { AnimatedNumber } from "@/components/ui/AnimatedNumber";
 import { StatCard } from "@/components/ui/StatCard";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
+import { useAuth } from "@/hooks/useAuth";
 
 interface User {
   id: string;
@@ -142,6 +143,7 @@ const maskEmail = (email: string) => {
 };
 
 export default function AdminDashboard() {
+  const { user: currentUser } = useAuth();
   const { t } = useTranslation();
   const { toast } = useToast();
   const [_, setLocation] = useLocation();
@@ -975,14 +977,16 @@ export default function AdminDashboard() {
                               <TableCell>{new Date(user.createdAt).toLocaleDateString()}</TableCell>
                               <TableCell>
                                 <div className="flex gap-2 justify-end">
-                                  <Button
-                                    variant="outline"
-                                    size="sm"
-                                    onClick={() => setLocation(`/messages?userId=${user.id}`)}
-                                    title="Message User"
-                                  >
-                                    <MessageSquare className="h-4 w-4" />
-                                  </Button>
+                                  {user?.id !== currentUser?.id && (
+                                    <Button
+                                      variant="outline"
+                                      size="sm"
+                                      onClick={() => setLocation(`/messages?userId=${user.id}`)}
+                                      title="Message User"
+                                    >
+                                      <MessageSquare className="h-4 w-4" />
+                                    </Button>
+                                  )}
                                   <Button
                                     variant="outline"
                                     size="sm"

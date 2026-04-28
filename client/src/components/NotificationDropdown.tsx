@@ -153,11 +153,22 @@ export function NotificationDropdown() {
   const { user } = useAuth();
   const [open, setOpen] = useState(false);
 
-  const { data: notifications = [] } = useQuery<any[]>({
+  const [dismissedNotifs, setDismissedNotifs] = useState<number[]>(() => {
+    try {
+      const stored = localStorage.getItem("dismissed_notifications");
+      return stored ? JSON.parse(stored) : [];
+    } catch {
+      return [];
+    }
+  });
+
+  const { data: serverNotifications = [] } = useQuery<any[]>({
     queryKey: ["/api/notifications"],
     enabled: !!user,
     refetchInterval: 15_000, // poll every 15s
   });
+
+  const notifications = serverNotifications.filter(n => !dismissedNotifs.includes(n.id));
 
   const { data: dmCount } = useQuery<{ unread: number }>({
     queryKey: ["/api/messages/unread-count"],
@@ -179,10 +190,16 @@ export function NotificationDropdown() {
 
   const deleteMutation = useMutation({
     mutationFn: async (id: number) => {
+      setDismissedNotifs(prev => {
+        const next = [...prev, id];
+        localStorage.setItem("dismissed_notifications", JSON.stringify(next));
+        return next;
+      });
+      // Optionally also mark as read on the server so it doesn't count as unread if they clear cache
       const csrfRes = await fetch("/api/auth/csrf-token");
       const { token } = await csrfRes.json();
-      await fetch(`/api/notifications/${id}`, {
-        method: "DELETE",
+      await fetch(`/api/notifications/${id}/read`, {
+        method: "PATCH",
         headers: { "X-CSRF-Token": token },
       });
     },
