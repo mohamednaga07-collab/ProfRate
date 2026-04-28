@@ -528,7 +528,7 @@ export class SqliteStorage implements IStorage {
   }
 
   async markMessageRead(id: number): Promise<void> {
-    this.db.prepare("UPDATE messages SET status = 'read' WHERE id = ?").run(id);
+    this.db.prepare("UPDATE messages SET status = 'read', isRead = 1 WHERE id = ?").run(id);
   }
   
   async deleteMessage(id: number): Promise<void> {

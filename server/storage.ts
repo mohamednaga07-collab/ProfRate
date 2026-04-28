@@ -550,7 +550,7 @@ export class DatabaseStorage implements IStorage {
   }
 
   async markMessageRead(id: number): Promise<void> {
-    await db.update(messages).set({ status: 'read' }).where(eq(messages.id, id));
+    await db.update(messages).set({ status: 'read', isRead: true }).where(eq(messages.id, id));
   }
 
   async deleteMessage(id: number): Promise<void> {

@@ -1685,6 +1685,7 @@ export async function registerRoutes(httpServer: Server, app: Express): Promise<
         return res.status(400).json({ message: "Message content or attachment is required" });
       }
       if (!user) return res.status(401).json({ message: "Not authenticated" });
+      if (parseInt(receiverId) === user.id) return res.status(400).json({ message: "You cannot message yourself" });
 
       const receiver = await storage.getUser(receiverId);
       if (!receiver) return res.status(404).json({ message: "User not found" });
@@ -1928,7 +1929,8 @@ export async function registerRoutes(httpServer: Server, app: Express): Promise<
 
       const allowed = allowedTypes[user.role] ?? ["broadcast"];
 
-      let filtered = messages.filter((msg: any) => allowed.includes(msg.type));
+      // Only show messages that are not deleted and match allowed types
+      let filtered = messages.filter((msg: any) => !msg.isDeleted && allowed.includes(msg.type));
       
       // For teachers, we must strictly filter `direct` messages to only those matching their linked doctor profile.
       if (user.role === "teacher") {
