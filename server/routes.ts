@@ -1555,8 +1555,9 @@ export async function registerRoutes(httpServer: Server, app: Express): Promise<
       const sentMessages = await storage.getSentMessages(user.id);
 
       const combined = [...allMessages, ...sentMessages].filter(m =>
-        (m.senderId === user.id && m.receiverId === otherUserId) ||
-        (m.senderId === otherUserId && m.receiverId === user.id)
+        m.type === "direct" &&
+        ((m.senderId === user.id && m.receiverId === otherUserId) ||
+        (m.senderId === otherUserId && m.receiverId === user.id))
       ).sort((a, b) => new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime());
 
       const uniqueMessages = Array.from(new Map(combined.map(m => [m.id, m])).values());
@@ -1920,9 +1921,9 @@ export async function registerRoutes(httpServer: Server, app: Express): Promise<
       // - Teachers: see broadcasts and direct (anonymous student DMs targeted to them)
       // - Students: see broadcast and broadcast_class announcements from teachers/admins
       const allowedTypes: Record<string, string[]> = {
-        admin: ["feedback", "support_request", "broadcast"],
+        admin: ["feedback", "support_request", "broadcast", "direct"],
         teacher: ["direct", "broadcast", "broadcast_class"],
-        student: ["broadcast", "broadcast_class"],
+        student: ["broadcast", "broadcast_class", "direct"],
       };
 
       const allowed = allowedTypes[user.role] ?? ["broadcast"];
@@ -1981,23 +1982,6 @@ export async function registerRoutes(httpServer: Server, app: Express): Promise<
         isAnonymous: isAnonymous === true,
         isRead: false,
       });
-
-      // Auto-create a notification for the receiver so the bell lights up
-      if (type === 'direct' && receiverId) {
-        try {
-          const senderName = [user.firstName, user.lastName].filter(Boolean).join(" ") || user.username || "Someone";
-          await storage.createMessage({
-            senderId: userId,
-            receiverId: receiverId,
-            targetDoctorId: null,
-            title: `New message from ${senderName}`,
-            content: (content || "📎 Sent an attachment").slice(0, 120),
-            type: "direct_notification",
-            isAnonymous: false,
-            isRead: false,
-          });
-        } catch (e) { console.error("Failed to auto-create notification:", e); }
-      }
 
       res.status(201).json(msg);
     } catch (error) {
