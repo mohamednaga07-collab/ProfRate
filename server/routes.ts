@@ -10,6 +10,28 @@ import { randomUUID } from "crypto";
 import crypto from "crypto";
 import { sendEmail, generateForgotPasswordEmailHtml, generateForgotUsernameEmailHtml, generateVerificationEmailHtml } from "./email";
 import os from "os";
+import multer from "multer";
+import path from "path";
+import fs from "fs";
+
+// Configure multer for 50MB file uploads (saving to server/uploads)
+const uploadDir = path.join(process.cwd(), "server", "uploads");
+if (!fs.existsSync(uploadDir)) {
+  fs.mkdirSync(uploadDir, { recursive: true });
+}
+const storageConfig = multer.diskStorage({
+  destination: function (req, file, cb) {
+    cb(null, uploadDir);
+  },
+  filename: function (req, file, cb) {
+    const uniqueSuffix = Date.now() + '-' + Math.round(Math.random() * 1E9);
+    cb(null, uniqueSuffix + path.extname(file.originalname));
+  }
+});
+const upload = multer({ 
+  storage: storageConfig,
+  limits: { fileSize: 50 * 1024 * 1024 } // 50 MB limit
+});
 
 // Guard to prevent simultaneous duplicate registration requests
 const pendingRegistrations = new Set<string>();
