@@ -11,7 +11,7 @@ import { motion, AnimatePresence } from "framer-motion";
 import { apiRequest } from "@/lib/queryClient";
 import EmojiPicker, { EmojiClickData, Theme } from 'emoji-picker-react';
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
-import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
+
 
 export default function Messages() {
   const { user } = useAuth();
@@ -63,32 +63,14 @@ export default function Messages() {
     }
   }, [conversations, initialUserId]);
 
-  const [deletedForMe, setDeletedForMe] = useState<number[]>(() => {
-    try {
-      const stored = localStorage.getItem("deleted_messages_for_me");
-      return stored ? JSON.parse(stored) : [];
-    } catch {
-      return [];
-    }
-  });
 
-  const handleDeleteForMe = (id: number) => {
-    setDeletedForMe(prev => {
-      const next = [...prev, id];
-      localStorage.setItem("deleted_messages_for_me", JSON.stringify(next));
-      return next;
-    });
-    toast({ title: "Message deleted for you" });
-  };
 
   // Fetch messages for selected conversation (right panel)
-  const { data: serverMessages = [], isLoading: loadingMessages } = useQuery<any[]>({
+  const { data: messages = [], isLoading: loadingMessages } = useQuery<any[]>({
     queryKey: ["/api/messages", selectedUserId],
     enabled: !!selectedUserId,
     refetchInterval: 3000,
   });
-
-  const messages = serverMessages.filter(m => !deletedForMe.includes(m.id));
 
   // Fetch settings to check if edit/delete is allowed
   const { data: settings } = useQuery<any>({
@@ -396,31 +378,17 @@ export default function Messages() {
                               </div>
 
                               {/* Hover Context Menu */}
-                              {!msg.isDeleted && (
+                              {isMe && !msg.isDeleted && (
                                 <div className="flex gap-1 opacity-0 focus-within:opacity-100 group-hover:opacity-100 transition-opacity">
-                                  {isMe && settings?.allowMessageEdit !== "false" && (
+                                  {settings?.allowMessageEdit !== "false" && (
                                     <Button variant="ghost" size="icon" className="h-8 w-8 rounded-full" onClick={() => handleEditClick(msg)}>
                                       <Edit2 className="h-4 w-4 text-muted-foreground hover:text-foreground" />
                                     </Button>
                                   )}
                                   {settings?.allowMessageDelete !== "false" && (
-                                    <DropdownMenu>
-                                      <DropdownMenuTrigger asChild>
-                                        <Button variant="ghost" size="icon" className="h-8 w-8 rounded-full hover:bg-destructive/10">
-                                          <Trash2 className="h-4 w-4 text-destructive" />
-                                        </Button>
-                                      </DropdownMenuTrigger>
-                                      <DropdownMenuContent align={isMe ? "end" : "start"}>
-                                        <DropdownMenuItem onClick={() => handleDeleteForMe(msg.id)}>
-                                          Delete for me
-                                        </DropdownMenuItem>
-                                        {isMe && (
-                                          <DropdownMenuItem className="text-destructive focus:text-destructive" onClick={() => deleteMessageMutation.mutate(msg.id)}>
-                                            Delete for everyone
-                                          </DropdownMenuItem>
-                                        )}
-                                      </DropdownMenuContent>
-                                    </DropdownMenu>
+                                    <Button variant="ghost" size="icon" className="h-8 w-8 rounded-full hover:bg-destructive/10" onClick={() => deleteMessageMutation.mutate(msg.id)}>
+                                      <Trash2 className="h-4 w-4 text-destructive" />
+                                    </Button>
                                   )}
                                 </div>
                               )}
