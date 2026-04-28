@@ -1932,21 +1932,7 @@ export async function registerRoutes(httpServer: Server, app: Express): Promise<
       // Only show messages that are not deleted and match allowed types
       let filtered = messages.filter((msg: any) => !msg.isDeleted && allowed.includes(msg.type));
       
-      // For teachers, we must strictly filter `direct` messages to only those matching their linked doctor profile.
-      if (user.role === "teacher") {
-         const allDoctors = await storage.getAllDoctors();
-         const fullName = [user.firstName, user.lastName].filter(Boolean).join(" ").trim().toLowerCase();
-         const normalize = (name: string) => name.replace(/^Dr\.?\s+/i, "").trim().toLowerCase();
-         const matchedDoctors = fullName ? allDoctors.filter(d => normalize(d.name) === fullName) : [];
-         const matchedDoctorId = matchedDoctors.length > 0 ? matchedDoctors[0].id : -1;
-         
-         filtered = filtered.filter((msg: any) => {
-           if (msg.type === "direct") {
-             return msg.targetDoctorId === matchedDoctorId;
-           }
-           return true; 
-         });
-      }
+
 
       // Strip sender identity for anonymous messages
       filtered = filtered.map((msg: any) => {

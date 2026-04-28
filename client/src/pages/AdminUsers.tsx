@@ -200,16 +200,17 @@ export default function AdminUsers() {
                   </td>
                   <td className="px-6 py-4 text-right">
                     <div className="flex items-center justify-end gap-2">
-                      <Button
-                        variant="outline"
-                        size="sm"
-                        className="h-8"
-                        onClick={() => setLocation(`/messages?userId=${user.id}`)}
-                        disabled={currentUser?.id === user.id}
-                      >
-                        <MessageSquare className="h-3.5 w-3.5 mr-2" />
-                        Message
-                      </Button>
+                      {currentUser?.id !== user.id && (
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          className="h-8"
+                          onClick={() => setLocation(`/messages?userId=${user.id}`)}
+                        >
+                          <MessageSquare className="h-3.5 w-3.5 mr-2" />
+                          Message
+                        </Button>
+                      )}
                       <Dialog open={isDialogOpen && selectedUser?.id === user.id} onOpenChange={(open) => {
                           if (!open) {
                               setIsDialogOpen(false);
