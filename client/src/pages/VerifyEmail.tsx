@@ -123,9 +123,6 @@ export function VerifyEmail() {
           <p className={`text-lg ${status === 'error' ? 'text-destructive' : 'text-muted-foreground'}`}>
             {message}
           </p>
-          <p className="text-sm text-muted-foreground mt-2">
-            If you need further assistance, contact support at <a href="mailto:mohamednaga07@gmail.com" className="text-primary">mohamednaga07@gmail.com</a>. We typically respond within 48 hours.
-          </p>
           
           {status !== 'loading' && (
             <div className="flex flex-col gap-2 mt-4">

@@ -10,7 +10,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Avatar, AvatarImage, AvatarFallback } from "@/components/ui/avatar";
 import { useToast } from "@/hooks/use-toast";
-import { GraduationCap, User, Lock, UserCircle, Mail, AlertCircle, CheckCircle2, Sparkles, ArrowRight, Eye, EyeOff } from "lucide-react";
+import { GraduationCap, User, Lock, UserCircle, Mail, AlertCircle, CheckCircle2, Sparkles, ArrowRight } from "lucide-react";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { motion, AnimatePresence } from "framer-motion";
 import { apiRequest, queryClient, prefetchCsrfToken } from "@/lib/queryClient";
@@ -38,10 +38,6 @@ export function AuthForm({ onSuccess, defaultTab = "login" }: AuthFormProps) {
   const [registrationSuccess, setRegistrationSuccess] = useState(false);
   const [isDarkMode, setIsDarkMode] = useState(false);
   const [isSessionVerified, setIsSessionVerified] = useState(false);
-  const [registrationCooldown, setRegistrationCooldown] = useState(false);
-  const [showLoginPassword, setShowLoginPassword] = useState(false);
-  const [showRegisterPassword, setShowRegisterPassword] = useState(false);
-  const [showRegisterPasswordConfirm, setShowRegisterPasswordConfirm] = useState(false);
   const authCardRef = useRef<HTMLDivElement>(null);
 
   const recaptchaEnabled = import.meta.env.VITE_RECAPTCHA_ENABLED === "true";
@@ -518,10 +514,6 @@ export function AuthForm({ onSuccess, defaultTab = "login" }: AuthFormProps) {
 
     try {
       console.log("Attempting registration with email:", registerEmail, "username:", registerUsername);
-      // Do NOT send the client-side honeypot value. Keep the honeypot input
-      // in the DOM to catch naive bots, but omit it from the request so
-      // browser autofill / password managers can't trigger the server-side
-      // bot-detection accidentally.
       const responseObj: any = await apiRequest("POST", "/api/auth/register", {
         email: registerEmail,
         username: registerUsername,
@@ -531,6 +523,7 @@ export function AuthForm({ onSuccess, defaultTab = "login" }: AuthFormProps) {
         role: registerRole,
         recaptchaToken,
         skipRecaptcha: isSessionVerified && !recaptchaToken,
+        _hsh: registerHoneypot,
       });
 
       // apiRequest returns a Response object, we need to parse JSON
@@ -546,9 +539,6 @@ export function AuthForm({ onSuccess, defaultTab = "login" }: AuthFormProps) {
           description: t("auth.success.verificationSent", { email: registerEmail, name: registerFirstName || registerUsername }),
         });
 
-        // Clear any cached user data — do NOT auto-login
-        queryClient.setQueryData(["/api/auth/user"], null);
-
         // Set success state and switch to login tab after showing message
         setRegistrationSuccess(true);
         setTimeout(() => {
@@ -562,51 +552,30 @@ export function AuthForm({ onSuccess, defaultTab = "login" }: AuthFormProps) {
             setRegisterPasswordConfirm("");
             setRegisterFirstName("");
             setRegisterLastName("");
-            setRegisterHoneypot("");
             setRecaptchaToken(null);
             if (recaptchaRef.current) recaptchaRef.current.reset();
           }, 300);
         }, 3000);
 
-        // Do NOT call onSuccess — user must verify email first, then login manually
+        if (onSuccess) onSuccess();
       } else {
         throw new Error("No user in response");
       }
     } catch (error: any) {
       console.error("Registration error:", error);
 
-      const status = error?.status || error?.response?.status;
-      const serverMsg = (error?.responseJson && error.responseJson.message) || error?.message || t("auth.errors.generic");
-
       let errorTitle = t("auth.errors.registrationFailed");
-      let errorDescription = serverMsg;
+      let errorDescription = error.message || t("auth.errors.generic");
 
-      // 429 -> registration already in progress (server-side guard)
-      if (status === 429 || (typeof serverMsg === "string" && serverMsg.toLowerCase().includes("already in progress"))) {
-        errorTitle = t("auth.errors.registrationInProgressTitle", { defaultValue: "Registration In Progress" });
-        errorDescription = serverMsg || "Registration is already in progress. Please wait a moment.";
-
-        // Short local cooldown to improve UX and prevent immediate retries
-        try {
-          setRegistrationCooldown(true);
-          setTimeout(() => setRegistrationCooldown(false), 3000);
-        } catch {}
-
-      } else if (typeof serverMsg === "string" && serverMsg.toLowerCase().includes("already exists")) {
+       if (error.message.includes("already exists")) {
         errorTitle = t("auth.errors.usernameTaken");
         errorDescription = t("auth.errors.usernameTakenDesc", { username: registerUsername });
-      } else if (typeof serverMsg === "string" && serverMsg.toLowerCase().includes("recaptcha")) {
+      } else if (error.message.includes("reCAPTCHA")) {
         errorTitle = t("auth.errors.recaptchaFailed");
         errorDescription = t("auth.errors.recaptchaFailedDesc");
-      } else if (typeof serverMsg === "string" && serverMsg.toLowerCase().includes("password")) {
+      } else if (error.message.includes("password")) {
         errorTitle = t("auth.errors.passwordTooWeak");
         errorDescription = t("auth.errors.passwordTooWeakDesc");
-      } else if (status === 400 && error?.responseJson?.feedback) {
-        // Show server-side password feedback if provided
-        errorTitle = t("auth.errors.passwordTooWeak");
-        errorDescription = Array.isArray(error.responseJson.feedback)
-          ? error.responseJson.feedback.join(" ")
-          : (error.responseJson.feedback || errorDescription);
       }
 
       toast({
@@ -702,9 +671,6 @@ export function AuthForm({ onSuccess, defaultTab = "login" }: AuthFormProps) {
                          Please check your inbox & spam
                       </p>
                     </div>
-                    <p className="text-sm text-muted-foreground mt-3 text-center">
-                      If you need assistance, contact support at <a href="mailto:mohamednaga07@gmail.com" className="text-primary">mohamednaga07@gmail.com</a>. We will usually respond within 48 hours.
-                    </p>
                   </motion.div>
                 </div>
 
@@ -807,32 +773,14 @@ export function AuthForm({ onSuccess, defaultTab = "login" }: AuthFormProps) {
                       <Lock className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
                       <Input
                         id="login-password"
-                        type={showLoginPassword ? "text" : "password"}
+                        type="password"
                         placeholder={t("auth.placeholders.password")}
                         value={loginPassword}
                         onChange={(e) => setLoginPassword(e.target.value)}
-                        className="pl-10 pr-10"
+                        className="pl-10"
                         required
                         disabled={isLoading}
                       />
-                      <button
-                        type="button"
-                        onClick={() => setShowLoginPassword((s) => !s)}
-                        className="absolute right-3 top-3 p-1 text-muted-foreground hover:text-primary transition-colors"
-                        aria-label={showLoginPassword ? t("auth.hidePassword", { defaultValue: "Hide password" }) : t("auth.showPassword", { defaultValue: "Show password" })}
-                      >
-                        <AnimatePresence mode="wait" initial={false}>
-                          <motion.div
-                            key={showLoginPassword ? "hide" : "show"}
-                            initial={{ opacity: 0, scale: 0.8 }}
-                            animate={{ opacity: 1, scale: 1 }}
-                            exit={{ opacity: 0, scale: 0.8 }}
-                            transition={{ duration: 0.15 }}
-                          >
-                            {showLoginPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
-                          </motion.div>
-                        </AnimatePresence>
-                      </button>
                     </div>
                   </div>
 
@@ -1006,33 +954,15 @@ export function AuthForm({ onSuccess, defaultTab = "login" }: AuthFormProps) {
                       <Lock className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
                       <Input
                         id="register-password"
-                        type={showRegisterPassword ? "text" : "password"}
+                        type="password"
                         placeholder={t("auth.placeholders.choosePassword")}
                         value={registerPassword}
                         onChange={handlePasswordChange}
-                        className="pl-10 pr-10"
+                        className="pl-10"
                         required
                         disabled={isLoading}
                         minLength={8}
                       />
-                      <button
-                        type="button"
-                        onClick={() => setShowRegisterPassword((s) => !s)}
-                        className="absolute right-3 top-3 p-1 text-muted-foreground hover:text-primary transition-colors"
-                        aria-label={showRegisterPassword ? t("auth.hidePassword", { defaultValue: "Hide password" }) : t("auth.showPassword", { defaultValue: "Show password" })}
-                      >
-                        <AnimatePresence mode="wait" initial={false}>
-                          <motion.div
-                            key={showRegisterPassword ? "hide" : "show"}
-                            initial={{ opacity: 0, scale: 0.8 }}
-                            animate={{ opacity: 1, scale: 1 }}
-                            exit={{ opacity: 0, scale: 0.8 }}
-                            transition={{ duration: 0.15 }}
-                          >
-                            {showRegisterPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
-                          </motion.div>
-                        </AnimatePresence>
-                      </button>
                     </div>
 
                     {/* Password Strength Meter */}
@@ -1065,11 +995,11 @@ export function AuthForm({ onSuccess, defaultTab = "login" }: AuthFormProps) {
                       <Lock className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
                       <Input
                         id="register-password-confirm"
-                        type={showRegisterPasswordConfirm ? "text" : "password"}
+                        type="password"
                         placeholder={t("auth.placeholders.confirmPassword")}
                         value={registerPasswordConfirm}
                         onChange={(e) => setRegisterPasswordConfirm(e.target.value)}
-                        className={`pl-10 pr-10 ${registerPasswordConfirm && registerPassword !== registerPasswordConfirm
+                        className={`pl-10 ${registerPasswordConfirm && registerPassword !== registerPasswordConfirm
                           ? "border-red-500"
                           : registerPasswordConfirm && registerPassword === registerPasswordConfirm
                             ? "border-green-500"
@@ -1079,24 +1009,6 @@ export function AuthForm({ onSuccess, defaultTab = "login" }: AuthFormProps) {
                         disabled={isLoading}
                         minLength={8}
                       />
-                      <button
-                        type="button"
-                        onClick={() => setShowRegisterPasswordConfirm((s) => !s)}
-                        className="absolute right-3 top-3 p-1 text-muted-foreground hover:text-primary transition-colors"
-                        aria-label={showRegisterPasswordConfirm ? t("auth.hidePassword", { defaultValue: "Hide password" }) : t("auth.showPassword", { defaultValue: "Show password" })}
-                      >
-                        <AnimatePresence mode="wait" initial={false}>
-                          <motion.div
-                            key={showRegisterPasswordConfirm ? "hide" : "show"}
-                            initial={{ opacity: 0, scale: 0.8 }}
-                            animate={{ opacity: 1, scale: 1 }}
-                            exit={{ opacity: 0, scale: 0.8 }}
-                            transition={{ duration: 0.15 }}
-                          >
-                            {showRegisterPasswordConfirm ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
-                          </motion.div>
-                        </AnimatePresence>
-                      </button>
                     </div>
                     {registerPasswordConfirm && registerPassword !== registerPasswordConfirm && (
                       <p className="text-sm text-red-500">{t("auth.validation.passwordsDontMatch")}</p>
@@ -1175,7 +1087,7 @@ export function AuthForm({ onSuccess, defaultTab = "login" }: AuthFormProps) {
                   <Button
                     type="submit"
                     className="w-full font-semibold"
-                    disabled={isLoading || registrationCooldown || !canSubmitRegister()}
+                    disabled={isLoading || !canSubmitRegister()}
                   >
                     {isLoading ? (
                       <>

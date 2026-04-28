@@ -156,7 +156,13 @@ export function NotificationDropdown() {
   const { data: notifications = [] } = useQuery<any[]>({
     queryKey: ["/api/notifications"],
     enabled: !!user,
-    refetchInterval: 30_000, // poll every 30s
+    refetchInterval: 15_000, // poll every 15s
+  });
+
+  const { data: dmCount } = useQuery<{ unread: number }>({
+    queryKey: ["/api/messages/unread-count"],
+    enabled: !!user,
+    refetchInterval: 10_000, // poll every 10s for DMs
   });
 
   const markReadMutation = useMutation({
@@ -202,7 +208,9 @@ export function NotificationDropdown() {
 
   if (!user) return null;
 
-  const unreadCount = notifications.filter((n: any) => !n.isRead).length;
+  const unreadNotifCount = notifications.filter((n: any) => !n.isRead).length;
+  const unreadDmCount = dmCount?.unread ?? 0;
+  const unreadCount = unreadNotifCount + unreadDmCount;
   const hasUnread = unreadCount > 0;
 
   return (
@@ -259,6 +267,26 @@ export function NotificationDropdown() {
             </Button>
           )}
         </div>
+
+        {/* DM unread banner */}
+        {unreadDmCount > 0 && (
+          <a
+            href="/messages"
+            className="flex items-center gap-3 px-4 py-3 border-b border-border/40 bg-sky-500/5 hover:bg-sky-500/10 transition-colors cursor-pointer"
+            onClick={() => setOpen(false)}
+          >
+            <div className="h-9 w-9 rounded-xl bg-sky-500/15 border border-sky-500/20 flex items-center justify-center shrink-0">
+              <Mail className="h-4 w-4 text-sky-500" />
+            </div>
+            <div className="flex-1 min-w-0">
+              <p className="text-sm font-semibold text-foreground leading-tight">
+                {unreadDmCount} unread message{unreadDmCount !== 1 ? "s" : ""}
+              </p>
+              <p className="text-xs text-muted-foreground mt-0.5">Click to open Messages</p>
+            </div>
+            <span className="h-2 w-2 rounded-full bg-sky-500 animate-pulse shrink-0" />
+          </a>
+        )}
 
         {/* Notification list */}
         {notifications.length === 0 ? (

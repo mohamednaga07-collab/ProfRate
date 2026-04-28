@@ -654,9 +654,7 @@ export async function registerRoutes(httpServer: Server, app: Express): Promise<
     const registrationKey = `${username.toLowerCase()}:${email?.toLowerCase()}`;
     if (pendingRegistrations.has(registrationKey)) {
       console.warn(`🛑 Duplicate registration attempt blocked for: ${registrationKey}`);
-      // Inform clients how long to wait before retrying
-      res.setHeader("Retry-After", "3");
-      return res.status(429).json({ message: "Registration is already in progress. Please wait a moment.", retryAfter: 3 });
+      return res.status(429).json({ message: "Registration is already in progress. Please wait a moment." });
     }
     
     // Track this attempt to block simultaneous ones
@@ -1507,6 +1505,345 @@ export async function registerRoutes(httpServer: Server, app: Express): Promise<
     }
   });
 
+  // ==================== DIRECT MESSAGING ROUTES ====================
+
+  const messageRateLimiter = new Map<string, number>();
+
+  // Lookup a user by ID (needed for new conversations started from admin dashboard)
+  app.get("/api/users/:id", isAuthenticated, async (req, res) => {
+    try {
+      const u = await storage.getUser(req.params.id);
+      if (!u) return res.status(404).json({ message: "User not found" });
+      res.json({ id: u.id, firstName: u.firstName, lastName: u.lastName, profileImageUrl: u.profileImageUrl, role: u.role });
+    } catch (error) {
+      res.status(500).json({ message: "Server error" });
+    }
+  });
+
+  // Get messages for a specific conversation (also marks them as read)
+  app.get("/api/messages/:otherUserId", isAuthenticated, async (req, res) => {
+    try {
+      let user = req.user as any;
+      if (!user && req.session?.userId) {
+        user = await storage.getUser(req.session.userId);
+      }
+      if (!user) return res.status(401).json({ message: "Not authenticated" });
+      const otherUserId = req.params.otherUserId;
+      const allMessages = await storage.getMessages(user.id);
+      const sentMessages = await storage.getSentMessages(user.id);
+
+      const combined = [...allMessages, ...sentMessages].filter(m =>
+        (m.senderId === user.id && m.receiverId === otherUserId) ||
+        (m.senderId === otherUserId && m.receiverId === user.id)
+      ).sort((a, b) => new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime());
+
+      const uniqueMessages = Array.from(new Map(combined.map(m => [m.id, m])).values());
+
+      // Flatten first attachment onto message object
+      const messagesWithAttachments = await Promise.all(
+        uniqueMessages.map(async (msg) => {
+          try {
+            const attachments = await storage.getAttachmentsForMessage(msg.id);
+            const first = attachments[0];
+            return { ...msg, attachmentId: first?.id || null, attachmentName: first?.filename || null, attachmentType: first?.mimeType || null };
+          } catch {
+            return { ...msg, attachmentId: null, attachmentName: null, attachmentType: null };
+          }
+        })
+      );
+
+      // Mark messages from the other user as read (triggers blue ticks on sender)
+      for (const msg of messagesWithAttachments) {
+        if (msg.senderId === otherUserId && msg.status !== "read") {
+          try { await storage.markMessageRead(msg.id); } catch {}
+        }
+      }
+
+      res.json(messagesWithAttachments);
+    } catch (error) {
+      console.error("Error fetching messages:", error);
+      res.status(500).json({ message: "Failed to fetch messages" });
+    }
+  });
+
+  // Get all conversations with last message + unread count
+  app.get("/api/conversations", isAuthenticated, async (req: any, res) => {
+    try {
+      let user = req.user as any;
+      if (!user && req.session?.userId) {
+        user = await storage.getUser(req.session.userId);
+      }
+      if (!user) return res.status(401).json({ message: "Not authenticated" });
+      const received = await storage.getMessages(user.id);
+      const sent = await storage.getSentMessages(user.id);
+
+      // Mark received 'sent' messages as 'delivered' (user is online/polling)
+      for (const msg of received) {
+        if (msg.type === "direct" && msg.status === "sent") {
+          try { await db.update(messages).set({ status: "delivered" }).where(eq(messages.id, msg.id)); } catch {}
+        }
+      }
+
+      const all = [...received, ...sent];
+      const otherUserIds = new Set<string>();
+      all.forEach(m => {
+        if (m.senderId && m.senderId !== user.id && m.type === "direct") otherUserIds.add(m.senderId);
+        if (m.receiverId && m.receiverId !== user.id && m.type === "direct") otherUserIds.add(m.receiverId);
+      });
+
+      const usersInfo = await Promise.all(Array.from(otherUserIds).map(id => storage.getUser(id)));
+
+      const conversations = await Promise.all(
+        usersInfo.filter(u => u !== undefined).map(async (u: any) => {
+          const thread = all.filter(m =>
+            m.type === "direct" && (
+              (m.senderId === u.id && m.receiverId === user.id) ||
+              (m.senderId === user.id && m.receiverId === u.id)
+            )
+          ).sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
+
+          const lastMsg = thread[0];
+          const unreadCount = thread.filter(m => m.senderId === u.id && m.receiverId === user.id && m.status !== "read").length;
+
+          return {
+            id: u.id,
+            firstName: u.firstName,
+            lastName: u.lastName,
+            profileImageUrl: u.profileImageUrl,
+            role: u.role,
+            lastMessage: lastMsg ? (lastMsg.isDeleted ? "🗑 Deleted message" : lastMsg.content || "📎 Attachment") : null,
+            lastMessageAt: lastMsg ? lastMsg.createdAt : null,
+            unreadCount,
+          };
+        })
+      );
+
+      conversations.sort((a, b) => {
+        if (!a.lastMessageAt) return 1;
+        if (!b.lastMessageAt) return -1;
+        return new Date(b.lastMessageAt).getTime() - new Date(a.lastMessageAt).getTime();
+      });
+
+      res.json(conversations);
+    } catch (error) {
+      res.status(500).json({ message: "Failed to fetch conversations" });
+    }
+  });
+
+  // Lightweight unread DM count for the notification bell badge
+  app.get("/api/messages/unread-count", isAuthenticated, async (req: any, res) => {
+    try {
+      let user = req.user as any;
+      if (!user && req.session?.userId) user = await storage.getUser(req.session.userId);
+      if (!user) return res.status(401).json({ message: "Not authenticated" });
+      const received = await storage.getMessages(user.id);
+      const unread = received.filter((m: any) => m.type === "direct" && m.status !== "read").length;
+      res.json({ unread });
+    } catch {
+      res.status(500).json({ unread: 0 });
+    }
+  });
+
+  // Send a message (with optional file attachment)
+  app.post("/api/messages", isAuthenticated, upload.single("attachment"), async (req, res) => {
+    try {
+      let user = req.user as any;
+      if (!user && (req as any).session?.userId) {
+        user = await storage.getUser((req as any).session.userId);
+      }
+      const { receiverId, targetDoctorId, content } = req.body;
+      const file = (req as any).file;
+
+      if (!receiverId || (!content && !file)) {
+        return res.status(400).json({ message: "Message content or attachment is required" });
+      }
+      if (!user) return res.status(401).json({ message: "Not authenticated" });
+
+      const receiver = await storage.getUser(receiverId);
+      if (!receiver) return res.status(404).json({ message: "User not found" });
+
+      const userRole = user?.role || "student";
+      const receiverRole = receiver?.role || "student";
+      const isAdminInvolved = userRole === "admin" || receiverRole === "admin";
+
+      if (!isAdminInvolved) {
+        if (userRole === "teacher" && receiverRole !== "student") {
+          return res.status(403).json({ message: "Teachers can only message students or admins" });
+        }
+        if (userRole === "student" && receiverRole !== "teacher") {
+          return res.status(403).json({ message: "Students can only message teachers or admins" });
+        }
+        if (userRole === "teacher") {
+          const receivedFromStudent = await storage.getMessages(user.id);
+          const hasHistory = receivedFromStudent.some(m => String(m.senderId) === String(receiverId));
+          if (!hasHistory) {
+            return res.status(403).json({ message: "Teachers can only reply to students who have messaged them first." });
+          }
+        }
+      }
+
+      // Anti-spam: 3 seconds between messages
+      const now = Date.now();
+      const lastSent = messageRateLimiter.get(user.id) || 0;
+      if (now - lastSent < 3000) {
+        return res.status(429).json({ message: "Please wait a moment before sending another message." });
+      }
+      messageRateLimiter.set(user.id, now);
+
+      const message = await storage.createMessage({
+        senderId: user.id,
+        receiverId,
+        targetDoctorId,
+        title: "Direct Message",
+        content: content || "",
+        type: "direct",
+      });
+
+      // Handle file attachment (dual storage: disk + DB base64)
+      let savedAttachment: any = null;
+      if (file) {
+        try {
+          const fileData = fs.readFileSync(file.path);
+          const base64Data = fileData.toString("base64");
+          const attachment = await storage.addAttachment({
+            id: randomUUID(),
+            messageId: message.id,
+            filename: file.originalname,
+            mimeType: file.mimetype,
+            size: file.size,
+            data: base64Data,
+          });
+          const { data, ...safeAtt } = attachment;
+          savedAttachment = safeAtt;
+        } catch (fileErr) {
+          console.error("Error saving attachment:", fileErr);
+        }
+      }
+
+      // Auto-create a notification for the receiver (bell badge)
+      try {
+        const senderName = [user.firstName, user.lastName].filter(Boolean).join(" ") || user.username || "Someone";
+        await storage.createMessage({
+          senderId: user.id,
+          receiverId,
+          targetDoctorId: null,
+          title: `💬 New message from ${senderName}`,
+          content: (content || "📎 Sent an attachment").slice(0, 120),
+          type: "direct",
+          isAnonymous: false,
+        });
+      } catch { /* non-critical */ }
+
+      res.status(201).json({
+        ...message,
+        attachmentId: savedAttachment?.id || null,
+        attachmentName: savedAttachment?.filename || null,
+        attachmentType: savedAttachment?.mimeType || null,
+      });
+    } catch (error: any) {
+      console.error("Error sending message:", error);
+      res.status(500).json({ message: error?.message || "Failed to send message" });
+    }
+  });
+
+  app.post("/api/messages/:id/read", isAuthenticated, validateCsrfHeader, async (req, res) => {
+    try {
+      await storage.markMessageRead(parseInt(req.params.id));
+      res.status(204).end();
+    } catch (error) {
+      res.status(500).json({ message: "Failed to mark as read" });
+    }
+  });
+
+  app.put("/api/messages/:id", isAuthenticated, validateCsrfHeader, async (req, res) => {
+    try {
+      let user = req.user as any;
+      if (!user && (req as any).session?.userId) user = await storage.getUser((req as any).session.userId);
+      const messageId = parseInt(req.params.id);
+      const { content } = req.body;
+      const settings = await storage.getAppSettings();
+      const allowEditSetting = settings.find(s => s.key === "allowMessageEdit");
+      if (allowEditSetting && allowEditSetting.value === "false" && user.role !== "admin") {
+        return res.status(403).json({ message: "Message editing is disabled by administrators" });
+      }
+      await storage.updateMessage(messageId, { content, isEdited: true });
+      res.status(200).json({ message: "Message updated" });
+    } catch (error) {
+      res.status(500).json({ message: "Failed to update message" });
+    }
+  });
+
+  app.delete("/api/messages/:id", isAuthenticated, validateCsrfHeader, async (req, res) => {
+    try {
+      let user = req.user as any;
+      if (!user && (req as any).session?.userId) user = await storage.getUser((req as any).session.userId);
+      const messageId = parseInt(req.params.id);
+      const settings = await storage.getAppSettings();
+      const allowDeleteSetting = settings.find(s => s.key === "allowMessageDelete");
+      if (allowDeleteSetting && allowDeleteSetting.value === "false" && user.role !== "admin") {
+        return res.status(403).json({ message: "Message deletion is disabled by administrators" });
+      }
+      await storage.deleteMessage(messageId);
+      res.status(200).json({ message: "Message deleted" });
+    } catch (error) {
+      res.status(500).json({ message: "Failed to delete message" });
+    }
+  });
+
+  // Serve attachment (disk-first, fallback to DB base64)
+  app.get("/api/attachments/:id", isAuthenticated, async (req, res) => {
+    try {
+      const attachmentId = req.params.id;
+      const attachment = await storage.getAttachment(attachmentId);
+      if (!attachment) return res.status(404).json({ message: "Attachment not found" });
+      const filePath = path.join(uploadDir, attachment.filename);
+      if (fs.existsSync(filePath)) return res.sendFile(filePath);
+      const fileBuffer = Buffer.from(attachment.data, "base64");
+      fs.writeFileSync(filePath, fileBuffer);
+      return res.sendFile(filePath);
+    } catch (error) {
+      console.error("Error serving attachment:", error);
+      res.status(500).json({ message: "Failed to load attachment" });
+    }
+  });
+
+  // App settings (admin message-edit/delete toggles)
+  app.get("/api/settings", async (req, res) => {
+    try {
+      const settings = await storage.getAppSettings();
+      const settingsObj = settings.reduce((acc, curr) => { acc[curr.key] = curr.value; return acc; }, {} as any);
+      res.json(settingsObj);
+    } catch (error) {
+      res.status(500).json({ message: "Failed to fetch settings" });
+    }
+  });
+
+  app.post("/api/settings", isAuthenticated, validateCsrfHeader, async (req, res) => {
+    try {
+      let user = req.user as any;
+      if (!user && (req as any).session?.userId) user = await storage.getUser((req as any).session.userId);
+      if (user?.role !== "admin") return res.status(403).json({ message: "Forbidden" });
+      for (const [key, value] of Object.entries(req.body)) {
+        await storage.updateAppSetting(key, String(value));
+      }
+      res.status(200).json({ message: "Settings updated successfully" });
+    } catch (error) {
+      res.status(500).json({ message: "Failed to update settings" });
+    }
+  });
+
+  // Admin contact lookup (for "Contact Support" button)
+  app.get("/api/admin-contact", isAuthenticated, async (req, res) => {
+    try {
+      const allUsers = await storage.getAllUsers ? await storage.getAllUsers() : [];
+      const admin = allUsers.find((u: any) => u.role === "admin");
+      if (!admin) return res.status(404).json({ message: "No admin found" });
+      res.json({ id: admin.id, firstName: admin.firstName, lastName: admin.lastName, profileImageUrl: admin.profileImageUrl, role: admin.role });
+    } catch (error) {
+      res.status(500).json({ message: "Failed to find admin" });
+    }
+  });
+
   // ==================== NOTIFICATION / MESSAGING ROUTES ====================
 
   app.get("/api/notifications", async (req: any, res) => {
@@ -1565,8 +1902,6 @@ export async function registerRoutes(httpServer: Server, app: Express): Promise<
   app.post("/api/notifications", async (req: any, res) => {
     try {
       const userId = getUserId(req);
-      if (!userId) return res.status(401).json({ message: "Unauthorized" });
-
       const user = await storage.getUser(userId);
       if (!user) return res.status(404).json({ message: "User not found" });
 
@@ -1587,6 +1922,23 @@ export async function registerRoutes(httpServer: Server, app: Express): Promise<
         isAnonymous: isAnonymous === true,
         isRead: false,
       });
+
+      // Auto-create a notification for the receiver so the bell lights up
+      if (type === 'direct' && receiverId) {
+        try {
+          const senderName = [user.firstName, user.lastName].filter(Boolean).join(" ") || user.username || "Someone";
+          await storage.createMessage({
+            senderId: userId,
+            receiverId: receiverId,
+            targetDoctorId: null,
+            title: `New message from ${senderName}`,
+            content: (content || "📎 Sent an attachment").slice(0, 120),
+            type: "direct_notification",
+            isAnonymous: false,
+            isRead: false,
+          });
+        } catch (e) { console.error("Failed to auto-create notification:", e); }
+      }
 
       res.status(201).json(msg);
     } catch (error) {

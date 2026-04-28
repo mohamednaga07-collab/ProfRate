@@ -1,7 +1,7 @@
 import { useState, useEffect, useRef } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { useAuth } from "@/hooks/useAuth";
-import { Send, User as UserIcon, ShieldCheck, CheckCheck, Loader2, MessageCircle, Smile, Paperclip, X, Trash2, Edit2, Play, File as FileIcon, Image as ImageIcon, MoreVertical } from "lucide-react";
+import { Send, User as UserIcon, Clock, ShieldCheck, CheckCheck, Loader2, MessageCircle, Smile, Paperclip, X, Trash2, Edit2, Play, File as FileIcon, Image as ImageIcon, MoreVertical } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { ScrollArea } from "@/components/ui/scroll-area";
@@ -34,6 +34,7 @@ export default function Messages() {
   // Fetch conversations (left sidebar)
   const { data: conversations = [], isLoading: loadingConversations } = useQuery<any[]>({
     queryKey: ["/api/conversations"],
+    refetchInterval: 5000, // poll every 5s so delivered/read updates fast
   });
 
   // If the initialUserId is not in conversations (new chat), fetch their info
@@ -92,29 +93,24 @@ export default function Messages() {
         const res = await apiRequest("PUT", `/api/messages/${editingMessageId}`, { content: messageText.trim() });
         return res.json();
       }
+
       if (messageText.trim()) {
         formData.append("content", messageText.trim());
       }
       if (attachment) {
         formData.append("attachment", attachment);
       }
-
+      
       const res = await fetch("/api/messages", {
         method: "POST",
         body: formData,
-        credentials: "include",
       });
-
+      
       if (!res.ok) {
         const err = await res.text();
         throw new Error(err || "Failed to send message");
       }
-
-      const sent = await res.json();
-
-      // Notification creation is handled by the messages endpoint on the server.
-
-      return sent;
+      return res.json();
     },
     onSuccess: () => {
       setMessageText("");
@@ -262,20 +258,38 @@ export default function Messages() {
                         : "hover:bg-muted"
                     }`}
                   >
-                    <Avatar className={`h-10 w-10 border-2 ${String(selectedUserId) === String(conv.id) ? 'border-primary-foreground/20' : 'border-background'}`}>
+                    <Avatar className={`h-10 w-10 border-2 shrink-0 ${String(selectedUserId) === String(conv.id) ? 'border-primary-foreground/20' : 'border-background'}`}>
                       <AvatarImage src={conv.profileImageUrl} />
                       <AvatarFallback className={String(selectedUserId) === String(conv.id) ? "bg-primary-foreground/20 text-white" : ""}>
                         {conv.firstName?.[0]}{conv.lastName?.[0]}
                       </AvatarFallback>
                     </Avatar>
                     <div className="flex-1 overflow-hidden">
-                      <p className="font-semibold truncate">
-                        {conv.firstName} {conv.lastName}
-                      </p>
-                      <p className={`text-xs capitalize flex items-center gap-1 ${String(selectedUserId) === String(conv.id) ? 'text-primary-foreground/80' : 'text-muted-foreground'}`}>
-                        {conv.role === 'teacher' ? <ShieldCheck className="w-3 h-3" /> : <UserIcon className="w-3 h-3" />}
-                        {conv.role}
-                      </p>
+                      <div className="flex items-center justify-between gap-1">
+                        <p className="font-semibold truncate">
+                          {conv.firstName} {conv.lastName}
+                        </p>
+                        {conv.lastMessageAt && (
+                          <span className={`text-[10px] shrink-0 ${String(selectedUserId) === String(conv.id) ? 'text-primary-foreground/60' : 'text-muted-foreground/60'}`}>
+                            {new Date(conv.lastMessageAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+                          </span>
+                        )}
+                      </div>
+                      <div className="flex items-center justify-between gap-1 mt-0.5">
+                        <p className={`text-xs truncate ${String(selectedUserId) === String(conv.id) ? 'text-primary-foreground/70' : 'text-muted-foreground'}`}>
+                          {conv.lastMessage || (
+                            <span className="flex items-center gap-1">
+                              {conv.role === 'teacher' ? <ShieldCheck className="w-3 h-3" /> : <UserIcon className="w-3 h-3" />}
+                              {conv.role}
+                            </span>
+                          )}
+                        </p>
+                        {conv.unreadCount > 0 && String(selectedUserId) !== String(conv.id) && (
+                          <span className="shrink-0 h-5 min-w-5 px-1 rounded-full bg-primary text-primary-foreground text-[10px] font-bold flex items-center justify-center">
+                            {conv.unreadCount > 99 ? '99+' : conv.unreadCount}
+                          </span>
+                        )}
+                      </div>
                     </div>
                   </button>
                 ))}
@@ -379,6 +393,7 @@ export default function Messages() {
                             </div>
 
                             <div className={`flex items-center gap-1 mt-1 text-[10px] text-muted-foreground ${isMe ? "flex-row-reverse" : ""}`}>
+                              <Clock className="w-3 h-3" />
                               {new Date(msg.createdAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
                               {isMe && (
                                 msg.status === 'read' ? <CheckCheck className="w-3 h-3 ml-1 text-blue-500" /> :
@@ -437,22 +452,12 @@ export default function Messages() {
                       </PopoverContent>
                     </Popover>
 
-                    <input
-                      id="message-attachment"
-                      type="file"
-                      className="sr-only"
-                      aria-label="Attach a file to your message"
-                      title="Attach a file to your message"
-                      ref={fileInputRef}
-                      onChange={handleFileChange}
-                    />
+                    <input type="file" className="hidden" ref={fileInputRef} onChange={handleFileChange} aria-label="Attach a file" title="Attach a file" />
                     <Button 
                       type="button" 
                       variant="ghost" 
                       size="icon" 
                       className="h-10 w-10 rounded-full shrink-0 text-muted-foreground hover:text-foreground"
-                      aria-label="Attach file"
-                      aria-controls="message-attachment"
                       onClick={() => fileInputRef.current?.click()}
                     >
                       <Paperclip className="h-5 w-5" />

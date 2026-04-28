@@ -7,14 +7,6 @@ import {
   type InsertReview,
   type DoctorRating,
   type DoctorWithRatings,
-  type TeacherPortfolio,
-  type InsertTeacherPortfolio,
-  type TeacherClass,
-  type InsertTeacherClass,
-  type StudentEnrollment,
-  type InsertStudentEnrollment,
-  type Message,
-  type InsertMessage,
 } from "@shared/schema";
 import type { IStorage } from "./storage";
 import { randomUUID } from "crypto";
@@ -35,15 +27,8 @@ export class MemoryStorage implements IStorage {
   private reviews = new Map<number, Review>();
   private doctorRatings = new Map<number, DoctorRating>();
   private activityLogs: any[] = [];
-  private teacherPortfolios = new Map<string, TeacherPortfolio>();
-  private teacherClasses = new Map<number, TeacherClass>();
-  private studentEnrollments = new Map<number, StudentEnrollment>();
-  private messages = new Map<number, Message>();
   private nextDoctorId = 1;
   private nextReviewId = 1;
-  private nextClassId = 1;
-  private nextEnrollmentId = 1;
-  private nextMessageId = 1;
 
   constructor() {
     // Initialize from sqlite database if it exists
@@ -71,8 +56,6 @@ export class MemoryStorage implements IStorage {
           resetTokenExpiry: row.resetTokenExpiry ? new Date(row.resetTokenExpiry) : null,
           emailVerified: row.emailVerified === 1 ? true : false,
           verificationToken: row.verificationToken,
-          activeSessionId: row.activeSessionId ?? null,
-          linkedDoctorId: row.linkedDoctorId ?? null,
           createdAt: new Date(row.createdAt),
           updatedAt: new Date(row.updatedAt),
         };
@@ -170,8 +153,6 @@ export class MemoryStorage implements IStorage {
       resetTokenExpiry: null,
       emailVerified: (userData as any).emailVerified ?? false,
       verificationToken: (userData as any).verificationToken ?? null,
-      activeSessionId: null,
-      linkedDoctorId: null,
       createdAt: new Date(),
       updatedAt: new Date(),
     };
@@ -201,8 +182,6 @@ export class MemoryStorage implements IStorage {
       resetTokenExpiry: null,
       emailVerified: (userData as any).emailVerified ?? false,
       verificationToken: (userData as any).verificationToken ?? null,
-      activeSessionId: null,
-      linkedDoctorId: null,
       createdAt: new Date(),
       updatedAt: new Date(),
     };
@@ -293,18 +272,11 @@ export class MemoryStorage implements IStorage {
     const review: Review = {
       id,
       doctorId: src.doctorId,
-      reviewerId: src.reviewerId ?? null,
-      lastEditedAt: src.lastEditedAt ?? null,
       teachingQuality: src.teachingQuality,
       availability: src.availability,
       communication: src.communication,
       knowledge: src.knowledge,
       fairness: src.fairness,
-      engagement: src.engagement ?? null,
-      helpfulness: src.helpfulness ?? null,
-      courseOrganization: src.courseOrganization ?? null,
-      subScores: src.subScores ?? null,
-      overallScore: src.overallScore ?? null,
       comment: src.comment ?? null,
       createdAt: new Date(),
     };
@@ -326,16 +298,6 @@ export class MemoryStorage implements IStorage {
     const avgCommunication = doctorReviews.reduce((sum, r) => sum + r.communication, 0) / doctorReviews.length;
     const avgKnowledge = doctorReviews.reduce((sum, r) => sum + r.knowledge, 0) / doctorReviews.length;
     const avgFairness = doctorReviews.reduce((sum, r) => sum + r.fairness, 0) / doctorReviews.length;
-    // For new columns, only average over reviews that have them (non-null)
-    const engageReviews = doctorReviews.filter((r: any) => r.engagement != null);
-    const avgEngagement = engageReviews.length > 0 ? engageReviews.reduce((sum: number, r: any) => sum + r.engagement!, 0) / engageReviews.length : 0;
-
-    const helpReviews = doctorReviews.filter((r: any) => r.helpfulness != null);
-    const avgHelpfulness = helpReviews.length > 0 ? helpReviews.reduce((sum: number, r: any) => sum + r.helpfulness!, 0) / helpReviews.length : 0;
-
-    const orgReviews = doctorReviews.filter((r: any) => r.courseOrganization != null);
-    const avgCourseOrganization = orgReviews.length > 0 ? orgReviews.reduce((sum: number, r: any) => sum + r.courseOrganization!, 0) / orgReviews.length : 0;
-
     const overallRating = (avgTeachingQuality + avgAvailability + avgCommunication + avgKnowledge + avgFairness) / 5;
 
     const rating: DoctorRating = {
@@ -346,9 +308,6 @@ export class MemoryStorage implements IStorage {
       avgCommunication,
       avgKnowledge,
       avgFairness,
-      avgEngagement,
-      avgHelpfulness,
-      avgCourseOrganization,
       overallRating,
       totalReviews: doctorReviews.length,
       updatedAt: new Date(),
@@ -465,123 +424,5 @@ export class MemoryStorage implements IStorage {
 
   async getActivityLogs(limit: number = 50): Promise<any[]> {
     return this.activityLogs.slice(-limit).reverse();
-  }
-
-  // Teacher portfolio
-  async getTeacherPortfolio(userId: string): Promise<TeacherPortfolio | undefined> {
-    return this.teacherPortfolios.get(userId);
-  }
-
-  async upsertTeacherPortfolio(data: InsertTeacherPortfolio): Promise<TeacherPortfolio> {
-    const item = { ...data, updatedAt: new Date(), createdAt: (data as any).createdAt ?? new Date() } as TeacherPortfolio;
-    this.teacherPortfolios.set(data.userId, item);
-    return item;
-  }
-
-  // Teacher classes
-  async getTeacherClasses(filters: { userId: string }): Promise<TeacherClass[]> {
-    return Array.from(this.teacherClasses.values()).filter((c) => c.userId === filters.userId);
-  }
-
-  async createTeacherClass(data: InsertTeacherClass): Promise<TeacherClass> {
-    const id = this.nextClassId++;
-    const cls = { id, ...data, createdAt: new Date(), updatedAt: new Date() } as TeacherClass;
-    this.teacherClasses.set(id, cls);
-    return cls;
-  }
-
-  async updateTeacherClass(id: number, data: Partial<InsertTeacherClass>): Promise<TeacherClass> {
-    const existing = this.teacherClasses.get(id) as any;
-    if (!existing) throw new Error("Class not found");
-    const updated = { ...existing, ...data, updatedAt: new Date() } as TeacherClass;
-    this.teacherClasses.set(id, updated);
-    return updated;
-  }
-
-  async deleteTeacherClass(id: number): Promise<void> {
-    this.teacherClasses.delete(id);
-  }
-
-  // Student enrollments
-  async getStudentEnrollments(userId: string): Promise<StudentEnrollment[]> {
-    return Array.from(this.studentEnrollments.values()).filter((e) => e.userId === userId);
-  }
-
-  async createStudentEnrollment(data: InsertStudentEnrollment): Promise<StudentEnrollment> {
-    const id = this.nextEnrollmentId++;
-    const enrollment = { id, ...data, createdAt: new Date() } as StudentEnrollment;
-    this.studentEnrollments.set(id, enrollment);
-    return enrollment;
-  }
-
-  async deleteStudentEnrollment(id: number, userId: string): Promise<void> {
-    this.studentEnrollments.delete(id);
-  }
-
-  async getStudentActivityLogs(userId: string): Promise<any[]> {
-    return this.activityLogs.filter((a) => a.userId === userId);
-  }
-
-  // Messages
-  async getMessages(receiverId: string | null): Promise<Message[]> {
-    return Array.from(this.messages.values()).filter((m) => (receiverId ? m.receiverId === receiverId || m.receiverId === null : m.receiverId === null));
-  }
-
-  async getSentMessages(senderId: string): Promise<Message[]> {
-    return Array.from(this.messages.values()).filter((m) => m.senderId === senderId);
-  }
-
-  async createMessage(data: InsertMessage): Promise<Message> {
-    // Prevent rapid duplicate messages (same sender/receiver/content within 5s)
-    try {
-      const now = Date.now();
-      for (const m of Array.from(this.messages.values()).reverse()) {
-        const age = now - new Date(m.createdAt).getTime();
-        if (age > 5000) break; // stop checking older messages
-        if (m.senderId === data.senderId && m.receiverId === data.receiverId && m.content === data.content) {
-          return m;
-        }
-      }
-    } catch (e) {
-      // ignore and continue to create
-    }
-
-    const id = this.nextMessageId++;
-    const msg = { id, ...data, isRead: false, createdAt: new Date() } as Message;
-    this.messages.set(id, msg);
-    return msg;
-  }
-
-  async markMessageRead(id: number): Promise<void> {
-    const msg = this.messages.get(id) as any;
-    if (msg) msg.isRead = true;
-  }
-
-  async deleteMessage(id: number): Promise<void> {
-    this.messages.delete(id);
-  }
-
-  // Session management
-  async setUserActiveSession(userId: string, sessionId: string | null): Promise<void> {
-    const user = this.users.get(userId);
-    if (user) user.activeSessionId = sessionId;
-  }
-
-  // Review ownership helpers
-  async getReviewByReviewerAndDoctor(reviewerId: string, doctorId: number): Promise<Review | undefined> {
-    return Array.from(this.reviews.values()).find((r) => r.reviewerId === reviewerId && r.doctorId === doctorId);
-  }
-
-  async updateReview(id: number, data: Partial<Review>): Promise<Review> {
-    const existing = this.reviews.get(id) as any;
-    if (!existing) throw new Error("Review not found");
-    const updated = { ...existing, ...data, lastEditedAt: new Date() } as Review;
-    this.reviews.set(id, updated);
-    await this.updateDoctorRatings(updated.doctorId);
-    return updated;
-  }
-
-  async getReviewsByReviewer(reviewerId: string): Promise<Review[]> {
-    return Array.from(this.reviews.values()).filter((r) => r.reviewerId === reviewerId);
   }
 }

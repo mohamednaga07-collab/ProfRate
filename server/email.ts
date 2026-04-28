@@ -15,7 +15,6 @@ const GOOGLE_REFRESH_TOKEN = process.env.GOOGLE_REFRESH_TOKEN;
 const RESEND_API_KEY = process.env.RESEND_API_KEY;
 const RESEND_FROM = process.env.RESEND_FROM || `ProfRate <${EMAIL_USER || 'onboarding@resend.dev'}>`;
 const USE_RESEND = !!RESEND_API_KEY;
-const SUPPORT_EMAIL = process.env.SUPPORT_EMAIL || 'mohamednaga07@gmail.com';
 
 // Initialize Gmail API client if credentials are present
 let oAuth2Client: any = null;
@@ -307,15 +306,12 @@ function generateBaseEmailHtml({
             <p style="font-size: 14px; color: #64748b; margin-top: 40px; border-top: 1px solid #f1f5f9; padding-top: 20px;">
               ${footerMessage}
             </p>
-            <p style="font-size: 14px; color: #64748b; margin-top: 12px;">
-              If you need further assistance, contact support at <a href="mailto:${SUPPORT_EMAIL}" style="color: #2563eb; text-decoration: none;">${SUPPORT_EMAIL}</a>. We usually respond within 48 hours.
-            </p>
           </div>
           <div class="footer">
             <p style="margin: 0; font-weight: 600;">© 2026 ProfRate. All rights reserved.</p>
             <div class="footer-links">
               <a href="https://profrate.onrender.com" class="footer-link">Website</a>
-              <a href="mailto:${SUPPORT_EMAIL}" class="footer-link">Support</a>
+              <a href="mailto:support@profrate.com" class="footer-link">Support</a>
             </div>
           </div>
         </div>

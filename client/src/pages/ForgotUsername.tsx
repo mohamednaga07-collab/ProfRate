@@ -170,9 +170,6 @@ export default function ForgotUsername() {
                           defaultValue: "Check your email for your username.",
                         })}
                       </p>
-                      <p className="text-sm text-muted-foreground">
-                        If you need further assistance, contact support at <a href="mailto:mohamednaga07@gmail.com" className="text-primary">mohamednaga07@gmail.com</a>. We typically respond within 48 hours.
-                      </p>
                     </div>
                   </motion.div>
                 ) : (
