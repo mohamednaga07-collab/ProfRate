@@ -1659,7 +1659,11 @@ export async function registerRoutes(httpServer: Server, app: Express): Promise<
       if (!user && req.session?.userId) user = await storage.getUser(req.session.userId);
       if (!user) return res.status(401).json({ message: "Not authenticated" });
       const received = await storage.getMessages(user.id);
-      const unread = received.filter((m: any) => m.type === "direct" && m.status !== "read").length;
+      const unread = received.filter((m: any) => 
+        m.type === "direct" && 
+        m.status !== "read" && 
+        String(m.receiverId) === String(user.id)
+      ).length;
       res.json({ unread });
     } catch {
       res.status(500).json({ unread: 0 });
@@ -1751,7 +1755,7 @@ export async function registerRoutes(httpServer: Server, app: Express): Promise<
           targetDoctorId: null,
           title: `💬 New message from ${senderName}`,
           content: (content || "📎 Sent an attachment").slice(0, 120),
-          type: "direct",
+          type: "direct_notification",
           isAnonymous: false,
         });
       } catch { /* non-critical */ }
@@ -1837,6 +1841,39 @@ export async function registerRoutes(httpServer: Server, app: Express): Promise<
       res.json(settingsObj);
     } catch (error) {
       res.status(500).json({ message: "Failed to fetch settings" });
+    }
+  });
+
+
+  // Lookup a teacher's user ID by their doctor profile ID
+  app.get("/api/doctors/:id/teacher-user", isAuthenticated, async (req: any, res) => {
+    try {
+      const doctorId = parseInt(req.params.id);
+      const doctor = await storage.getDoctor(doctorId);
+      if (!doctor) return res.status(404).json({ message: "Doctor not found" });
+
+      const allUsers = await storage.getAllUsers();
+      // First try to find by exact linkedDoctorId
+      let teacherUser = allUsers.find((u: any) => u.linkedDoctorId === doctorId);
+      
+      // Fallback: try to match by name
+      if (!teacherUser && doctor.name) {
+        const docNameLower = doctor.name.toLowerCase().replace(/^dr\.\s*/i, '').trim();
+        teacherUser = allUsers.find((u: any) => {
+          if (u.role !== 'teacher') return false;
+          const userFullName = `${u.firstName || ''} ${u.lastName || ''}`.toLowerCase().trim();
+          return userFullName === docNameLower || docNameLower.includes(userFullName);
+        });
+      }
+
+      if (teacherUser) {
+        return res.json({ teacherUserId: teacherUser.id });
+      } else {
+        return res.status(404).json({ message: "This professor has not registered an account yet." });
+      }
+    } catch (error) {
+      console.error("Error finding teacher user:", error);
+      res.status(500).json({ message: "Failed to look up teacher user" });
     }
   });
 
